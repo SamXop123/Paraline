@@ -485,6 +485,9 @@ function applySettings(nextSettings) {
     }
   };
 
+  if (!nextSettings) return;
+    visualizerState.globalSensitivity = nextSettings.globalSensitivity ?? 1.0;
+
   if (!["ambientWave", "reactiveBorder", "flowBorder", "sideBars", "flatRipples", "dotParticles", "rippleFlow", "snowBubbleParticles", "edgeCrystals"].includes(visualizerState.selectedTheme)) {
     visualizerState.selectedTheme = "ambientWave";
   }
@@ -655,12 +658,22 @@ if (window.audioBridge) {
     if (payload && typeof payload.value === "number") {
       latestSource = payload.source || "unknown";
       lastPayloadValue = payload.value;
+
+      // 1. Fetch the sensitivity multiplier safely from the active visualizerState
+      const globalSensitivity = visualizerState?.globalSensitivity ?? 1.0;
+
+      // 2. Scale the raw incoming audio value by your multiplier calculation
+      const scaledValue = payload.value * globalSensitivity;
+
+      const helperDriven = latestSource === "helper";
       incomingLevel = latestSource === "helper"
-        ? clamp01(payload.value * getActiveAudioMultiplier())
-        : clamp01(payload.value);
+        ? clamp01(scaledValue * getActiveAudioMultiplier())
+        : clamp01(scaledValue);
     }
   });
 }
+
+
 
 if (window.visualizerSettings) {
   window.visualizerSettings.onChange((nextSettings) => {

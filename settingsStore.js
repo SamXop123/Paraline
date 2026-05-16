@@ -3,6 +3,7 @@ const path = require("path");
 
 const DEFAULT_SETTINGS = Object.freeze({
   selectedTheme: "ambientWave",
+  globalSensitivity: 1.0,
   ambientWave: Object.freeze({
     tone: "blue",
     sensitivity: "medium",
@@ -93,6 +94,7 @@ function createDefaultSettings() {
   return {
     selectedTheme: DEFAULT_SETTINGS.selectedTheme,
     ambientWave: { ...DEFAULT_SETTINGS.ambientWave },
+    globalSensitivity: DEFAULT_SETTINGS.globalSensitivity ,
     reactiveBorder: { ...DEFAULT_SETTINGS.reactiveBorder },
     flowBorder: { ...DEFAULT_SETTINGS.flowBorder },
     sideBars: { ...DEFAULT_SETTINGS.sideBars },
@@ -275,6 +277,7 @@ function sanitizeSettings(input = {}) {
 
   return {
     selectedTheme: pick(source.selectedTheme, VALID_MAIN_THEMES, DEFAULT_SETTINGS.selectedTheme),
+    globalSensitivity: typeof input.globalSensitivity === 'number' ? source.globalSensitivity : DEFAULT_SETTINGS.globalSensitivity,
     ambientWave: sanitizeAmbientWave(source.ambientWave),
     reactiveBorder: sanitizeReactiveBorder(source.reactiveBorder),
     flowBorder: sanitizeFlowBorder(source.flowBorder),
