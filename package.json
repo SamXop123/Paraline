@@ -63,7 +63,7 @@
           ]
         }
       ],
-      "icon": "assets/appicon.png"
+      "icon": "assets/appicon.ico"
     },
     "nsis": {
       "oneClick": false,

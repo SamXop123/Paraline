@@ -226,12 +226,26 @@ function openExternalUrl(url) {
 }
 
 function createTrayIcon() {
-  const iconCandidates = [
-    path.join(process.resourcesPath, "assets", "appicon.png"),
-    path.join(process.resourcesPath, "assets", "paraline.png"),
-    path.join(__dirname, "assets", "appicon.png"),
-    path.join(__dirname, "assets", "paraline.png")
-  ];
+  const isWindows = process.platform === "win32";
+
+  // On Windows, prefer the .ico file which contains all resolutions (16, 32, 48, 256px)
+  // natively — this avoids blurry downscaling from a single PNG on high-DPI displays.
+  // Fall back to .png for non-Windows platforms or when the .ico is not yet present.
+  const iconCandidates = isWindows
+    ? [
+        path.join(process.resourcesPath, "assets", "appicon.ico"),
+        path.join(__dirname, "assets", "appicon.ico"),
+        path.join(process.resourcesPath, "assets", "appicon.png"),
+        path.join(process.resourcesPath, "assets", "paraline.png"),
+        path.join(__dirname, "assets", "appicon.png"),
+        path.join(__dirname, "assets", "paraline.png")
+      ]
+    : [
+        path.join(process.resourcesPath, "assets", "appicon.png"),
+        path.join(process.resourcesPath, "assets", "paraline.png"),
+        path.join(__dirname, "assets", "appicon.png"),
+        path.join(__dirname, "assets", "paraline.png")
+      ];
 
   const iconPath = iconCandidates.find((candidatePath) => {
     try {
@@ -245,6 +259,11 @@ function createTrayIcon() {
     const image = nativeImage.createFromPath(iconPath);
 
     if (!image.isEmpty()) {
+      // ICO files already embed multi-resolution sizes — no need to resize.
+      // Only resize PNG fallbacks to the 16×16 tray size.
+      if (iconPath.endsWith(".ico")) {
+        return image;
+      }
       return image.resize({ width: 16, height: 16 });
     }
   }
