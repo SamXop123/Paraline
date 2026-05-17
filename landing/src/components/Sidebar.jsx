@@ -1,6 +1,12 @@
 import { motion } from "framer-motion";
 
-export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
+export default function Sidebar({ isSidebarOpen, closeSidebar }) {
+  const handleNavClick = () => {
+    if (window.innerWidth < 1024) {
+      closeSidebar();
+    }
+  };
+
   return (
     <>
       {/* Backdrop overlay */}
@@ -8,16 +14,20 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
         initial={false}
         animate={{ opacity: isSidebarOpen ? 1 : 0, pointerEvents: isSidebarOpen ? "auto" : "none" }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        onClick={toggleSidebar}
-        className="fixed inset-0 bg-[#02040c]/40 z-40 backdrop-blur-[2px]"
+        onClick={closeSidebar}
+        className="fixed inset-0 z-40 bg-[#02040c]/40 backdrop-blur-[2px] lg:hidden"
+        aria-hidden={!isSidebarOpen}
       />
 
       {/* Sidebar panel */}
-      <motion.div
+      <motion.aside
         initial={false}
         animate={{ x: isSidebarOpen ? 0 : "-100%" }}
         transition={{ type: "spring", stiffness: 450, damping: 30 }}
-        className="flex flex-col h-screen lg:w-[22vw] md:w-[40vw] sm:w-[50vw] w-[75vw] fixed top-0 left-0 z-50 bg-[#050816]/95 backdrop-blur-2xl shadow-[10px_0_50px_rgba(0,0,0,0.8)] border-r border-white/[0.08] overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isSidebarOpen}
+        className="fixed top-0 left-0 z-50 flex h-screen w-[min(85vw,20rem)] flex-col overflow-hidden border-r border-white/[0.08] bg-[#050816]/95 shadow-[10px_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl sm:w-[min(70vw,18rem)] md:w-[min(50vw,16rem)] lg:w-[min(22vw,15rem)]"
       >
         {/* Subtle background glow */}
         <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-[rgba(125,211,252,0.1)] to-transparent pointer-events-none" />
@@ -31,7 +41,12 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
             </div>
             <h3 className="font-bold tracking-[0.25em] text-sm bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">PARALINE</h3>
           </div>
-          <button onClick={toggleSidebar} className="p-2.5 hover:bg-white/10 rounded-full transition-all duration-150 group">
+          <button
+            type="button"
+            onClick={closeSidebar}
+            aria-label="Close navigation menu"
+            className="p-2.5 hover:bg-white/10 rounded-full transition-all duration-150 group"
+          >
             <img src='./sidebar-icons/sidebar.svg' className="h-5 invert opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all" alt="Close Sidebar" />
           </button>
         </div>
@@ -41,17 +56,17 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
           <div className="flex flex-col gap-1 w-full">
             <p className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-3 px-3 font-bold">Menu</p>
 
-            <SidebarItem icon="./sidebar-icons/home.svg" label="Home" active={true} />
-            <SidebarItem icon="./sidebar-icons/tools.svg" label="Installation Guide" />
-            <SidebarItem icon="./sidebar-icons/theme.svg" label="Themes" />
-            <SidebarItem icon="./sidebar-icons/settings.svg" label="Settings" />
+            <SidebarItem icon="./sidebar-icons/home.svg" label="Home" active={true} onNavigate={handleNavClick} />
+            <SidebarItem icon="./sidebar-icons/tools.svg" label="Installation Guide" onNavigate={handleNavClick} />
+            <SidebarItem icon="./sidebar-icons/theme.svg" label="Themes" onNavigate={handleNavClick} />
+            <SidebarItem icon="./sidebar-icons/settings.svg" label="Settings" onNavigate={handleNavClick} />
           </div>
 
           <div className="flex flex-col gap-1 w-full mt-10">
             <p className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-3 px-3 font-bold">Support</p>
 
-            <SidebarItem icon="./sidebar-icons/customer-service.svg" label="Contact Us" />
-            <SidebarItem icon="./sidebar-icons/github-svgrepo-com.svg" label="Github" />
+            <SidebarItem icon="./sidebar-icons/customer-service.svg" label="Contact Us" onNavigate={handleNavClick} />
+            <SidebarItem icon="./sidebar-icons/github-svgrepo-com.svg" label="Github" onNavigate={handleNavClick} />
           </div>
         </div>
 
@@ -65,14 +80,18 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }) {
             <span className="text-xs text-white/40 tracking-widest uppercase font-semibold">Active</span>
           </div>
         </div>
-      </motion.div>
+      </motion.aside>
     </>
   );
 }
 
-function SidebarItem({ icon, label, active }) {
+function SidebarItem({ icon, label, active, onNavigate }) {
   return (
-    <button className={`relative flex items-center w-full px-3 py-3.5 rounded-2xl transition-all duration-150 group overflow-hidden ${active ? 'bg-white/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'}`}>
+    <button
+      type="button"
+      onClick={onNavigate}
+      className={`relative flex items-center w-full px-3 py-3.5 rounded-2xl transition-all duration-150 group overflow-hidden ${active ? 'bg-white/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]' : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'}`}
+    >
       {/* Hover background highlight */}
       <div className="absolute inset-0 bg-gradient-to-r from-sky-500/0 via-sky-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 

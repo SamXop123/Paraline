@@ -55,10 +55,30 @@ export default function App() {
   };
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-    console.log(isSidebarOpen);
-  }
+  const toggleSidebar = () => setIsSidebarOpen((open) => !open);
+  const closeSidebar = () => setIsSidebarOpen(false);
+
+  useEffect(() => {
+    if (!isSidebarOpen) {
+      document.body.style.overflow = "";
+      return undefined;
+    }
+
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        closeSidebar();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isSidebarOpen]);
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-midnight text-white">
@@ -72,21 +92,30 @@ export default function App() {
         transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      <Sidebar isSidebarOpen={isSidebarOpen} closeSidebar={closeSidebar} />
 
       <div className="relative z-10">
-        <header className="fixed inset-x-0 top-0 z-40 border border-gray-700 bg-[#02040c]/10 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 sm:px-8">
-            <button
-              onClick={toggleSidebar}
-              className="absolute top-5 left-5">
-                <img src='./sidebar-icons/menu.svg' className="h-8"/>
-            </button>
+        <header className="fixed inset-x-0 top-0 z-40 border-b border-white/5 bg-midnight/80 backdrop-blur-md">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-8">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                aria-expanded={isSidebarOpen}
+                aria-label={isSidebarOpen ? "Close navigation menu" : "Open navigation menu"}
+                className="shrink-0 rounded-lg p-2 transition hover:bg-white/10"
+              >
+                <img src="./sidebar-icons/menu.svg" className="h-7 w-7" alt="" />
+              </button>
 
-            <a href="#hero" className="text-xs uppercase tracking-[0.45em] text-white/70 transition hover:text-white">
-              Paraline
-            </a>
-            <div className="flex items-center gap-3">
+              <a
+                href="#hero"
+                className="truncate text-xs uppercase tracking-[0.45em] text-white/70 transition hover:text-white"
+              >
+                Paraline
+              </a>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               <a
                 href={githubUrl}
                 target="_blank"
@@ -107,7 +136,7 @@ export default function App() {
           </div>
         </header>
 
-        <main>
+        <main className="pt-[5.75rem] sm:pt-24">
           <HeroSection
             downloadUrl={downloadUrl}
             isHostedInstaller={isHostedInstaller}
