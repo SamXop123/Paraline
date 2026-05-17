@@ -5,7 +5,9 @@ import HeroSection from "./components/sections/HeroSection";
 import ExperienceSection from "./components/sections/ExperienceSection";
 import ThemeShowcaseSection from "./components/sections/ThemeShowcaseSection";
 import CTASection from "./components/sections/CTASection";
+import KeyboardShortcutsHelp from "./components/KeyboardShortcutsHelp";
 import Sidebar from "./components/Sidebar";
+import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 
 const downloadUrl = import.meta.env.VITE_DOWNLOAD_URL || "/downloads/Paraline-Setup.exe";
 const isHostedInstaller = /^https?:\/\//.test(downloadUrl);
@@ -55,10 +57,24 @@ export default function App() {
   };
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-    console.log(isSidebarOpen);
-  }
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const toggleSidebar = () => setIsSidebarOpen((open) => !open);
+  const closeSidebar = () => setIsSidebarOpen(false);
+  const toggleShortcutsHelp = (next) => {
+    if (typeof next === "boolean") {
+      setShowShortcuts(next);
+      return;
+    }
+
+    setShowShortcuts((open) => !open);
+  };
+
+  useKeyboardShortcuts({
+    onToggleSidebar: toggleSidebar,
+    onCloseSidebar: closeSidebar,
+    onToggleHelp: toggleShortcutsHelp,
+    isHelpOpen: showShortcuts,
+  });
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-midnight text-white">
@@ -78,8 +94,13 @@ export default function App() {
         <header className="fixed inset-x-0 top-0 z-40 border border-gray-700 bg-[#02040c]/10 backdrop-blur-xl">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 sm:px-8">
             <button
+              type="button"
               onClick={toggleSidebar}
-              className="absolute top-5 left-5">
+              aria-expanded={isSidebarOpen}
+              aria-label="Toggle navigation menu"
+              title="Toggle menu (Ctrl+B)"
+              className="absolute top-5 left-5"
+            >
                 <img src='./sidebar-icons/menu.svg' className="h-8"/>
             </button>
 
@@ -122,6 +143,8 @@ export default function App() {
           />
         </main>
       </div>
+
+      <KeyboardShortcutsHelp open={showShortcuts} onClose={() => toggleShortcutsHelp(false)} />
 
       <Analytics />
     </div>
