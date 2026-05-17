@@ -107,7 +107,7 @@ export default function App() {
           </div>
         </header>
 
-        <main>
+        <main className="pt-24">
           <HeroSection
             downloadUrl={downloadUrl}
             isHostedInstaller={isHostedInstaller}
