@@ -5,10 +5,19 @@ const path = require("path");
 
 function createAudioBridge(sendLevel, onStatusChange = () => {}) {
   let helperProcess = null;
+
   let helperStatus = {
     mode: "simulated",
     reason: "Helper not started yet."
   };
+
+  // NEW: Parse error recovery variables
+  let parseErrorCount = 0;
+  const MAX_PARSE_ERRORS = 3;
+
+  // NEW: Restart retry tracking
+  let restartAttempts = 0;
+  const MAX_RESTART_ATTEMPTS = 3;
 
   function updateStatus(nextStatus) {
     helperStatus = nextStatus;
@@ -17,15 +26,84 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
 
   function findHelperBinary() {
     const appPath = app.getAppPath();
+
     const candidates = [
-      path.join(process.resourcesPath, "audio-helper", "Paraline.AudioBridge.exe"),
-      path.join(appPath, "build", "audio-helper", "Paraline.AudioBridge.exe"),
-      path.join(appPath, "audio-helper", "bin", "Release", "net8.0-windows", "win-x64", "publish", "Paraline.AudioBridge.exe"),
-      path.join(appPath, "audio-helper", "bin", "Debug", "net8.0-windows", "Paraline.AudioBridge.exe"),
-      path.join(appPath, "audio-helper", "bin", "Release", "net8.0-windows", "Paraline.AudioBridge.exe")
+      path.join(
+        process.resourcesPath,
+        "audio-helper",
+        "Paraline.AudioBridge.exe"
+      ),
+      path.join(
+        appPath,
+        "build",
+        "audio-helper",
+        "Paraline.AudioBridge.exe"
+      ),
+      path.join(
+        appPath,
+        "audio-helper",
+        "bin",
+        "Release",
+        "net8.0-windows",
+        "win-x64",
+        "publish",
+        "Paraline.AudioBridge.exe"
+      ),
+      path.join(
+        appPath,
+        "audio-helper",
+        "bin",
+        "Debug",
+        "net8.0-windows",
+        "Paraline.AudioBridge.exe"
+      ),
+      path.join(
+        appPath,
+        "audio-helper",
+        "bin",
+        "Release",
+        "net8.0-windows",
+        "Paraline.AudioBridge.exe"
+      )
     ];
 
-    return candidates.find((candidatePath) => fs.existsSync(candidatePath)) || null;
+    return (
+      candidates.find((candidatePath) =>
+        fs.existsSync(candidatePath)
+      ) || null
+    );
+  }
+
+  // NEW: Automatic helper restart logic
+  function restartHelper(reason = "Unknown error") {
+    if (restartAttempts >= MAX_RESTART_ATTEMPTS) {
+      updateStatus({
+        mode: "simulated",
+        reason: [
+          "Helper recovery failed after multiple restart attempts.",
+          "\n",
+          `Last reason: ${reason}`
+        ].join("")
+      });
+
+      return;
+    }
+
+    restartAttempts++;
+
+    if (helperProcess) {
+      helperProcess.kill();
+      helperProcess = null;
+    }
+
+    updateStatus({
+      mode: "helper-restarting",
+      reason: `Restarting audio helper (${restartAttempts}/${MAX_RESTART_ATTEMPTS})...`
+    });
+
+    setTimeout(() => {
+      start();
+    }, 1500);
   }
 
   function start() {
@@ -44,6 +122,7 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
           "\n- See DEVELOPMENT.md for setup instructions."
         ].join("")
       });
+
       return;
     }
 
@@ -73,21 +152,35 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
         try {
           const message = JSON.parse(line);
 
-          if (message.type === "level" && typeof message.value === "number") {
+          // RESET counters after successful parsing
+          parseErrorCount = 0;
+          restartAttempts = 0;
+
+          if (
+            message.type === "level" &&
+            typeof message.value === "number"
+          ) {
             sendLevel(message.value);
           }
         } catch (_error) {
+          // NEW: Controlled parse error handling
+          parseErrorCount++;
+
           updateStatus({
-            mode: "simulated",
+            mode: "helper-warning",
             reason: [
-              "Audio helper sent invalid data.",
+              `Invalid helper output detected (${parseErrorCount}/${MAX_PARSE_ERRORS}).`,
               "\n",
-              "Troubleshooting:",
-              "\n- The audio capture process returned unexpected output.",
-              "\n- Try restarting Paraline.",
-              "\n- If the problem persists, rebuild the helper binary."
+              "Attempting automatic recovery..."
             ].join("")
           });
+
+          // Restart helper after threshold exceeded
+          if (parseErrorCount >= MAX_PARSE_ERRORS) {
+            restartHelper(
+              "Too many malformed helper messages."
+            );
+          }
         }
       }
     });
@@ -109,15 +202,20 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
 
     helperProcess.on("exit", (code) => {
       helperProcess = null;
+
+      // NEW: Auto-recovery for unexpected crashes
+      if (code !== 0) {
+        restartHelper(
+          `Helper exited unexpectedly with code ${code}`
+        );
+
+        return;
+      }
+
       updateStatus({
         mode: "simulated",
         reason: [
-          `Audio helper stopped (exit code ${code}).`,
-          "\n",
-          "Troubleshooting:",
-          "\n- The audio capture process exited unexpectedly.",
-          "\n- Try restarting Paraline.",
-          "\n- If the problem persists, rebuild the helper binary."
+          `Audio helper stopped normally (exit code ${code}).`
         ].join("")
       });
     });
