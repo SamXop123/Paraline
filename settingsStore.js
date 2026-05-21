@@ -275,9 +275,16 @@ function migrateLegacySettings(input = {}) {
 function sanitizeSettings(input = {}) {
   const source = migrateLegacySettings(input);
 
+  // 1. Enforce strict type validation and numeric finite boundaries
+  let safeSensitivity = 1.0; // Production default fallback
+  if (typeof source.globalSensitivity === 'number' && Number.isFinite(source.globalSensitivity)) {
+    // 2. Enforce a safe range clamp between 0.1x (minimum) and 5.0x (maximum)
+    safeSensitivity = Math.min(Math.max(source.globalSensitivity, 0.1), 5.0);
+  }
+
   return {
     selectedTheme: pick(source.selectedTheme, VALID_MAIN_THEMES, DEFAULT_SETTINGS.selectedTheme),
-    globalSensitivity: typeof input.globalSensitivity === 'number' ? source.globalSensitivity : DEFAULT_SETTINGS.globalSensitivity,
+    globalSensitivity: safeSensitivity, // Use the securely validated value
     ambientWave: sanitizeAmbientWave(source.ambientWave),
     reactiveBorder: sanitizeReactiveBorder(source.reactiveBorder),
     flowBorder: sanitizeFlowBorder(source.flowBorder),

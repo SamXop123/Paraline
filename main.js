@@ -282,7 +282,15 @@ function buildMainThemeMenuItems() {
     click: () => updateSettings({ selectedTheme: themeOption.value })
   }));
 }
-
+function getNumericSensitivity(level) {
+  switch (level) {
+    case "low": return 0.5;
+    case "high": return 2.0;
+    case "medium":
+    default:
+      return 1.0;
+  }
+}
 function buildAmbientWaveMenuItems() {
   const ambientSettings = visualizerSettings.ambientWave;
 
@@ -310,7 +318,9 @@ function buildAmbientWaveMenuItems() {
         label: level[0].toUpperCase() + level.slice(1),
         type: "radio",
         checked: ambientSettings.sensitivity === level,
-        click: () => updateSettings({ ambientWave: { sensitivity: level } })
+        click: () => updateSettings({ 
+          globalSensitivity: getNumericSensitivity(level), // Update your global field!
+          ambientWave: { sensitivity: level } })
       }))
     },
     {
@@ -362,7 +372,9 @@ function buildReactiveBorderMenuItems() {
         label: level[0].toUpperCase() + level.slice(1),
         type: "radio",
         checked: reactiveSettings.intensity === level,
-        click: () => updateSettings({ reactiveBorder: { intensity: level } })
+        click: () => updateSettings({ 
+          globalSensitivity: getNumericSensitivity(level), // Update your global field!
+          reactiveBorder: { intensity: level }})
       }))
     },
     {

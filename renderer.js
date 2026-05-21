@@ -659,10 +659,16 @@ if (window.audioBridge) {
       latestSource = payload.source || "unknown";
       lastPayloadValue = payload.value;
 
-      // 1. Fetch the sensitivity multiplier safely from the active visualizerState
-      const globalSensitivity = visualizerState?.globalSensitivity ?? 1.0;
+      // 1. Fetch the sensitivity value from state
+      let rawSensitivity = visualizerState?.globalSensitivity;
 
-      // 2. Scale the raw incoming audio value by your multiplier calculation
+      // 2. Validate and clamp runtime boundaries right before calculation path
+      let globalSensitivity = 1.0;
+      if (typeof rawSensitivity === "number" && Number.isFinite(rawSensitivity)) {
+        globalSensitivity = Math.min(Math.max(rawSensitivity, 0.1), 5.0);
+      }
+
+      // 3. Scale the incoming audio level safely
       const scaledValue = payload.value * globalSensitivity;
 
       const helperDriven = latestSource === "helper";
