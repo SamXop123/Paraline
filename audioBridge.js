@@ -16,12 +16,19 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
   const MAX_RESTART_ATTEMPTS = 5;
   const BASE_RESTART_DELAY = 1000;
 
-  // NEW: prevent restart on intentional shutdown
+  // Prevent restart on intentional shutdown
   let expectedExit = false;
 
-  // NEW: healthy uptime tracking
+  // NEW: prevent duplicate restart scheduling
+  let isRestarting = false;
+
+  // Healthy uptime tracking
   let healthyTimer = null;
   const HEALTHY_UPTIME_MS = 30000;
+
+  // NEW: parse error tracking
+  let parseErrorCount = 0;
+  const MAX_PARSE_ERRORS = 5;
 
   function updateStatus(nextStatus) {
     helperStatus = nextStatus;
@@ -89,7 +96,19 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
 
   // Auto restart with exponential backoff
   function restartHelper(reason = "Unknown crash") {
+    // NEW: prevent duplicate restart scheduling
+    if (isRestarting) {
+      return;
+    }
+
+    isRestarting = true;
+
+    // NEW: reset parse errors on restart
+    parseErrorCount = 0;
+
     if (restartAttempts >= MAX_RESTART_ATTEMPTS) {
+      isRestarting = false;
+
       updateStatus({
         mode: "simulated",
         reason: [
@@ -123,11 +142,15 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
     }
 
     setTimeout(() => {
+      isRestarting = false;
       start();
     }, delay);
   }
 
   function start() {
+    // NEW: reset parse errors on fresh start
+    parseErrorCount = 0;
+
     const helperBinary = findHelperBinary();
 
     if (!helperBinary) {
@@ -147,7 +170,6 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
       return;
     }
 
-    // NEW: reset expected exit before starting
     expectedExit = false;
 
     helperProcess = spawn(helperBinary, [], {
@@ -160,7 +182,7 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
       reason: "C# helper process connected."
     });
 
-    // NEW: reset retry count only after healthy uptime
+    // Reset retry count only after healthy uptime
     clearTimeout(healthyTimer);
 
     healthyTimer = setTimeout(() => {
@@ -188,8 +210,8 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
         try {
           const message = JSON.parse(line);
 
-          // REMOVED:
-          // restartAttempts = 0;
+          // Reset parse error counter after valid parse
+          parseErrorCount = 0;
 
           if (
             message.type === "level" &&
@@ -198,14 +220,23 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
             sendLevel(message.value);
           }
         } catch (_error) {
+          parseErrorCount++;
+
           updateStatus({
             mode: "helper-warning",
             reason: [
               "Audio helper sent invalid data.",
               "\n",
-              "Continuing helper monitoring..."
+              `Parse errors: ${parseErrorCount}/${MAX_PARSE_ERRORS}`
             ].join("")
           });
+
+          // NEW: restart helper after repeated parse failures
+          if (parseErrorCount >= MAX_PARSE_ERRORS) {
+            restartHelper(
+              "Too many invalid helper responses"
+            );
+          }
         }
       }
     });
@@ -225,7 +256,7 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
 
       helperProcess = null;
 
-      // NEW: ignore intentional shutdowns
+      // Ignore intentional shutdowns
       if (expectedExit) {
         expectedExit = false;
 
@@ -234,6 +265,11 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
           reason: "Helper stopped intentionally."
         });
 
+        return;
+      }
+
+      // NEW: avoid duplicate restart scheduling
+      if (isRestarting) {
         return;
       }
 
@@ -255,7 +291,6 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
 
   function stop() {
     if (helperProcess) {
-      // NEW: mark shutdown as intentional
       expectedExit = true;
 
       helperProcess.kill();
