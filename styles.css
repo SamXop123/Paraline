@@ -17,3 +17,55 @@ body {
   width: 100vw;
   height: 100vh;
 }
+/* --- Footer UI Enhancements --- */
+.bottom-footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background:rgba(15, 15, 20, 0.85); /* Dark semi-transparent background */
+    backdrop-filter: blur(10px); /* Modern blur effect */
+    border-top: 1px solidrgba(255, 255, 255, 0.1);
+    padding: 1rem 2rem;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    color: #a0a0a0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.9rem;
+}
+
+.footer-content p {
+    margin: 0;
+}
+
+.social-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.social-links a {
+    color: #a0a0a0;
+    text-decoration: none;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.social-links a:hover {
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+    .footer-content {
+        flex-direction: column;
+        gap: 0.8rem;
+        text-align: center;
+    }
+}
