@@ -16,6 +16,13 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
   const MAX_RESTART_ATTEMPTS = 5;
   const BASE_RESTART_DELAY = 1000;
 
+  // NEW: prevent restart on intentional shutdown
+  let expectedExit = false;
+
+  // NEW: healthy uptime tracking
+  let healthyTimer = null;
+  const HEALTHY_UPTIME_MS = 30000;
+
   function updateStatus(nextStatus) {
     helperStatus = nextStatus;
     onStatusChange(helperStatus);
@@ -110,6 +117,7 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
     });
 
     if (helperProcess) {
+      expectedExit = true;
       helperProcess.kill();
       helperProcess = null;
     }
@@ -139,6 +147,9 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
       return;
     }
 
+    // NEW: reset expected exit before starting
+    expectedExit = false;
+
     helperProcess = spawn(helperBinary, [], {
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"]
@@ -148,6 +159,18 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
       mode: "helper",
       reason: "C# helper process connected."
     });
+
+    // NEW: reset retry count only after healthy uptime
+    clearTimeout(healthyTimer);
+
+    healthyTimer = setTimeout(() => {
+      restartAttempts = 0;
+
+      updateStatus({
+        mode: "helper",
+        reason: "Audio helper running normally."
+      });
+    }, HEALTHY_UPTIME_MS);
 
     let stdoutBuffer = "";
 
@@ -165,8 +188,8 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
         try {
           const message = JSON.parse(line);
 
-          // Reset retry count after successful response
-          restartAttempts = 0;
+          // REMOVED:
+          // restartAttempts = 0;
 
           if (
             message.type === "level" &&
@@ -197,8 +220,22 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
       });
     });
 
-    helperProcess.on("exit", (code) => {
+    helperProcess.on("exit", (code, signal) => {
+      clearTimeout(healthyTimer);
+
       helperProcess = null;
+
+      // NEW: ignore intentional shutdowns
+      if (expectedExit) {
+        expectedExit = false;
+
+        updateStatus({
+          mode: "simulated",
+          reason: "Helper stopped intentionally."
+        });
+
+        return;
+      }
 
       // Restart helper automatically after crash
       if (code !== 0) {
@@ -218,9 +255,14 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
 
   function stop() {
     if (helperProcess) {
+      // NEW: mark shutdown as intentional
+      expectedExit = true;
+
       helperProcess.kill();
       helperProcess = null;
     }
+
+    clearTimeout(healthyTimer);
 
     updateStatus({
       mode: "simulated",
