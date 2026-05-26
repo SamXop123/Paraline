@@ -19,4 +19,3 @@ What to include:
 - Impact assessment
 - A proof of concept, if possible
 
-We will acknowledge receipt and work on a fix as quickly as possible.
