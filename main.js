@@ -282,15 +282,7 @@ function buildMainThemeMenuItems() {
     click: () => updateSettings({ selectedTheme: themeOption.value })
   }));
 }
-function getNumericSensitivity(level) {
-  switch (level) {
-    case "low": return 0.5;
-    case "high": return 2.0;
-    case "medium":
-    default:
-      return 1.0;
-  }
-}
+
 function buildAmbientWaveMenuItems() {
   const ambientSettings = visualizerSettings.ambientWave;
 
@@ -318,9 +310,7 @@ function buildAmbientWaveMenuItems() {
         label: level[0].toUpperCase() + level.slice(1),
         type: "radio",
         checked: ambientSettings.sensitivity === level,
-        click: () => updateSettings({ 
-          globalSensitivity: getNumericSensitivity(level), // Update your global field!
-          ambientWave: { sensitivity: level } })
+        click: () => updateSettings({ ambientWave: { sensitivity: level } })
       }))
     },
     {
@@ -372,9 +362,7 @@ function buildReactiveBorderMenuItems() {
         label: level[0].toUpperCase() + level.slice(1),
         type: "radio",
         checked: reactiveSettings.intensity === level,
-        click: () => updateSettings({ 
-          globalSensitivity: getNumericSensitivity(level), // Update your global field!
-          reactiveBorder: { intensity: level }})
+        click: () => updateSettings({ reactiveBorder: { intensity: level } })
       }))
     },
     {
@@ -892,6 +880,21 @@ function refreshTrayMenu() {
     {
       label: helperConnected ? "Audio Capture: Live" : "Audio Capture: Fallback",
       enabled: false
+    },
+    { type: "separator" },
+    {
+      label: "Global Sensitivity",
+      submenu: [
+        { label: "0.5x (Quiet)", value: 0.5 },
+        { label: "1.0x (Normal)", value: 1.0 },
+        { label: "1.5x (Loud)", value: 1.5 },
+        { label: "2.0x (Aggressive)", value: 2.0 }
+      ].map((opt) => ({
+        label: opt.label,
+        type: "radio",
+        checked: visualizerSettings.globalSensitivity === opt.value,
+        click: () => updateSettings({ globalSensitivity: opt.value })
+      }))
     },
     { type: "separator" },
     {
