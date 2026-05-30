@@ -504,7 +504,9 @@ function migrateLegacySettings(input = {}) {
 
 function sanitizeFocusMode(input = {}) {
   const enabled = typeof input.enabled === "boolean" ? input.enabled : DEFAULT_SETTINGS.focusMode.enabled;
-  const dimOpacity = typeof input.dimOpacity === "number" && input.dimOpacity >= 0 && input.dimOpacity <= 1
+  const dimOpacity = typeof input.dimOpacity === "number"
+      && input.dimOpacity >= 0.05
+      && input.dimOpacity <= 0.9
     ? input.dimOpacity
     : DEFAULT_SETTINGS.focusMode.dimOpacity;
   const idleTimeout = typeof input.idleTimeout === "number" && input.idleTimeout >= 1 && input.idleTimeout <= 60
