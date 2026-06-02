@@ -3,6 +3,8 @@ const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
+let intentionalShutdown = false;
+
 function createAudioBridge(sendLevel, onStatusChange = () => {}) {
   let helperProcess = null;
   let helperStatus = {
@@ -107,33 +109,37 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
       });
     });
 
-    helperProcess.on("exit", (code) => {
-      helperProcess = null;
-      updateStatus({
-        mode: "simulated",
-        reason: [
-          `Audio helper stopped (exit code ${code}).`,
-          "\n",
-          "Troubleshooting:",
-          "\n- The audio capture process exited unexpectedly.",
-          "\n- Try restarting Paraline.",
-          "\n- If the problem persists, rebuild the helper binary."
-        ].join("")
-      });
-    });
+   helperProcess.on("exit", (code) => {
+  if (intentionalShutdown) {
+    intentionalShutdown = false;
+    return;
   }
+
+  updateStatus({
+    mode: "simulated",
+    reason: [
+      `Audio helper stopped (exit code ${code}).`,
+      "\n",
+      "Troubleshooting:",
+      "\n- The audio capture process exited unexpectedly.",
+      "\n- Try restarting Paraline.",
+      "\n- If the problem persists, rebuild the helper binary."
+    ].join("")
+  });
+});
 
   function stop() {
-    if (helperProcess) {
-      helperProcess.kill();
-      helperProcess = null;
-    }
-
-    updateStatus({
-      mode: "simulated",
-      reason: "Helper stopped."
-    });
+  if (helperProcess) {
+    intentionalShutdown = true;
+    helperProcess.kill();
+    helperProcess = null;
   }
+
+  updateStatus({
+    mode: "simulated",
+    reason: "Helper stopped."
+  });
+}
 
   function getStatus() {
     return helperStatus;
