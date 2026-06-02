@@ -98,6 +98,9 @@ contextBridge.exposeInMainWorld("paralineApp", {
   deleteThemeProfile: (profileName) =>
     ipcRenderer.invoke("theme-profiles:delete", profileName),
 
+  duplicateThemeProfile: (srcProfileName, destProfileName) =>
+    ipcRenderer.invoke("theme-profiles:duplicate", srcProfileName, destProfileName),
+
   exportThemeProfile: (profileName) =>
     ipcRenderer.invoke("theme-profiles:export", profileName),
 

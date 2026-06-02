@@ -52,14 +52,19 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
       stdio: ["ignore", "pipe", "pipe"]
     });
 
-    updateStatus({
-      mode: "helper",
-      reason: "C# helper process connected."
-    });
+    let helperReady = false;
 
     let stdoutBuffer = "";
 
     helperProcess.stdout.on("data", (chunk) => {
+      if (!helperReady) {
+  helperReady = true;
+
+  updateStatus({
+    mode: "helper",
+    reason: "C# helper process connected."
+  });
+}
       stdoutBuffer += chunk.toString();
 
       const lines = stdoutBuffer.split(/\r?\n/);
@@ -71,6 +76,7 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
         }
 try {
   const message = JSON.parse(line);
+
 
   if (message.type === "level" && typeof message.value === "number") {
     sendLevel(message.value);
@@ -84,6 +90,21 @@ try {
 
   continue;
 }
+
+        try {
+          const message = JSON.parse(line);
+
+          if (message.type === "level" && typeof message.value === "number") {
+            sendLevel(message.value);
+          }
+        } catch (_error) {
+  console.warn("Invalid helper message received.");
+  continue;
+}
+        }
+      }
+    };
+
 
     helperProcess.stderr.on("data", (chunk) => {
       updateStatus({

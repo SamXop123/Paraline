@@ -328,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnExportThemeProfile = document.getElementById('btn-export-theme-profile');
     const btnImportThemeProfile = document.getElementById('btn-import-theme-profile');
     const btnResetThemeProfile = document.getElementById('btn-reset-theme-profile');
+    const btnDuplicateThemeProfile = document.getElementById('btnDuplicateThemeProfile');
     
 
     let presets = {
@@ -579,6 +580,34 @@ refreshThemeProfiles();
 
             refreshThemeProfiles();
         });
+
+        if (btnDuplicateThemeProfile) {
+            btnDuplicateThemeProfile.addEventListener('click', async () => {
+                const selectedProfile = themeProfileSelector.value;
+
+                if (!selectedProfile) {
+                    alert("Please select a profile to duplicate.");
+                    return;
+                }
+
+                const newName = prompt("Enter a name for the duplicated profile:", `${selectedProfile} - Copy`);
+                if (newName === null) return; // User cancelled
+
+                const trimmedName = newName.trim();
+                if (trimmedName === "") {
+                    alert("Profile name cannot be empty.");
+                    return;
+                }
+
+                const res = await window.paralineApp.duplicateThemeProfile(selectedProfile, trimmedName);
+                if (res) {
+                    alert(`Profile duplicated successfully as "${trimmedName}"`);
+                    refreshThemeProfiles();
+                } else {
+                    alert("Failed to duplicate profile. Ensure the name is valid and not already in use.");
+                }
+            });
+        }
 
         btnExportThemeProfile.addEventListener('click', async () => {
             const selectedProfile = themeProfileSelector.value;
