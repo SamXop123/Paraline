@@ -93,27 +93,32 @@ export default function App() {
 
       <div className="relative z-10">
         <header className="fixed inset-x-0 top-0 z-40 border border-gray-700 bg-[#02040c]/10 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 sm:px-8">
-            <button
-              onClick={toggleSidebar}
-              className="absolute top-5 left-5">
-                <img src='./sidebar-icons/menu.svg' className="h-8 w-10 object-contain"/>
-            </button>
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-8">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={toggleSidebar}
+                className="shrink-0"
+                aria-label={isSidebarOpen ? "Close navigation menu" : "Open navigation menu"}
+                aria-expanded={isSidebarOpen}
+              >
+                <img src="./sidebar-icons/menu.svg" className="h-8 w-10 object-contain" />
+              </button>
 
-            <a 
-              href="#hero" 
-              onClick={() => setCurrentPage("home")}
-              className="text-xs uppercase tracking-[0.45em] text-white/70 transition hover:text-white"
-            >
-              Paraline
-            </a>
+              <a
+                href="#hero"
+                onClick={() => setCurrentPage("home")}
+                className="text-xs font-bold uppercase tracking-[0.3em] text-white/90 transition hover:text-white sm:text-sm sm:tracking-[0.45em]"
+              >
+                Paraline
+              </a>
+            </div>
 
             <div className="flex items-center gap-3">
               <a
                 href={githubUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[11px] uppercase tracking-[0.28em] text-white/52 transition hover:text-white"
+                className="hidden text-[11px] uppercase tracking-[0.28em] text-white/52 transition hover:text-white md:block"
               >
                 GitHub
               </a>
@@ -121,7 +126,7 @@ export default function App() {
                 href={downloadUrl}
                 download={isHostedInstaller ? undefined : "Paraline-Setup.exe"}
                 onClick={() => trackDownloadClick("navbar")}
-                className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-[11px] uppercase tracking-[0.28em] text-white/82 backdrop-blur transition hover:border-cyan-300/35 hover:bg-white/10 hover:text-white"
+                className="whitespace-nowrap rounded-full bg-white px-3.5 py-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-950 transition hover:scale-[1.02] hover:bg-cyan-100 sm:px-5 sm:py-2.5 sm:text-[11px]"
               >
                 Windows Installer
               </a>

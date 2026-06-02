@@ -64,19 +64,18 @@ export default function HeroSection({ downloadUrl, isHostedInstaller, onDownload
             transition={{ duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
             className="mt-10 flex flex-col items-center justify-center gap-3"
           >
-            {/* ── buttons row — identical to original ── */}
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <a
                 href={downloadUrl}
                 download={isHostedInstaller ? undefined : "Paraline-Setup.exe"}
                 onClick={onDownloadClick}
-                className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02] hover:bg-cyan-100"
+                className="rounded-full bg-white px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.15em] text-slate-950 transition hover:scale-[1.02] hover:bg-cyan-100"
               >
                 Download for Windows
               </a>
               <a
                 href="#themes"
-                className="rounded-full border border-white/12 bg-white/5 px-6 py-3 text-sm text-white/78 backdrop-blur transition hover:border-cyan-300/30 hover:bg-white/10 hover:text-white"
+                className="rounded-full border border-white/12 bg-white/5 px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.15em] text-white/78 backdrop-blur transition hover:border-cyan-300/30 hover:bg-white/10 hover:text-white"
               >
                 Explore Themes
               </a>
@@ -102,11 +101,11 @@ export default function HeroSection({ downloadUrl, isHostedInstaller, onDownload
               transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
             />
 
-            <div className="relative z-10 flex flex-wrap items-center justify-center gap-3">
+            <div className="relative z-10 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
               {heroLines.map((line) => (
                 <span
                   key={line}
-                  className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-[11px] uppercase tracking-[0.28em] text-white/70"
+                  className="rounded-full border border-white/12 bg-white/6 px-5 py-2.5 text-[11px] uppercase tracking-[0.28em] text-white/70"
                 >
                   {line}
                 </span>

@@ -1,33 +1,103 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
 import PreviewStage from "./PreviewStage";
 
-export default function ThemeCard({ theme, index }) {
+export default function ThemeCard({
+  theme,
+  compareSelected = false,
+  onCompareToggle,
+  compareDisabled = false,
+  onLearnMore,
+}) {
+  const [hovered, setHovered] = useState(false);
+
   return (
-    <motion.article
-      className={`group relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] p-5 backdrop-blur xl:p-6 ${
-        index === 0 || index === 4 || index === 8 ? "md:col-span-2" : ""
-      }`}
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.72, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -6, borderColor: "rgba(125, 211, 252, 0.28)" }}
+    <div
+      className="relative group rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden transition-all duration-300 hover:border-white/20"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-500 group-hover:opacity-100">
-        <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/75 to-transparent" />
-        <div className="absolute bottom-0 left-1/2 h-24 w-24 -translate-x-1/2 rounded-full bg-cyan-300/10 blur-3xl" />
-      </div>
+      <label
+        className={`absolute top-3 right-3 z-20 flex items-center gap-1.5 cursor-pointer select-none transition-opacity duration-200 ${
+          hovered || compareSelected
+            ? "opacity-100"
+            : "opacity-0 group-hover:opacity-100"
+        } ${compareDisabled ? "cursor-not-allowed" : ""}`}
+        title={
+          compareDisabled
+            ? "Remove a theme to add another"
+            : compareSelected
+            ? "Remove from comparison"
+            : "Add to comparison"
+        }
+      >
+        <input
+          type="checkbox"
+          className="sr-only"
+          checked={compareSelected}
+          disabled={compareDisabled}
+          onChange={() => !compareDisabled && onCompareToggle?.(theme)}
+        />
+        <span
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border transition-all duration-200 ${
+            compareSelected
+              ? "bg-violet-500/90 border-violet-400 text-white"
+              : compareDisabled
+              ? "bg-white/5 border-white/10 text-white/30"
+              : "bg-black/40 border-white/20 text-white/70 hover:border-violet-400/60 hover:text-white"
+          }`}
+        >
+          {compareSelected ? (
+            <>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path
+                  d="M2 5l2 2 4-4"
+                  stroke="white"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Comparing
+            </>
+          ) : (
+            <>+ Compare</>
+          )}
+        </span>
+      </label>
 
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:gap-8">
-        <div className="lg:w-64 lg:flex-none">
-          <p className="text-[10px] uppercase tracking-[0.32em] text-cyan-200/70">{theme.tag}</p>
-          <h3 className="mt-3 font-display text-3xl leading-none text-white">{theme.name}</h3>
-          <p className="mt-4 max-w-sm text-sm leading-7 text-white/62">{theme.blurb}</p>
-        </div>
+      <PreviewStage theme={theme} />
 
-        <div className="flex-1">
-          <PreviewStage theme={theme} />
-        </div>
+      <div className="p-4">
+        <h3 className="text-white font-semibold text-sm leading-tight">
+          {theme.name}
+        </h3>
+        <p className="text-white/40 text-xs mt-0.5">{theme.tag}</p>
+        <p className="text-white/60 text-xs mt-2 leading-relaxed">
+          {theme.blurb}
+        </p>
+
+        <button
+          onClick={() => onLearnMore?.(theme)}
+          className="mt-3 flex items-center gap-1 text-cyan-300/70 hover:text-cyan-200 text-xs font-medium transition-colors duration-150 group/btn"
+        >
+          Learn More
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            className="transition-transform duration-150 group-hover/btn:translate-x-0.5"
+          >
+            <path
+              d="M2 6h8M7 3l3 3-3 3"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
       </div>
-    </motion.article>
+    </div>
   );
 }

@@ -54,14 +54,19 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
       stdio: ["ignore", "pipe", "pipe"]
     });
 
-    updateStatus({
-      mode: "helper",
-      reason: "C# helper process connected."
-    });
+    let helperReady = false;
 
     let stdoutBuffer = "";
 
     helperProcess.stdout.on("data", (chunk) => {
+      if (!helperReady) {
+  helperReady = true;
+
+  updateStatus({
+    mode: "helper",
+    reason: "C# helper process connected."
+  });
+}
       stdoutBuffer += chunk.toString();
 
       const lines = stdoutBuffer.split(/\r?\n/);
@@ -79,20 +84,12 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
             sendLevel(message.value);
           }
         } catch (_error) {
-          updateStatus({
-            mode: "simulated",
-            reason: [
-              "Audio helper sent invalid data.",
-              "\n",
-              "Troubleshooting:",
-              "\n- The audio capture process returned unexpected output.",
-              "\n- Try restarting Paraline.",
-              "\n- If the problem persists, rebuild the helper binary."
-            ].join("")
-          });
+  console.warn("Invalid helper message received.");
+  continue;
+}
         }
       }
-    });
+    };
 
     helperProcess.stderr.on("data", (chunk) => {
       updateStatus({
