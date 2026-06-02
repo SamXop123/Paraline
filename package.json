@@ -3,16 +3,25 @@
   "version": "2.0.0",
   "description": "Windows desktop audio visualizer with transparent edge-light overlays and real-time system audio capture.",
   "main": "main.js",
-  "scripts": {
-    "start": "electron .",
-    "dev": "electron .",
-    "landing:dev": "npm --prefix landing run dev",
-    "landing:build": "npm --prefix landing run build",
-    "audio:helper:info": "powershell -NoProfile -Command \"Write-Output 'Build the helper with: dotnet build .\\audio-helper\\Paraline.AudioBridge.csproj'\"",
-    "build:helper": "dotnet publish .\\audio-helper\\Paraline.AudioBridge.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o .\\build\\audio-helper",
-    "pack:win": "npm run build:helper && electron-builder --dir --win nsis --x64",
-    "dist:win": "npm run build:helper && electron-builder --win nsis --x64"
-  },
+"scripts": {
+  "start": "electron .",
+  "dev": "electron .",
+
+  "landing:dev": "npm --prefix landing run dev",
+  "landing:build": "npm --prefix landing run build",
+
+  "helper:info": "powershell -NoProfile -Command \"Write-Output 'Build the helper with: dotnet build .\\audio-helper\\Paraline.AudioBridge.csproj'\"",
+  "helper:build": "dotnet publish .\\audio-helper\\Paraline.AudioBridge.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o .\\build\\audio-helper",
+
+  "build": "npm run helper:build",
+  "clean": "powershell -NoProfile -Command \"if (Test-Path dist) { Remove-Item dist -Recurse -Force }; if (Test-Path build/audio-helper) { Remove-Item build/audio-helper -Recurse -Force }\"",
+
+  "pack:win": "npm run helper:build && electron-builder --dir --win nsis --x64",
+  "dist:win": "npm run helper:build && electron-builder --win nsis --x64",
+
+  "lint": "echo \"No linter configured yet\"",
+  "format": "echo \"No formatter configured yet\""
+},
   "keywords": [
     "electron",
     "overlay",
