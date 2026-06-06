@@ -7,6 +7,7 @@ export default function HeroSection({ downloadUrl, isHostedInstaller, onDownload
   return (
     <section
       id="hero"
+      aria-labelledby="hero-heading"
       className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-16 pt-28 sm:px-8"
     >
       <EdgePulseFrame />
@@ -70,12 +71,14 @@ export default function HeroSection({ downloadUrl, isHostedInstaller, onDownload
                 href={downloadUrl}
                 download={isHostedInstaller ? undefined : "Paraline-Setup.exe"}
                 onClick={onDownloadClick}
+                aria-label="Download Paraline for Windows"
                 className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:scale-[1.02] hover:bg-cyan-100"
               >
                 Download for Windows
               </a>
               <a
                 href="#themes"
+                aria-label="Explore available visual themes"
                 className="rounded-full border border-white/12 bg-white/5 px-6 py-3 text-sm text-white/78 backdrop-blur transition hover:border-cyan-300/30 hover:bg-white/10 hover:text-white"
               >
                 Explore Themes
