@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+:root {
+  --background: #060913;
+  /* Ultra-deep midnight */
+  --foreground: #f1f5f9;
+  /* Slate 100 */
+
+  /* Luxurious Midnight palette */
+  --color-surface: rgba(15, 23, 42, 0.4);
+  /* Glass slate */
+  --color-surface-hover: rgba(30, 41, 59, 0.6);
+  --color-border: rgba(148, 163, 184, 0.15);
+  --color-border-hover: rgba(148, 163, 184, 0.3);
+  --color-muted: #94a3b8;
+  --color-accent: #38bdf8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--color-surface);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-border: var(--color-border);
+  --color-border-hover: var(--color-border-hover);
+  --color-muted: var(--color-muted);
+  --color-accent: var(--color-accent);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  /* Luxurious radial lighting from top center exactly matching screenshots */
+  background-image: radial-gradient(100% 100% at 50% 0%, rgba(30, 58, 138, 0.15) 0%, rgba(2, 6, 23, 1) 100%);
+  background-attachment: fixed;
+}
+
+/* Remove the old messy mesh */
+.bg-ambient-mesh {
+  display: none;
+}
+
+/* High-end ultra-subtle noise overlay */
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.025'/%3E%3C/svg%3E");
+}
+
+/* Professional thin scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Smooth motion selection */
+::selection {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}

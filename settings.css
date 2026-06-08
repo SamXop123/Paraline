@@ -1175,3 +1175,28 @@ input[type="range"]:active::-webkit-slider-thumb {
     border-radius: 2px;
 }
 
+/* Numeric input styling to match theme dropdowns */
+input[type="number"] {
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-input);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    outline: none;
+    transition: all var(--duration-normal) var(--ease-smooth);
+    box-shadow: var(--shadow-input);
+}
+
+input[type="number"]:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    background-color: var(--bg-input-hover);
+}
+
+input[type="number"]:focus {
+    border-color: var(--border-focus);
+    box-shadow: var(--shadow-input), 0 0 0 3px rgba(0, 212, 255, 0.08);
+}
+
+

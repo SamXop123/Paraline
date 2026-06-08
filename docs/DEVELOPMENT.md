@@ -25,7 +25,7 @@ Use this guide when setting up a development environment, understanding how comp
 - **Vanilla HTML / CSS / JavaScript** for renderer-side visuals
 - **C# / .NET 8** helper process for Windows system audio capture
 - **WASAPI Loopback** for real-time audio input from the active output device
-- **Vite / React / TailwindCSS** for the `landing` product website
+- **Next.js / React / TailwindCSS** for the `landing` product website
 
 ---
 
@@ -316,7 +316,7 @@ Paraline/
 ├── docs/
 │   └── DEVELOPMENT.md
 ├── landing/
-│   ├── src/                 # React landing page application
+│   ├── src/                 # Next.js landing page application
 │   └── public/              # Website assets and previews
 └── audio-helper/
     ├── Program.cs
@@ -330,12 +330,14 @@ Paraline/
 Each visualizer theme is implemented as an isolated rendering module inside the `themes/` directory.
 
 Themes generally:
+
 - Receive normalized audio level data
 - Read theme-specific settings
 - Render onto the shared canvas context
 - Manage their own animation behavior and styling
 
 New themes should:
+
 - Avoid excessive allocations during animation frames
 - Reuse shared utilities where possible
 - Keep rendering logic self-contained

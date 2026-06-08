@@ -59,7 +59,17 @@ Or use:
 npm run build:helper
 ```
 
+> **Note:** `dotnet build` produces a debug build suitable for local development. `npm run build:helper` runs a full `dotnet publish` with self-contained, single-file settings and writes the output to `build/audio-helper/` — this is what the packaging scripts use. They are not interchangeable for packaging purposes.
+
+For the complete packaging and distribution workflow, including production builds and Windows installer generation, see **[BUILD.md](./BUILD.md)**.
+
 ---
+
+# Building & Distribution
+
+For detailed documentation on how to build the audio helper, package the app, and generate a distributable Windows installer, see:
+
+**[Build & Distribution Guide](./BUILD.md)**
 
 # Pull Request Guidelines
 

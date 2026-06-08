@@ -154,7 +154,8 @@ function createOverlayWindow() {
     fullscreenable: false,
     skipTaskbar: true,
     hasShadow: false,
-    focusable: true,
+    focusable: false,
+    show: false,
     backgroundColor: "#00000000",
     icon: getWindowIconPath(),
     webPreferences: {
@@ -168,8 +169,10 @@ function createOverlayWindow() {
   overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   overlayWindow.setIgnoreMouseEvents(true, { forward: true });
   overlayWindow.setBounds(bounds);
+  overlayWindow.showInactive();
   overlayWindow.moveTop();
   overlayWindow.loadFile("index.html");
+
   overlayWindow.webContents.on("did-finish-load", () => {
     setTimeout(() => {
       sendVisualizerSettings();
@@ -449,6 +452,38 @@ function saveThemeProfile(profileName) {
   return profiles;
 }
 
+function duplicateThemeProfile(profileName) {
+    const profiles = settingsStore.loadProfiles();
+
+    if (!profiles[profileName]) {
+        return {
+            success: false,
+            error: "Profile not found"
+        };
+    }
+
+    let newName = `${profileName} (Copy)`;
+    let counter = 2;
+
+    while (profiles[newName]) {
+        newName = `${profileName} (Copy ${counter})`;
+        counter++;
+    }
+
+    const duplicatedProfile = JSON.parse(
+        JSON.stringify(profiles[profileName])
+    );
+
+    profiles[newName] = sanitizeSettings(duplicatedProfile);
+
+    settingsStore.saveProfiles(profiles);
+
+    return {
+        success: true,
+        profileName: newName
+    };
+}
+
 function loadThemeProfile(profileName) {
   if (!isValidProfileName(profileName)) {
     return null;
@@ -477,6 +512,23 @@ function deleteThemeProfile(profileName) {
 
   settingsStore.saveProfiles(profiles);
 
+  return profiles;
+}
+
+function duplicateThemeProfile(srcName, destName) {
+  if (
+    typeof srcName !== "string" || srcName.trim() === "" ||
+    typeof destName !== "string" || destName.trim() === "" ||
+    destName === "__proto__" || destName === "constructor" || destName === "prototype"
+  ) {
+    return null;
+  }
+  const profiles = settingsStore.loadProfiles();
+  if (!profiles[srcName]) {
+    return null;
+  }
+  profiles[destName] = JSON.parse(JSON.stringify(profiles[srcName]));
+  settingsStore.saveProfiles(profiles);
   return profiles;
 }
 
@@ -1354,11 +1406,9 @@ function showCustomContextMenu() {
   const cursorPoint = screen.getCursorScreenPoint();
 
   // Force Windows to refresh the window's z-order relative to other topmost windows
-  // (like the tray overflow panel) by toggling setAlwaysOnTop and calling show()/focus()
+  // (like the tray overflow panel) by toggling setAlwaysOnTop and calling moveTop()
   overlayWindow.setAlwaysOnTop(false);
   overlayWindow.setAlwaysOnTop(true, "screen-saver");
-  overlayWindow.show();
-  overlayWindow.focus();
   overlayWindow.moveTop();
 
   const primaryDisplay = screen.getPrimaryDisplay();
@@ -1493,6 +1543,10 @@ app.whenReady().then(() => {
     return getRendererSettings();
   });
 
+  ipcMain.handle("theme-profiles:duplicate", async (_, profileName) => {
+    return duplicateThemeProfile(profileName);
+  });
+
   ipcMain.handle("theme-profiles:reset-current", () => {
     resetCurrentThemeSettings();
     return getRendererSettings();
@@ -1531,6 +1585,37 @@ app.whenReady().then(() => {
     return { success: true };
   });
 
+  ipcMain.handle("settings:export-all", async () => {
+    const backup = {
+        version: 1,
+        settings: settingsStore.load(),
+        profiles: settingsStore.loadProfiles()
+    };
+    const dialogParent = settingsWindow && !settingsWindow.isDestroyed()
+      ? settingsWindow
+      : BrowserWindow.getFocusedWindow();
+    const result = await dialog.showSaveDialog(dialogParent, {
+      title: "Export Settings Backup",
+      defaultPath: "paraline-settings-backup.json",
+      filters: [
+        {
+          name: "JSON Files",
+          extensions: ["json"]
+        }
+      ]
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { success: false };
+    }
+
+    require("fs").writeFileSync(
+      result.filePath,
+      JSON.stringify(backup, null, 2)
+    );
+
+    return { success: true };
+  });
   ipcMain.handle("theme-profiles:import", async () => {
     try {
       const dialogParent = settingsWindow && !settingsWindow.isDestroyed()
@@ -1592,6 +1677,93 @@ app.whenReady().then(() => {
     }
   });
   
+  ipcMain.handle("settings:import-all", async () => {
+    try {
+      const dialogParent = settingsWindow && !settingsWindow.isDestroyed()
+        ? settingsWindow
+        : BrowserWindow.getFocusedWindow();
+
+      const result = await dialog.showOpenDialog(dialogParent, {
+        title: "Import Settings Backup",
+        filters: [
+          {
+            name: "JSON Files",
+            extensions: ["json"]
+          }
+        ],
+        properties: ["openFile"]
+      });
+
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false };
+      }
+
+      const filePath = result.filePaths[0];
+
+      // Check file size (100KB limit to prevent DoS attacks)
+      const stats = fs.statSync(filePath);
+      const MAX_FILE_SIZE = 100 * 1024; // 100KB
+      if (stats.size > MAX_FILE_SIZE) {
+        return { success: false, error: "File too large. Maximum size is 100KB." };
+      }
+
+      const importedBackup = JSON.parse(
+          require("fs").readFileSync(filePath, "utf8")
+      );
+
+      if (
+          !importedBackup ||
+          typeof importedBackup !== "object" ||
+          Array.isArray(importedBackup)
+      ) {
+          return { success: false, error: "Invalid backup format" };
+      }
+      const cleanSettings = sanitizeSettings(
+          importedBackup.settings || {}
+      );
+
+      settingsStore.save(cleanSettings);
+
+    const safeProfiles = {};
+
+    for (const [name, profile] of Object.entries(importedBackup.profiles || {})) {
+
+        if (
+            typeof name !== "string" ||
+            name === "__proto__" ||
+            name === "constructor" ||
+            name === "prototype"
+        ) {
+            continue;
+        }
+
+        safeProfiles[name] = sanitizeSettings(profile || {});
+    }
+
+    settingsStore.saveProfiles(safeProfiles);
+
+      visualizerSettings = cleanSettings;
+
+      applyStartupSettings(visualizerSettings.launchOnStartup);
+      applyFocusModeState();
+
+      if (themeAgent) {
+          themeAgent.start();
+      }
+
+      sendVisualizerSettings();
+      refreshTrayMenu();
+
+      return {                                    
+        success: true,
+      };
+    }
+    catch (error) {
+      console.error("Failed to import settings backup:", error);
+      return { success: false, error: error.message };
+    }
+  });
+  
   ipcMain.handle("app:open-external", (_event, url) => {
     openExternalUrl(url);
   });
@@ -1610,7 +1782,14 @@ app.whenReady().then(() => {
     stopSimulatedAudioFallback();
     sendAudioLevel(value, "helper");
   }, handleAudioBridgeStatusChange);
-  audioBridge.start();
+
+  // Defer starting the audio bridge to prevent startup resource contention and SmartScreen lags from blocking Electron initialization
+  setTimeout(() => {
+    if (!isQuitting) {
+      audioBridge.start();
+    }
+  }, 4000);
+
   refreshTrayMenu();
 
   screen.on("display-metrics-changed", resizeOverlayToPrimaryDisplay);

@@ -98,6 +98,9 @@ contextBridge.exposeInMainWorld("paralineApp", {
   deleteThemeProfile: (profileName) =>
     ipcRenderer.invoke("theme-profiles:delete", profileName),
 
+  duplicateThemeProfile: (srcProfileName, destProfileName) =>
+    ipcRenderer.invoke("theme-profiles:duplicate", srcProfileName, destProfileName),
+
   exportThemeProfile: (profileName) =>
     ipcRenderer.invoke("theme-profiles:export", profileName),
 
@@ -107,6 +110,11 @@ contextBridge.exposeInMainWorld("paralineApp", {
   resetThemeSettings: () =>
     ipcRenderer.invoke("theme-profiles:reset"),
 
+  duplicateThemeProfile: (profileName) =>
+    ipcRenderer.invoke(
+      'theme-profiles:duplicate',
+      profileName
+    ),
   resetActiveThemeSettings: () =>
     ipcRenderer.invoke("theme-profiles:reset-current")
 });

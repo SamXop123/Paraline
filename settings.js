@@ -201,6 +201,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const intervalMinutes = document.getElementById('intervalMinutes');
     const dayThemeSelect = document.getElementById('dayThemeSelect');
     const nightThemeSelect = document.getElementById('nightThemeSelect');
+    const dayStartHourInput = document.getElementById('dayStartHourInput');
+    const nightStartHourInput = document.getElementById('nightStartHourInput');
+
+    function formatHour(hour) {
+        if (hour === 0) return '12 AM';
+        if (hour === 12) return '12 PM';
+        return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+    }
+
+    function updateThemeLabels(dayStart, nightStart) {
+        const dayThemeLabel = document.getElementById('dayThemeLabel');
+        const nightThemeLabel = document.getElementById('nightThemeLabel');
+        if (dayThemeLabel) {
+            dayThemeLabel.textContent = `Daytime Theme (${formatHour(dayStart)} - ${formatHour(nightStart)}):`;
+        }
+        if (nightThemeLabel) {
+            nightThemeLabel.textContent = `Nighttime Theme (${formatHour(nightStart)} - ${formatHour(dayStart)}):`;
+        }
+    }
 
     function toggleAutoControls(isEnabled) {
         if (themeAutoControls) {
@@ -243,6 +262,81 @@ document.addEventListener('DOMContentLoaded', () => {
     if (nightThemeSelect) {
         nightThemeSelect.addEventListener('change', (e) => {
             updateAutomationSetting({ nightTheme: e.target.value });
+        });
+    }
+
+    if (dayStartHourInput) {
+        dayStartHourInput.addEventListener('change', (e) => {
+            let val = parseInt(e.target.value, 10);
+            if (isNaN(val) || val < 0 || val > 23) {
+                val = 6;
+                dayStartHourInput.value = val;
+            }
+            updateAutomationSetting({ dayStartHour: val });
+            const nightStart = nightStartHourInput ? parseInt(nightStartHourInput.value, 10) : 18;
+            updateThemeLabels(val, isNaN(nightStart) ? 18 : nightStart);
+        });
+    }
+
+    if (nightStartHourInput) {
+        nightStartHourInput.addEventListener('change', (e) => {
+            let val = parseInt(e.target.value, 10);
+            if (isNaN(val) || val < 0 || val > 23) {
+                val = 18;
+                nightStartHourInput.value = val;
+            }
+            updateAutomationSetting({ nightStartHour: val });
+            const dayStart = dayStartHourInput ? parseInt(dayStartHourInput.value, 10) : 6;
+            updateThemeLabels(isNaN(dayStart) ? 6 : dayStart, val);
+        });
+    }
+
+    // ----------------------------------------
+    // FOCUS MODE BINDINGS
+    // ----------------------------------------
+    const focusModeEnabledCheckbox = document.getElementById('focus-mode-enabled-checkbox');
+    const focusModeControls = document.getElementById('focusModeControls');
+    const focusModeDimOpacitySlider = document.getElementById('focus-mode-dim-opacity-slider');
+    const focusModeTimeoutSlider = document.getElementById('focus-mode-timeout-slider');
+
+    function toggleFocusModeControls(isEnabled) {
+        if (focusModeControls) {
+            focusModeControls.style.display = isEnabled ? 'block' : 'none';
+        }
+    }
+
+    function updateFocusModeSetting(patch) {
+        if (window.visualizerSettings) {
+            const currentFocusMode = cachedSettings.focusMode || {};
+            const nextFocusMode = { ...currentFocusMode, ...patch };
+            cachedSettings.focusMode = nextFocusMode; // Optimistic local cache update!
+            window.visualizerSettings.update({
+                focusMode: nextFocusMode
+            });
+        }
+    }
+
+    if (focusModeEnabledCheckbox) {
+        focusModeEnabledCheckbox.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            toggleFocusModeControls(isChecked);
+            updateFocusModeSetting({ enabled: isChecked });
+        });
+    }
+
+    if (focusModeDimOpacitySlider) {
+        focusModeDimOpacitySlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('val-focus-mode-dim-opacity').textContent = val.toFixed(2);
+            updateFocusModeSetting({ dimOpacity: val });
+        });
+    }
+
+    if (focusModeTimeoutSlider) {
+        focusModeTimeoutSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            document.getElementById('val-focus-mode-timeout').textContent = val;
+            updateFocusModeSetting({ idleTimeout: val });
         });
     }
 
@@ -328,7 +422,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnExportThemeProfile = document.getElementById('btn-export-theme-profile');
     const btnImportThemeProfile = document.getElementById('btn-import-theme-profile');
     const btnResetThemeProfile = document.getElementById('btn-reset-theme-profile');
-    
+    const btnDuplicateThemeProfile = document.getElementById("btnDuplicateThemeProfile");
+
+    // Names that must not be used as object keys because they shadow prototype
+    // properties, which would allow an attacker to corrupt the JS execution
+    // context of the settings window via a crafted localStorage value.
+    const RESERVED_PRESET_NAMES = new Set([
+        "__proto__", "constructor", "prototype",
+        "toString", "valueOf", "hasOwnProperty",
+        "isPrototypeOf", "propertyIsEnumerable",
+        "toLocaleString", "__defineGetter__", "__defineSetter__",
+        "__lookupGetter__", "__lookupSetter__"
+    ]);
+
+    function isSafePresetName(name) {
+        return (
+            typeof name === "string" &&
+            name.length > 0 &&
+            name.length <= 64 &&
+            !RESERVED_PRESET_NAMES.has(name)
+        );
+    }
 
     let presets = {
         "Ocean Blue": ["#00f2fe", "#4facfe", "#8ee2ff"],
@@ -339,7 +453,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load from local storage if available
     try {
         const savedPresets = localStorage.getItem('paraline_presets');
-        if (savedPresets) presets = JSON.parse(savedPresets);
+        if (savedPresets) {
+            const parsed = JSON.parse(savedPresets);
+            // Only accept plain objects with safe keys and array values.
+            if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
+                const sanitized = {};
+                for (const [key, val] of Object.entries(parsed)) {
+                    if (isSafePresetName(key) && Array.isArray(val) && val.length === 3) {
+                        sanitized[key] = val;
+                    }
+                }
+                presets = sanitized;
+            }
+        }
     } catch(e) {}
 
     function updatePresetDropdown() {
@@ -367,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     savePresetBtn.addEventListener('click', () => {
         const presetName = presetNameInput.value.trim();
-        if (presetName !== "") {
+        if (presetName !== "" && isSafePresetName(presetName)) {
             presets[presetName] = [color1.value, color2.value, color3.value];
             updatePresetDropdown();
             presetSelector.value = presetName;
@@ -580,6 +706,26 @@ refreshThemeProfiles();
             refreshThemeProfiles();
         });
 
+        btnDuplicateThemeProfile.addEventListener("click", async () => {
+            const selectedProfile = themeProfileSelector.value;
+            if (!selectedProfile) return;
+
+            try {
+                const result = await window.paralineApp.duplicateThemeProfile(selectedProfile);
+
+                if (!result || !result.success) {
+                    alert(result?.error || "Failed to duplicate profile");
+                    return;
+                }
+
+                alert(`Profile duplicated as "${result.profileName}"`);
+                refreshThemeProfiles();
+            } catch (error) {
+                alert("Failed to duplicate profile");
+                console.error(error);
+            }
+        });
+
         btnExportThemeProfile.addEventListener('click', async () => {
             const selectedProfile = themeProfileSelector.value;
 
@@ -721,7 +867,56 @@ refreshThemeProfiles();
                 if (nightThemeSelect) {
                     nightThemeSelect.value = automation.nightTheme || "reactiveBorder";
                 }
+                const dayStart = automation.dayStartHour !== undefined ? automation.dayStartHour : 6;
+                const nightStart = automation.nightStartHour !== undefined ? automation.nightStartHour : 18;
+                if (dayStartHourInput) {
+                    dayStartHourInput.value = dayStart;
+                }
+                if (nightStartHourInput) {
+                    nightStartHourInput.value = nightStart;
+                }
+                updateThemeLabels(dayStart, nightStart);
             }
+
+            // Load focus mode settings
+            if (settings.focusMode) {
+                const fm = settings.focusMode;
+                if (focusModeEnabledCheckbox) {
+                    focusModeEnabledCheckbox.checked = !!fm.enabled;
+                    toggleFocusModeControls(fm.enabled);
+                }
+                if (focusModeDimOpacitySlider) {
+                    focusModeDimOpacitySlider.value = fm.dimOpacity !== undefined ? fm.dimOpacity : 0.1;
+                    document.getElementById('val-focus-mode-dim-opacity').textContent = parseFloat(focusModeDimOpacitySlider.value).toFixed(2);
+                }
+                if (focusModeTimeoutSlider) {
+                    focusModeTimeoutSlider.value = fm.idleTimeout !== undefined ? fm.idleTimeout : 5;
+                    document.getElementById('val-focus-mode-timeout').textContent = focusModeTimeoutSlider.value;
+                }
+            }
+            
+            // set custom variables into UI if they exist globally or on the active theme
+            const activeThemeData = settings[settings.selectedTheme] || {};
+            if (activeThemeData.customColors && activeThemeData.customColors.length === 3) {
+                color1.value = activeThemeData.customColors[0];
+                color2.value = activeThemeData.customColors[1];
+                color3.value = activeThemeData.customColors[2];
+            } else if (settings.customColors && settings.customColors.length === 3) {
+                color1.value = settings.customColors[0];
+                color2.value = settings.customColors[1];
+                color3.value = settings.customColors[2];
+            }
+            
+            const activeData = settings[settings.selectedTheme] || {};
+            if (activeData.customThickness) thicknessSlider.value = activeData.customThickness;
+            if (activeData.customGap) gapSlider.value = activeData.customGap;
+            if (activeData.customSensitivity) sensitivitySlider.value = activeData.customSensitivity;
+            if (activeData.customSpeed) speedSlider.value = activeData.customSpeed;
+            
+            document.getElementById('val-customThickness').textContent = thicknessSlider.value;
+            document.getElementById('val-customGap').textContent = gapSlider.value;
+            document.getElementById('val-customSensitivity').textContent = (sensitivitySlider.value / 10).toFixed(1);
+            document.getElementById('val-customSpeed').textContent = (speedSlider.value / 10).toFixed(1);
         });
 
         // Realtime dynamic synchronization when toggled from the tray context menu
@@ -750,6 +945,32 @@ refreshThemeProfiles();
                 }
                 if (nightThemeSelect && automation.nightTheme !== undefined) {
                     nightThemeSelect.value = automation.nightTheme;
+                }
+                if (dayStartHourInput && automation.dayStartHour !== undefined) {
+                    dayStartHourInput.value = automation.dayStartHour;
+                }
+                if (nightStartHourInput && automation.nightStartHour !== undefined) {
+                    nightStartHourInput.value = automation.nightStartHour;
+                }
+                const dayStart = automation.dayStartHour !== undefined ? automation.dayStartHour : (cachedSettings.themeAutomation?.dayStartHour ?? 6);
+                const nightStart = automation.nightStartHour !== undefined ? automation.nightStartHour : (cachedSettings.themeAutomation?.nightStartHour ?? 18);
+                updateThemeLabels(dayStart, nightStart);
+            }
+
+            // Sync Focus Mode settings
+            if (nextSettings.focusMode) {
+                const fm = nextSettings.focusMode;
+                if (focusModeEnabledCheckbox && fm.enabled !== undefined) {
+                    focusModeEnabledCheckbox.checked = !!fm.enabled;
+                    toggleFocusModeControls(fm.enabled);
+                }
+                if (focusModeDimOpacitySlider && fm.dimOpacity !== undefined) {
+                    focusModeDimOpacitySlider.value = fm.dimOpacity;
+                    document.getElementById('val-focus-mode-dim-opacity').textContent = parseFloat(fm.dimOpacity).toFixed(2);
+                }
+                if (focusModeTimeoutSlider && fm.idleTimeout !== undefined) {
+                    focusModeTimeoutSlider.value = fm.idleTimeout;
+                    document.getElementById('val-focus-mode-timeout').textContent = fm.idleTimeout;
                 }
             }
 
