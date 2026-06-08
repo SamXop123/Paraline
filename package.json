@@ -13,6 +13,7 @@
     "pack:win": "npm run build:helper && electron-builder --dir --win nsis --x64",
     "dist:win": "npm run build:helper && electron-builder --win nsis --x64"
   },
+  "clean": "rimraf dist build/audio-helper",
   "keywords": [
     "electron",
     "overlay",
