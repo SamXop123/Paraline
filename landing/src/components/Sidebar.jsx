@@ -1,11 +1,75 @@
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
+const focusableSelector = [
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(", ");
+
 export default function Sidebar({ isSidebarOpen, closeSidebar }) {
+  const sidebarRef = useRef(null);
+  const previousFocusRef = useRef(null);
+
   const handleNavClick = () => {
     if (window.innerWidth < 1024) {
       closeSidebar();
     }
   };
+
+  useEffect(() => {
+    if (!isSidebarOpen || !sidebarRef.current) {
+      return undefined;
+    }
+
+    const sidebar = sidebarRef.current;
+    previousFocusRef.current = document.activeElement;
+
+    const getFocusableElements = () => Array.from(sidebar.querySelectorAll(focusableSelector));
+    const focusableElements = getFocusableElements();
+    (focusableElements[0] || sidebar).focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        closeSidebar();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const elements = getFocusableElements();
+      if (elements.length === 0) {
+        event.preventDefault();
+        sidebar.focus();
+        return;
+      }
+
+      const firstElement = elements[0];
+      const lastElement = elements[elements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      if (previousFocusRef.current instanceof HTMLElement) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [isSidebarOpen, closeSidebar]);
 
   return (
     <>
@@ -21,12 +85,14 @@ export default function Sidebar({ isSidebarOpen, closeSidebar }) {
 
       {/* Sidebar panel */}
       <motion.aside
+        ref={sidebarRef}
         initial={false}
         animate={{ x: isSidebarOpen ? 0 : "-100%" }}
         transition={{ type: "spring", stiffness: 450, damping: 30 }}
         role="dialog"
         aria-modal="true"
-        aria-hidden={!isSidebarOpen}
+        inert={!isSidebarOpen}
+        tabIndex={-1}
         className="fixed top-0 left-0 z-50 flex h-screen w-[min(85vw,20rem)] flex-col overflow-hidden border-r border-white/[0.08] bg-[#050816]/95 shadow-[10px_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl sm:w-[min(70vw,18rem)] md:w-[min(50vw,16rem)] lg:w-[min(22vw,15rem)]"
       >
         {/* Subtle background glow */}
