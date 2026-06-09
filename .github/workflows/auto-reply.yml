@@ -1,0 +1,83 @@
+name: Auto Reply
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  issue-reply:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reply to new issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const maintainers = ['SamXop123'].map((name) => name.toLowerCase());
+            const author = context.payload.sender.login.toLowerCase();
+
+            if (maintainers.includes(author)) {
+              core.info('Maintainer opened the issue. Skipping reply.');
+              return;
+            }
+
+            const body = [
+              'Thanks for opening this issue and contributing to Paraline 🌌',
+              '',
+              'The maintainers will review it soon.',
+              'If applicable, please make sure to include:',
+              '',
+              '* clear reproduction/details',
+              '* screenshots or recordings',
+              '* implementation ideas (optional but appreciated)',
+              '',
+              'Thanks again for helping improve the project 👍'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body
+            });
+
+  pr-reply:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reply to new PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const maintainers = ['SamXop123'].map((name) => name.toLowerCase());
+            const author = context.payload.sender.login.toLowerCase();
+
+            if (maintainers.includes(author)) {
+              core.info('Maintainer opened the PR. Skipping reply.');
+              return;
+            }
+
+            const body = [
+              'Thanks for the contribution and for opening this PR 🌌',
+              '',
+              'The changes will be reviewed soon. Please make sure:',
+              '',
+              '* the implementation is properly tested',
+              '* unrelated files are avoided',
+              '* all required files/commits are pushed before review',
+              '',
+              'Appreciate the effort you put into improving Paraline 👍'
+            ].join('\n');
+
+            await github.rest.pulls.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              body
+            });

@@ -8,13 +8,17 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
-        try
+        WasapiLoopbackCapture? capture = null;
+
+        while (true)
         {
-            using var capture = new WasapiLoopbackCapture();
-
-
-            while (true)
+            try
             {
+                if (capture == null)
+                {
+                    capture = new WasapiLoopbackCapture();
+                }
+
                 var value = capture.ReadLevel();
 
                 // Keep the stdout contract stable so Electron does not need to change.
@@ -27,12 +31,28 @@ internal static class Program
                 Console.WriteLine(payload);
                 Thread.Sleep(33);
             }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine("Loopback capture failed to start.");
-            Console.Error.WriteLine(ex.Message);
-            Environment.Exit(1);
+            catch (Exception ex)
+            {
+                // Log the exception to stderr for diagnostics
+                Console.Error.WriteLine($"[AudioBridge] Capture encountered an exception: {ex.Message}. Re-initializing stream...");
+
+                // Dispose of the stale capture client cleanly
+                if (capture != null)
+                {
+                    try
+                    {
+                        capture.Dispose();
+                    }
+                    catch
+                    {
+                        // Ignore disposal errors of invalidated streams
+                    }
+                    capture = null;
+                }
+
+                // Wait 1 second before attempting to bind to the new default audio endpoint
+                Thread.Sleep(1000);
+            }
         }
     }
 }
