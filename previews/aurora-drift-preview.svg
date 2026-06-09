@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+  <defs>
+    <!-- Background of preview card -->
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#08090d"/>
+      <stop offset="100%" stop-color="#0c0e14"/>
+    </linearGradient>
+    
+    <!-- Volumetric Horizon Glow -->
+    <linearGradient id="horizonGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(0, 229, 255, 0)"/>
+      <stop offset="60%" stop-color="rgba(0, 119, 255, 0.02)"/>
+      <stop offset="100%" stop-color="rgba(127, 0, 255, 0.08)"/>
+    </linearGradient>
+
+    <!-- Aurora Curtain Gradients -->
+    <linearGradient id="auroraGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(0, 255, 127, 0)"/>
+      <stop offset="50%" stop-color="rgba(0, 255, 127, 0.25)"/>
+      <stop offset="90%" stop-color="rgba(0, 229, 255, 0.35)"/>
+      <stop offset="100%" stop-color="rgba(0, 119, 255, 0.05)"/>
+    </linearGradient>
+
+    <linearGradient id="auroraViolet" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(127, 0, 255, 0)"/>
+      <stop offset="40%" stop-color="rgba(127, 0, 255, 0.28)"/>
+      <stop offset="85%" stop-color="rgba(0, 229, 255, 0.22)"/>
+      <stop offset="100%" stop-color="rgba(0, 119, 255, 0.03)"/>
+    </linearGradient>
+
+    <linearGradient id="auroraPink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(255, 0, 127, 0)"/>
+      <stop offset="35%" stop-color="rgba(255, 0, 127, 0.32)"/>
+      <stop offset="75%" stop-color="rgba(127, 0, 255, 0.25)"/>
+      <stop offset="100%" stop-color="rgba(0, 229, 255, 0.03)"/>
+    </linearGradient>
+
+    <!-- Soft Glow filter -->
+    <filter id="auroraGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="9" result="blur1"/>
+      <feGaussianBlur stdDeviation="3" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="640" height="360" rx="32" fill="url(#bg)"/>
+  
+  <!-- Outer Window boundary -->
+  <rect x="34" y="34" width="572" height="292" rx="26" fill="#040508" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  
+  <!-- Ambient background horizon haze -->
+  <rect x="35" y="180" width="570" height="145" fill="url(#horizonGlow)" opacity="0.45"/>
+
+  <!-- Layer 0: Background Violet Aurora -->
+  <path d="M 35 325 L 35 260 Q 150 220 260 250 T 500 230 T 605 250 L 605 325 Z" fill="url(#auroraViolet)" filter="url(#auroraGlow)" opacity="0.25">
+    <animateTransform attributeName="transform" type="translate" values="0 0; 0 4; 0 0" dur="8s" repeatCount="indefinite"/>
+    <animate attributeName="d" values="M 35 325 L 35 260 Q 150 220 260 250 T 500 230 T 605 250 L 605 325 Z; M 35 325 L 35 245 Q 180 235 280 265 T 480 215 T 605 240 L 605 325 Z; M 35 325 L 35 260 Q 150 220 260 250 T 500 230 T 605 250 L 605 325 Z" dur="12s" repeatCount="indefinite"/>
+  </path>
+
+  <!-- Layer 1: Mid-ground Green Aurora -->
+  <path d="M 35 325 L 35 270 Q 130 235 240 260 T 470 240 T 605 260 L 605 325 Z" fill="url(#auroraGreen)" filter="url(#auroraGlow)" opacity="0.3">
+    <animateTransform attributeName="transform" type="translate" values="0 0; 0 -5; 0 0" dur="6.5s" repeatCount="indefinite"/>
+    <animate attributeName="d" values="M 35 325 L 35 270 Q 130 235 240 260 T 470 240 T 605 260 L 605 325 Z; M 35 325 L 35 255 Q 160 245 250 270 T 450 225 T 605 250 L 605 325 Z; M 35 325 L 35 270 Q 130 235 240 260 T 470 240 T 605 260 L 605 325 Z" dur="10s" repeatCount="indefinite"/>
+  </path>
+
+  <!-- Layer 2: Foreground Pink-accent curtain -->
+  <path d="M 35 325 L 35 280 Q 140 245 280 270 T 490 250 T 605 270 L 605 325 Z" fill="url(#auroraPink)" filter="url(#auroraGlow)" opacity="0.28">
+    <animateTransform attributeName="transform" type="translate" values="0 0; 0 3; 0 0" dur="5.2s" repeatCount="indefinite"/>
+    <animate attributeName="d" values="M 35 325 L 35 280 Q 140 245 280 270 T 490 250 T 605 270 L 605 325 Z; M 35 325 L 35 270 Q 120 250 260 280 T 510 235 T 605 260 L 605 325 Z; M 35 325 L 35 280 Q 140 245 280 270 T 490 250 T 605 270 L 605 325 Z" dur="8.5s" repeatCount="indefinite"/>
+  </path>
+  
+  <!-- Additive Filament strands for energetic sways -->
+  <path d="M 50 325 C 120 290, 200 315, 270 290 C 340 260, 420 310, 590 300" fill="none" stroke="#e0f7fa" stroke-width="1.2" opacity="0.18" filter="url(#auroraGlow)">
+    <animate attributeName="stroke-dasharray" values="10 5; 30 15; 10 5" dur="4s" repeatCount="indefinite"/>
+    <animateTransform attributeName="transform" type="translate" values="0 0; 0 -3; 0 0" dur="4.8s" repeatCount="indefinite"/>
+  </path>
+</svg>

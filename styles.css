@@ -5,6 +5,7 @@ body {
   height: 100%;
   overflow: hidden;
   background: transparent;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 body {
@@ -16,4 +17,230 @@ body {
   display: block;
   width: 100vw;
   height: 100vh;
+  transition: opacity 1.5s ease;
+}
+
+/* Fullscreen click-intercepting shield */
+.menu-shield {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  z-index: 9999;
+  pointer-events: auto;
+}
+
+.menu-shield.hidden,
+.context-menu.hidden {
+  display: none !important;
+}
+
+/* macOS Glassmorphic Context Menu Container */
+.context-menu {
+  position: fixed;
+  z-index: 10000;
+  min-width: 240px;
+  background: 
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.025'/%3E%3C/svg%3E"),
+    #18181c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.65), 
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 1px 0px rgba(255, 255, 255, 0.08) inset;
+  padding: 6px 0;
+  pointer-events: auto;
+  animation: menuFadeIn 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top left;
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Menu Items & Labels */
+.menu-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.38);
+  padding: 5px 12px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.09);
+  margin: 5px 0;
+}
+
+.menu-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  margin: 0 5px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  cursor: default;
+  transition: background 0.08s ease, color 0.08s ease;
+}
+
+.menu-item:not(.disabled):hover {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 1px 0px rgba(255, 255, 255, 0.05) inset;
+  color: #ffffff;
+}
+
+.menu-item.active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.menu-item.disabled {
+  color: rgba(255, 255, 255, 0.3) !important;
+  background: transparent !important;
+  cursor: default;
+}
+
+.menu-item.menu-title.disabled {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4) !important;
+  padding-top: 5px;
+  padding-bottom: 3px;
+}
+
+.menu-item.menu-status.disabled {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4) !important;
+  padding-top: 3px;
+  padding-bottom: 5px;
+}
+
+.menu-item.menu-header.disabled {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4) !important;
+  padding-top: 6px;
+  padding-bottom: 4px;
+}
+
+/* Left Icon / Checkmark Column */
+.menu-item .item-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  color: rgba(255, 255, 255, 0.56);
+  flex-shrink: 0;
+}
+
+/* Ensure checkmark inside item-icon has right color and size */
+.menu-item .item-icon .checkmark {
+  width: 12px;
+  height: 12px;
+  color: #2ecc71; /* Live green */
+}
+
+/* Hover icon color change */
+.menu-item:not(.disabled):hover .item-icon {
+  color: #ffffff;
+}
+
+.menu-item .item-icon-spacer {
+  width: 16px;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.menu-item .item-label {
+  flex: 1;
+}
+
+/* Right Status / Arrow */
+.menu-item .item-status {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.45);
+  margin-left: 10px;
+  margin-right: 5px;
+}
+
+.menu-item .item-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 10px;
+  height: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.menu-item:not(.disabled):hover .item-chevron {
+  color: #ffffff;
+}
+
+/* Submenu Position and Display */
+.menu-item .submenu {
+  display: none;
+  position: absolute;
+  top: -6px;
+  left: 100%;
+  min-width: 200px;
+  background: 
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.025'/%3E%3C/svg%3E"),
+    #18181c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.65), 
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 1px 0px rgba(255, 255, 255, 0.08) inset;
+  padding: 6px 0;
+  z-index: 10001;
+  margin-left: 1px;
+  animation: submenuFadeIn 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top left;
+}
+
+@keyframes submenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.menu-item:hover > .submenu {
+  display: block;
+}
+
+/* Submenu on the Left (when near screen right edge) */
+.menu-item.submenu-left .submenu {
+  left: auto;
+  right: 100%;
+  margin-left: 0;
+  margin-right: 1px;
+  transform-origin: top right;
 }

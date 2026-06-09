@@ -3,7 +3,8 @@
     getGlowMultiplier,
     drawWave,
     drawGlowBand,
-    drawSoftFill
+    drawSoftFill,
+    hexToRgb
   } = window.ParalineShared;
 
   const AMBIENT_TONES = {
@@ -34,19 +35,34 @@
   };
 
   function getAmbientTonePalette(settings) {
+    if (settings.tone === "custom" && settings.customColors) {
+      const c1 = hexToRgb(settings.customColors[0]);
+      const c2 = hexToRgb(settings.customColors[1]);
+      const c3 = hexToRgb(settings.customColors[2]);
+      
+      const str = (c, alpha) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha})`;
+      
+      return {
+        topLine: str(c2, 0.34),
+        topGlow: str(c2, 0.12),
+        bottomLine: str(c1, 0.22),
+        bottomGlow: str(c1, 0.08),
+        hazeTop: str(c3, 0.10),
+        hazeBottom: str(c1, 0.06)
+      };
+    }
     return AMBIENT_TONES[settings.tone] || AMBIENT_TONES.blue;
   }
 
-  function getAmbientSensitivityMultiplier(settings) {
-    if (settings.sensitivity === "low") {
-      return 3.2;
+  function getAmbientSensitivityMultiplier(settings = {}) {
+    let base = 4.5;
+    if (settings.sensitivity === "low") base = 3.2;
+    if (settings.sensitivity === "high") base = 6.2;
+    
+    if (settings.sensitivity === "custom" && typeof settings.customSensitivity === "number") {
+      return base * (settings.customSensitivity / 30);
     }
-
-    if (settings.sensitivity === "high") {
-      return 6.2;
-    }
-
-    return 4.5;
+    return base;
   }
 
   function drawAmbientWave(options) {
@@ -58,7 +74,8 @@
       smoothedLevel,
       latestSource,
       edgeGradient,
-      settings
+      settings,
+      performanceMode = 'balanced'
     } = options;
 
     const ambientTheme = getAmbientTonePalette(settings);

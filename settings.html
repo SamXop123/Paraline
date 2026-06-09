@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paraline Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="settings.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Ambient Glow Layers -->
+        <div class="ambient-glow ambient-glow--cyan"></div>
+        <div class="ambient-glow ambient-glow--purple"></div>
+        <div class="ambient-glow ambient-glow--center"></div>
+
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>Paraline</h2>
+                <span class="sidebar-brand-tag">Audio Visualizer</span>
+                <div class="sidebar-version">v2.0.0</div>
+            </div>
+            <ul class="nav-links">
+                <li>
+                    <button class="nav-btn active" data-target="settings">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        Settings
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" data-target="advanced">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" y1="21" x2="4" y2="14"></line>
+                            <line x1="4" y1="10" x2="4" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12" y2="3"></line>
+                            <line x1="20" y1="21" x2="20" y2="16"></line>
+                            <line x1="20" y1="12" x2="20" y2="3"></line>
+                            <line x1="2" y1="14" x2="6" y2="14"></line>
+                            <line x1="10" y1="8" x2="14" y2="8"></line>
+                            <line x1="18" y1="16" x2="22" y2="16"></line>
+                        </svg>
+                        Advanced
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" data-target="tweaks">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                        </svg>
+                        Tweaks
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" data-target="about">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        About
+                    </button>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <button class="sidebar-action-btn" id="btn-hide">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                    Hide Visualizer
+                </button>
+                <button class="sidebar-action-btn" id="btn-pause">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="6" y="4" width="4" height="16"></rect>
+                        <rect x="14" y="4" width="4" height="16"></rect>
+                    </svg>
+                    Pause Visualizer
+                </button>
+                <button class="sidebar-action-btn" id="btn-reload">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    Reload Visualizer
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="content-area">
+            <!-- Settings Tab (Existing Options) -->
+            <section id="settings" class="tab-content active">
+                <header>
+                    <h1><span class="header-accent"></span>Theme Settings</h1>
+                    <p>Standard presets. Changes are applied instantly.</p>
+                </header>
+
+
+                <div class="settings-group">
+                    <h3>Visualizer Mode</h3>
+                    <div class="input-group" style="margin-top: 10px;">
+                        <select class="styled-select" id="theme-selector">
+                            <option value="ambientWave">Ambient Wave</option>
+                            <option value="auroraDrift">Aurora Drift</option>
+                            <option value="reactiveBorder">Reactive Border</option>
+                            <option value="flowBorder">Flow Border</option>
+                            <option value="sideBars">Side Bars</option>
+                            <option value="flatRipples">Pulse Lines</option>
+                            <option value="dotParticles">Dot Particles</option>
+                            <option value="rippleFlow">Ripple Flow</option>
+                            <option value="snowBubbleParticles">Snow Particles</option>
+                            <option value="edgeCrystals">Edge Crystals</option>
+                            <option value="sideBraids">Side Braids</option>
+                        </select>
+                    </div>
+                </div>
+
+
+
+                <div class="settings-group">
+                    <h3>Theme Properties</h3>
+                    <div id="dynamic-theme-settings">
+                        <!-- Populated dynamically by settings.js based on selected theme -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Advanced Settings Tab (Custom Options) -->
+            <section id="advanced" class="tab-content">
+                <header>
+                    <h1><span class="header-accent"></span>Advanced Settings</h1>
+                    <p>Fine-tune the appearance with granular sliders and custom gradients.</p>
+                </header>
+
+                <div id="standard-advanced-controls">
+                    <div class="settings-group">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px;">
+                            <div>
+                                <h3>Custom Gradient Colors</h3>
+                                <p class="setting-desc" style="margin-bottom: 0;">Select your colors or load a saved preset.</p>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <select id="preset-selector" class="styled-select" style="min-width: 150px;">
+                                    <!-- Populated by JS -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="preset-save-container" style="display: flex; gap: 8px; margin-bottom: 16px;">
+                            <input type="text" id="preset-name-input" class="styled-select" placeholder="New Preset Name" style="flex: 1; padding: 6px 10px; font-size: 14px; box-sizing: border-box;">
+                            <button id="btn-save-preset" class="btn-secondary" style="padding: 6px 12px; font-size: 14px; flex-shrink: 0;">Save New</button>
+                        </div>
+
+                        <div class="color-picker-container" id="gradient-colors" style="margin-top: 20px;">
+                            <div class="color-stop">
+                                <input type="color" class="color-input custom-trigger" id="color1" value="#00f2fe">
+                                <label for="color1">Start</label>
+                            </div>
+                            <div class="color-stop">
+                                <input type="color" class="color-input custom-trigger" id="color2" value="#4facfe">
+                                <label for="color2">Middle</label>
+                            </div>
+                            <div class="color-stop">
+                                <input type="color" class="color-input custom-trigger" id="color3" value="#8ee2ff">
+                                <label for="color3">End</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group" id="advanced-sliders-container">
+                        <h3>Precise Controls</h3>
+
+                        <div class="slider-control" id="container-customThickness">
+                            <div class="slider-header">
+                                <label id="label-customThickness" for="customThickness">Thickness</label>
+                                <span class="slider-value" id="val-customThickness">4</span>
+                            </div>
+                            <input type="range" class="custom-trigger" id="customThickness" min="1" max="20" value="4">
+                        </div>
+
+                        <div class="slider-control" id="container-customGap" style="margin-top: 16px;">
+                            <div class="slider-header">
+                                <label id="label-customGap" for="customGap">Gap</label>
+                                <span class="slider-value" id="val-customGap">7</span>
+                            </div>
+                            <input type="range" class="custom-trigger" id="customGap" min="2" max="30" value="7">
+                        </div>
+
+                        <div class="slider-control" id="container-customSensitivity" style="margin-top: 16px;">
+                            <div class="slider-header">
+                                <label id="label-customSensitivity" for="customSensitivity">Sensitivity</label>
+                                <span class="slider-value" id="val-customSensitivity">3.0</span>
+                            </div>
+                            <input type="range" class="custom-trigger" id="customSensitivity" min="1" max="100" value="30">
+                        </div>
+
+                        <div class="slider-control" id="container-customSpeed" style="margin-top: 16px;">
+                            <div class="slider-header">
+                                <label id="label-customSpeed" for="customSpeed">Speed</label>
+                                <span class="slider-value" id="val-customSpeed">3.0</span>
+                            </div>
+                            <input type="range" class="custom-trigger" id="customSpeed" min="1" max="100" value="30">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="aurora-advanced-controls" style="display: none;">
+                    <div class="settings-group" style="padding-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div>
+                                <h3 style="margin: 0; color: #fff; font-size: 16px;">Aurora Solar Gradient Sculptor</h3>
+                                <p class="setting-desc" style="margin: 4px 0 0 0;">Visual HSL stops. Click track to add stops (2-6 max). Click marker to pick color. Hover and click [x] to delete.</p>
+                            </div>
+                            <button class="btn-secondary" id="btn-reset-aurora-palette" style="padding: 6px 12px; font-size: 12px; height: 30px;">Reset Palette</button>
+                        </div>
+                        
+                        <div class="aurora-gradient-builder-container" style="position: relative; margin-top: 24px; padding: 0 10px;">
+                            <div id="aurora-gradient-preview-bar" style="height: 28px; border-radius: 14px; width: 100%; background: linear-gradient(to right, #00e5ff, #0077ff, #7f00ff, #ff007f); position: relative; border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37); cursor: crosshair;">
+                                <!-- Markers will be injected dynamically -->
+                            </div>
+                            <div id="aurora-stops-markers-container" style="position: relative; height: 20px; width: 100%; pointer-events: none;">
+                                <!-- Marker nodes will go here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group" style="margin-top: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+                            <h3 style="margin: 0; font-size: 16px; color: #fff;">Granular Plasma Tuners</h3>
+                            <div class="aurora-tabs" style="display: flex; gap: 8px;">
+                                <button class="aurora-tab-btn active" data-tab="shape">Shape & Depth</button>
+                                <button class="aurora-tab-btn" data-tab="glow">Glow & Bloom</button>
+                                <button class="aurora-tab-btn" data-tab="motion">Motion & Waves</button>
+                                <button class="aurora-tab-btn" data-tab="audio">Audio Response</button>
+                            </div>
+                        </div>
+
+                        <!-- Tab 1: Shape & Depth -->
+                        <div id="aurora-tab-shape" class="aurora-tab-content active-content">
+                            <div class="slider-control">
+                                <div class="slider-header"><label for="adv-ribbonHeight">Ribbon Max Height</label><span class="slider-value" id="val-adv-ribbonHeight">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-ribbonHeight" min="0.2" max="2.5" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-ribbonWidth">Ribbon Horizontal Scale</label><span class="slider-value" id="val-adv-ribbonWidth">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-ribbonWidth" min="0.3" max="2.0" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-edgeSoftness">Atmospheric Blur Softness</label><span class="slider-value" id="val-adv-edgeSoftness">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-edgeSoftness" min="0.1" max="2.5" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-layerSeparation">Layers Parallax Separation</label><span class="slider-value" id="val-adv-layerSeparation">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-layerSeparation" min="0.2" max="2.5" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-crestSharpness">Luminous Crest Sharpness</label><span class="slider-value" id="val-adv-crestSharpness">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-crestSharpness" min="0.1" max="3.0" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-layerCount">Active Curtains Count</label><span class="slider-value" id="val-adv-layerCount">5</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-layerCount" min="1" max="6" step="1" value="5">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-parallaxDepth">Depth Layer Parallax Rate</label><span class="slider-value" id="val-adv-parallaxDepth">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-parallaxDepth" min="0.0" max="2.5" step="0.05" value="1.0">
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Glow & Bloom -->
+                        <div id="aurora-tab-glow" class="aurora-tab-content">
+                            <div class="slider-control">
+                                <div class="slider-header"><label for="adv-baseGlowRadius">Volumetric Base Glow Radius</label><span class="slider-value" id="val-adv-baseGlowRadius">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-baseGlowRadius" min="0.1" max="2.5" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-peakGlowRadius">Bass Bloom Expansion</label><span class="slider-value" id="val-adv-peakGlowRadius">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-peakGlowRadius" min="0.1" max="2.5" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-crestBrightness">Crest Edge Brightness</label><span class="slider-value" id="val-adv-crestBrightness">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-crestBrightness" min="0.1" max="3.0" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-bloomStrength">Additive Bloom Multiplier</label><span class="slider-value" id="val-adv-bloomStrength">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-bloomStrength" min="0.0" max="3.0" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-glowFalloff">Atmospheric Fade Falloff</label><span class="slider-value" id="val-adv-glowFalloff">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-glowFalloff" min="0.1" max="2.5" step="0.05" value="1.0">
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Motion & Turbulence -->
+                        <div id="aurora-tab-motion" class="aurora-tab-content">
+                            <div class="slider-control">
+                                <div class="slider-header"><label for="adv-primaryFrequency">Primary Wave Length (Freq)</label><span class="slider-value" id="val-adv-primaryFrequency">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-primaryFrequency" min="0.2" max="2.5" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-secondaryFrequency">Crease Turbulence Spacing</label><span class="slider-value" id="val-adv-secondaryFrequency">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-secondaryFrequency" min="0.2" max="2.5" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-turbulenceComplexity">Crease Internal Complexity</label><span class="slider-value" id="val-adv-turbulenceComplexity">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-turbulenceComplexity" min="0.1" max="2.5" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-motionSmoothness">Wave Motion Smoothness</label><span class="slider-value" id="val-adv-motionSmoothness">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-motionSmoothness" min="0.1" max="2.5" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-driftSpeed">Ribbon Drift Speed Rate</label><span class="slider-value" id="val-adv-driftSpeed">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-driftSpeed" min="0.0" max="2.5" step="0.05" value="1.0">
+                            </div>
+                        </div>
+
+                        <!-- Tab 4: Audio Reactivity -->
+                        <div id="aurora-tab-audio" class="aurora-tab-content">
+                            <div class="slider-control">
+                                <div class="slider-header"><label for="adv-bassInfluence">Bass Breathing Surge</label><span class="slider-value" id="val-adv-bassInfluence">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-bassInfluence" min="0.0" max="3.0" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-midInfluence">Vocal/Melody Crest Sway</label><span class="slider-value" id="val-adv-midInfluence">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-midInfluence" min="0.0" max="3.0" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-highShimmer">Treble Sparkle detail</label><span class="slider-value" id="val-adv-highShimmer">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-highShimmer" min="0.0" max="3.0" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-audioSmoothing">Response Elasticity (Smoothing)</label><span class="slider-value" id="val-adv-audioSmoothing">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-audioSmoothing" min="0.1" max="2.5" step="0.05" value="1.0">
+                            </div>
+                            <div class="slider-control" style="margin-top: 16px;">
+                                <div class="slider-header"><label for="adv-peakSensitivity">Onset Peak Attack Speed</label><span class="slider-value" id="val-adv-peakSensitivity">1.0</span></div>
+                                <input type="range" class="aurora-adv-trigger" id="adv-peakSensitivity" min="0.1" max="2.5" step="0.05" value="1.0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group" style="margin-top: 20px;">
+                        <h3>Ambient Atmosphere Fine-Tuner</h3>
+                        <div class="slider-control" style="margin-top: 10px;">
+                            <div class="slider-header"><label for="adv-ambientOpacity">Global Ambient Haze Opacity</label><span class="slider-value" id="val-adv-ambientOpacity">1.0</span></div>
+                            <input type="range" class="aurora-adv-trigger" id="adv-ambientOpacity" min="0.0" max="2.5" step="0.05" value="1.0">
+                        </div>
+                        <div class="slider-control" style="margin-top: 16px;">
+                            <div class="slider-header"><label for="adv-colorSaturation">Color Vividness (Saturation)</label><span class="slider-value" id="val-adv-colorSaturation">1.0</span></div>
+                            <input type="range" class="aurora-adv-trigger" id="adv-colorSaturation" min="0.0" max="2.5" step="0.05" value="1.0">
+                        </div>
+                        <div class="slider-control" style="margin-top: 16px;">
+                            <div class="slider-header"><label for="adv-backgroundHaze">Background Veil Depth</label><span class="slider-value" id="val-adv-backgroundHaze">1.0</span></div>
+                            <input type="range" class="aurora-adv-trigger" id="adv-backgroundHaze" min="0.0" max="3.0" step="0.05" value="1.0">
+                        </div>
+                        <div class="slider-control" style="margin-top: 16px;">
+                            <div class="slider-header"><label for="adv-foregroundHighlight">Foreground Highlights Intensity</label><span class="slider-value" id="val-adv-foregroundHighlight">1.0</span></div>
+                            <input type="range" class="aurora-adv-trigger" id="adv-foregroundHighlight" min="0.0" max="3.0" step="0.05" value="1.0">
+                        </div>
+                        <div class="slider-control" style="margin-top: 16px;">
+                            <div class="slider-header"><label for="adv-atmosphericFade">Vertical Fade feathering</label><span class="slider-value" id="val-adv-atmosphericFade">1.0</span></div>
+                            <input type="range" class="aurora-adv-trigger" id="adv-atmosphericFade" min="0.0" max="2.5" step="0.05" value="1.0">
+                        </div>
+                        <div class="slider-control" style="margin-top: 16px;">
+                            <div class="slider-header"><label for="adv-edgeFeathering">Border Clipping Feather</label><span class="slider-value" id="val-adv-edgeFeathering">1.0</span></div>
+                            <input type="range" class="aurora-adv-trigger" id="adv-edgeFeathering" min="0.0" max="2.5" step="0.05" value="1.0">
+                        </div>
+                    </div>
+
+                    <div class="settings-group" style="margin-top: 20px;">
+                        <h3>Advanced Aurora Engine Presets</h3>
+                        <p class="setting-desc" style="margin-bottom: 12px;">Choose a pre-sculpted solar engine profile or save your own custom configurations.</p>
+                        
+                        <div class="aurora-preset-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                            <div class="aurora-preset-card" data-preset="dreamscape" style="cursor: pointer; padding: 10px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); text-align: center; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                                <div style="font-weight: 500; font-size: 13px; color: #e2e8f0; margin-bottom: 4px;">Dreamscape</div>
+                                <div style="font-size: 10px; color: #a0aec0;">Calm Haze</div>
+                            </div>
+                            <div class="aurora-preset-card" data-preset="neonStorm" style="cursor: pointer; padding: 10px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); text-align: center; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                                <div style="font-weight: 500; font-size: 13px; color: #e2e8f0; margin-bottom: 4px;">Neon Storm</div>
+                                <div style="font-size: 10px; color: #a0aec0;">Energetic Surge</div>
+                            </div>
+                            <div class="aurora-preset-card" data-preset="frozenSky" style="cursor: pointer; padding: 10px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); text-align: center; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                                <div style="font-weight: 500; font-size: 13px; color: #e2e8f0; margin-bottom: 4px;">Frozen Sky</div>
+                                <div style="font-size: 10px; color: #a0aec0;">Ice Pale glow</div>
+                            </div>
+                            <div class="aurora-preset-card" data-preset="deepCosmos" style="cursor: pointer; padding: 10px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); text-align: center; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                                <div style="font-weight: 500; font-size: 13px; color: #e2e8f0; margin-bottom: 4px;">Deep Cosmos</div>
+                                <div style="font-size: 10px; color: #a0aec0;">Aurora Core</div>
+                            </div>
+                            <div class="aurora-preset-card" data-preset="softHorizon" style="cursor: pointer; padding: 10px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); text-align: center; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);">
+                                <div style="font-weight: 500; font-size: 13px; color: #e2e8f0; margin-bottom: 4px;">Soft Horizon</div>
+                                <div style="font-size: 10px; color: #a0aec0;">Monochrome</div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 8px;">
+                            <select id="aurora-custom-preset-select" class="styled-select" style="flex: 1; padding: 6px 12px;">
+                                <option value="" disabled selected>Saved Profiles...</option>
+                            </select>
+                            <button class="btn-secondary" id="btn-load-aurora-preset" style="padding: 6px 12px; font-size: 13px;">Load</button>
+                            <button class="btn-secondary" id="btn-delete-aurora-preset" style="padding: 6px 12px; font-size: 13px;">Delete</button>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 10px;">
+                            <input type="text" id="aurora-preset-name-input" class="styled-select" placeholder="New Profile Name" style="flex: 1; padding: 6px 12px; font-size: 13px; box-sizing: border-box;">
+                            <button class="btn-secondary" id="btn-save-aurora-preset" style="padding: 6px 12px; font-size: 13px;">Save Engine Profile</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <h3>Theme Profiles</h3>
+                    <p class="setting-desc">
+                        Save, switch, import, and export your personalized visualizer themes.
+                    </p>
+
+                    <div class="input-group" style="margin-top: 14px;">
+                        <select class="styled-select" id="theme-profile-selector">
+                            <option value="">Select Theme Profile</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 14px;">
+                        <input
+                            type="text"
+                            id="theme-profile-name"
+                            class="styled-select"
+                            placeholder="Profile Name"
+                            style="flex: 1; padding: 8px 12px;"
+                        >
+
+                        <button id="btn-save-theme-profile" class="btn-secondary">
+                            Save
+                        </button>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+                        <button id="btn-load-theme-profile" class="btn-secondary">
+                            Load
+                        </button>
+
+                        <button id="btn-delete-theme-profile" class="btn-secondary">
+                            Delete
+                        </button>
+
+                        <button id="btn-export-theme-profile" class="btn-secondary">
+                            Export
+                        </button>
+
+                        <button id="btn-import-theme-profile" class="btn-secondary">
+                            Import
+                        </button>
+
+                        <button id="btn-reset-theme-profile" class="btn-secondary">
+                            Restore Defaults
+                        </button>
+                        <button id="btnDuplicateThemeProfile" class="btn-secondary">
+                            Duplicate
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tweaks Settings Tab -->
+            <section id="tweaks" class="tab-content">
+                <header>
+                    <h1><span class="header-accent"></span>System Tweaks</h1>
+                    <p>Configure performance options and system integration settings.</p>
+                </header>
+
+                <div class="settings-group">
+                    <h3>Performance Mode</h3>
+                    <p class="setting-desc">Balance visual quality with system performance. Lower modes reduce GPU usage.</p>
+                    <div class="input-group" style="margin-top: 10px;">
+                        <select class="styled-select" id="performance-mode-selector">
+                            <option value="performance">Performance (Low GPU)</option>
+                            <option value="balanced">Balanced (Recommended)</option>
+                            <option value="quality">Quality (High GPU)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Framerate Target</h3>
+                    <p class="setting-desc">Control the visualizer's update rate to balance animation smoothness with power efficiency.</p>
+                    <div class="input-group" style="margin-top: 10px;">
+                        <select class="styled-select" id="fps-limit-selector">
+                            <option value="default">Default: Coordinated Throttling (Recommended)</option>
+                            <option value="battery">Battery Saver (Lock 30 FPS)</option>
+                            <option value="unlocked">High Refresh (Unlocked / V-Sync)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Descriptive Outcome Box -->
+                    <div class="outcome-box" style="margin-top: 16px; padding: 14px 16px; border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); display: block; position: relative;">
+                        <div id="fps-outcome-default" class="fps-outcome">
+                            <span style="font-weight: 600; font-size: 13px; color: var(--accent); display: block; margin-bottom: 4px;">Dynamic Coordinated Throttling (36–60 FPS)</span>
+                            <span class="setting-desc" style="font-size: 12px; line-height: 1.45; margin-bottom: 0; display: block;">
+                                Automatically adapts rendering speed to the active theme's mechanical needs. Ensures a highly smooth visual baseline while keeping GPU load under 2% on most machines. Highly recommended for standard setups.
+                            </span>
+                        </div>
+                        <div id="fps-outcome-battery" class="fps-outcome" style="display: none;">
+                            <span style="font-weight: 600; font-size: 13px; color: #ffd2eb; display: block; margin-bottom: 4px;">Battery Saver (Lock 30 FPS)</span>
+                            <span class="setting-desc" style="font-size: 12px; line-height: 1.45; margin-bottom: 0; display: block;">
+                                Locks the visualizer loop to 30 FPS across all themes. Drastically reduces processor overhead and power consumption. Highly recommended if you are playing demanding games or running Paraline on a laptop on battery.
+                            </span>
+                        </div>
+                        <div id="fps-outcome-unlocked" class="fps-outcome" style="display: none;">
+                            <span style="font-weight: 600; font-size: 13px; color: var(--accent-secondary); display: block; margin-bottom: 4px;">High Refresh (Unlocked / V-Sync Sync)</span>
+                            <span class="setting-desc" style="font-size: 12px; line-height: 1.45; margin-bottom: 0; display: block;">
+                                Removes artificial caps, rendering at your monitor's native refresh rate (e.g. 75Hz, 144Hz, 240Hz). Delivers butter-smooth, ultra-responsive physics. Best for powerful desktop PCs with dedicated graphics cards and gaming monitors.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Color Mode</h3>
+                    <p class="setting-desc">Adaptive mode follows your Windows accent color and light or dark theme in real time. Manual mode keeps your chosen theme colors.</p>
+                    <div class="input-group" style="margin-top: 10px;">
+                        <select class="styled-select" id="color-mode-selector">
+                            <option value="manual">Manual</option>
+                            <option value="adaptive">Adaptive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Theme Automation</h3>
+                    <p class="setting-desc">Automatically switch between day and night visualizer modes based on the time of day.</p>
+                    <div class="input-group" style="margin-top: 10px;">
+                        <label style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" id="enableThemeAutomation" />
+                            Enable Time-Based Theme Switching
+                        </label>
+                    </div>
+
+                    <div id="themeAutoControls" style="display: none; margin-top: 15px;">
+                        <div class="input-group" style="margin-top: 10px;">
+                            <label>Check Interval (Minutes):</label>
+                            <input type="number" id="intervalMinutes" min="1" max="120" value="30" style="width: 60px; margin-left: 10px;" />
+                        </div>
+
+                        <div class="input-group" style="margin-top: 10px; display: flex; gap: 20px;">
+                            <div style="display: flex; align-items: center;">
+                                <label for="dayStartHourInput" style="margin-bottom: 0;">Day Start Hour:</label>
+                                <input type="number" id="dayStartHourInput" min="0" max="23" value="6" style="width: 60px; margin-left: 10px;" />
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <label for="nightStartHourInput" style="margin-bottom: 0;">Night Start Hour:</label>
+                                <input type="number" id="nightStartHourInput" min="0" max="23" value="18" style="width: 60px; margin-left: 10px;" />
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-top: 10px;">
+                            <label id="dayThemeLabel">Daytime Theme (6 AM - 6 PM):</label>
+                            <select class="styled-select" id="dayThemeSelect" style="margin-top: 5px;">
+                                <option value="ambientWave">Ambient Wave</option>
+                                <option value="reactiveBorder">Reactive Border</option>
+                                <option value="flowBorder">Flow Border</option>
+                                <option value="sideBars">Side Bars</option>
+                                <option value="flatRipples">Pulse Lines</option>
+                                <option value="dotParticles">Dot Particles</option>
+                                <option value="rippleFlow">Ripple Flow</option>
+                                <option value="snowBubbleParticles">Snow Particles</option>
+                                <option value="edgeCrystals">Edge Crystals</option>
+                                <option value="sideBraids">Side Braids</option>
+                                <option value="auroraDrift">Aurora Drift</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group" style="margin-top: 10px;">
+                            <label id="nightThemeLabel">Nighttime Theme (6 PM - 6 AM):</label>
+                            <select class="styled-select" id="nightThemeSelect" style="margin-top: 5px;">
+                                <option value="ambientWave">Ambient Wave</option>
+                                <option value="reactiveBorder">Reactive Border</option>
+                                <option value="flowBorder">Flow Border</option>
+                                <option value="sideBars">Side Bars</option>
+                                <option value="flatRipples">Pulse Lines</option>
+                                <option value="dotParticles">Dot Particles</option>
+                                <option value="rippleFlow">Ripple Flow</option>
+                                <option value="snowBubbleParticles">Snow Particles</option>
+                                <option value="edgeCrystals">Edge Crystals</option>
+                                <option value="sideBraids">Side Braids</option>
+                                <option value="auroraDrift">Aurora Drift</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>Focus Mode</h3>
+                    <p class="setting-desc">Dim the visualizer when you are actively using your computer to reduce distractions, and restore full opacity when idle.</p>
+                    <div class="switch-control" style="margin-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-weight: 500; font-size: 15px; color: #e2e8f0;">Enable Focus Mode</span>
+                            <p class="setting-desc" style="margin-top: 4px; margin-bottom: 0;">Dim the visualizer during active user input.</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="focus-mode-enabled-checkbox">
+                            <span class="slider-round"></span>
+                        </label>
+                    </div>
+
+                    <div id="focusModeControls" style="display: none; margin-top: 20px;">
+                        <div class="slider-control" style="margin-bottom: 20px;">
+                            <div class="slider-header">
+                                <label for="focus-mode-dim-opacity-slider">Dimmed Opacity</label>
+                                <span class="slider-value" id="val-focus-mode-dim-opacity">0.10</span>
+                            </div>
+                            <input type="range" id="focus-mode-dim-opacity-slider" min="0.0" max="1.0" step="0.05" value="0.10">
+                        </div>
+
+                        <div class="slider-control">
+                            <div class="slider-header">
+                                <label for="focus-mode-timeout-slider">Activity Idle Timeout (seconds)</label>
+                                <span class="slider-value" id="val-focus-mode-timeout">5</span>
+                            </div>
+                            <input type="range" id="focus-mode-timeout-slider" min="1" max="60" step="1" value="5">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <h3>System Integration</h3>
+                    <p class="setting-desc">Configure how Paraline behaves with your operating system.</p>
+                    <div class="switch-control" style="margin-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-weight: 500; font-size: 15px; color: #e2e8f0;">Launch on Startup</span>
+                            <p class="setting-desc" style="margin-top: 4px; margin-bottom: 0;">Automatically run Paraline when you log into Windows.</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="launch-on-startup-checkbox">
+                            <span class="slider-round"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- About Tab -->
+            <section id="about" class="tab-content about-tab">
+                <header style="display: none;">
+                    <h1><span class="header-accent"></span>About Paraline</h1>
+                </header>
+
+                <div class="about-stage">
+                    <div class="about-shell">
+                        <div class="about-brand">
+                            <div class="about-logo-text">PARALINE</div>
+                            <p class="about-tagline">Desktop Audio Visualizer for Windows</p>
+                            <div class="about-version-badge">v2.0.0 — Stable Release</div>
+                        </div>
+
+                        <div class="about-divider"></div>
+
+                        <p class="about-description">
+                            A transparent desktop overlay that reacts to your system audio in real-time.
+                            Choose from multiple visualizer themes, customize colors, adjust sensitivity,
+                            and let your music come alive on screen.
+                        </p>
+
+                        <div class="about-links">
+                            <button class="btn-secondary" id="btn-github">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                                </svg>
+                                GitHub Repository
+                            </button>
+                            <button class="btn-secondary" id="btn-updates">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                                Check for Updates
+                            </button>
+                            <button class="btn-secondary" id="btn-landing">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                </svg>
+                                Landing Page
+                            </button>
+                        </div>
+
+                        <p class="about-credit">
+                            Built with care by <a href="https://github.com/SamXop123" target="_blank">SamXop123</a>
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="settings.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,38 @@
+name: PR Merged Congratulator
+
+on:
+  pull_request_target:
+    types: [closed]
+
+jobs:
+  congratulate:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post Congratulatory Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const creator = context.payload.pull_request.user.login;
+            const commentBody = `🎉 **Congratulations @${creator}!** 🎉
+
+            Your pull request has been successfully merged into **Paraline**! Thank you so much for your valuable contribution and effort. Every single improvement helps make Paraline a better desktop experience for everyone! 🙌
+
+            🚀 **What's Next?**
+            - **Keep the momentum going!** Feel free to browse through our open **[Issues](https://github.com/${context.repo.owner}/${context.repo.repo}/issues)** and grab another one that interests you!
+            - **Support the Project:** If you enjoyed contributing to Paraline, **please take a second to [star our repository](https://github.com/${context.repo.owner}/${context.repo.repo})**! It helps increase the project's visibility and supports our community. ⭐
+
+            💬 **Stay Connected:**
+            Have any questions, want feedback, or just want to discuss further contributions? Feel free to reach out directly to the maintainer on Discord: **dot_notsam**!
+
+            Thank you again, and keep up the amazing work! 💻✨`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: commentBody
+            });
