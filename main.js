@@ -5,7 +5,7 @@ const { createAudioBridge } = require("./audioBridge");
 const { createDefaultSettings, createSettingsStore, createThemeDefaults, sanitizeSettings } = require("./settingsStore");
 const ThemeAgent = require('./themeAgent');
 
-let overlayWindow;
+const overlayWindows = new Map();
 let lastBridgeMode = null;
 let lastBridgeReason = null;
 let audioBridge;
@@ -227,11 +227,19 @@ const THEME_LABELS = {
   auroraDrift: "Aurora Drift"
 };
 
-function createOverlayWindow() {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { bounds } = primaryDisplay;
+function createOverlayForDisplay(display) {
+  const { bounds, id } = display;
 
-  overlayWindow = new BrowserWindow({
+  const isEnabled = visualizerSettings.monitors && visualizerSettings.monitors[id] ? visualizerSettings.monitors[id].enabled !== false : true;
+  if (!isEnabled) {
+    return;
+  }
+
+  if (overlayWindows.has(id)) {
+    return;
+  }
+
+  const win = new BrowserWindow({
     x: bounds.x,
     y: bounds.y,
     width: bounds.width,
@@ -277,6 +285,27 @@ function createOverlayWindow() {
     stopSimulatedAudioFallback();
     overlayWindow = null;
   });
+
+  overlayWindows.set(id, win);
+}
+
+function syncOverlayWindows() {
+  const displays = screen.getAllDisplays();
+  const currentDisplayIds = new Set(displays.map(d => d.id));
+
+  for (const [id, win] of overlayWindows.entries()) {
+    const isEnabled = visualizerSettings.monitors && visualizerSettings.monitors[id] ? visualizerSettings.monitors[id].enabled !== false : true;
+    if (!currentDisplayIds.has(id) || !isEnabled) {
+      if (!win.isDestroyed()) {
+        win.close();
+      }
+      overlayWindows.delete(id);
+    }
+  }
+
+  for (const display of displays) {
+    createOverlayForDisplay(display);
+  }
 }
 
 function sendAudioLevel(value, source) {
@@ -284,14 +313,11 @@ function sendAudioLevel(value, source) {
     return;
   }
 
-  if (!overlayWindow || overlayWindow.isDestroyed()) {
-    return;
+  for (const win of overlayWindows.values()) {
+    if (!win.isDestroyed()) {
+      win.webContents.send("audio-level", { value, source });
+    }
   }
-
-  overlayWindow.webContents.send("audio-level", {
-    value,
-    source
-  });
 }
 
 function getRendererSettings() {
@@ -373,8 +399,10 @@ function toggleHidden() {
 }
 
 function reloadVisualizer() {
-  if (!overlayWindow || overlayWindow.isDestroyed()) {
-    return;
+  for (const win of overlayWindows.values()) {
+    if (!win.isDestroyed()) {
+      win.webContents.reloadIgnoringCache();
+    }
   }
 
   stopSimulatedAudioFallback();
@@ -533,12 +561,6 @@ function resizeOverlayToPrimaryDisplay() {
   if (!overlayWindow || overlayWindow.isDestroyed()) {
     return;
   }
-
-  const { bounds } = screen.getPrimaryDisplay();
-  overlayWindow.setBounds(bounds);
-  overlayWindow.setAlwaysOnTop(true, "screen-saver");
-  overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  overlayWindow.moveTop();
 }
 
 function handleAudioBridgeStatusChange(status) {
@@ -1544,6 +1566,26 @@ function refreshTrayMenu() {
       label: "Reload Visualizer",
       click: () => reloadVisualizer()
     },
+    { type: "separator" },
+    {
+      label: "Displays",
+      submenu: screen.getAllDisplays().map((display, index) => {
+        const isEnabled = visualizerSettings.monitors && visualizerSettings.monitors[display.id] ? visualizerSettings.monitors[display.id].enabled !== false : true;
+        return {
+          label: `Display ${index + 1} (${display.bounds.width}x${display.bounds.height})`,
+          type: "checkbox",
+          checked: isEnabled,
+          click: () => {
+            updateSettings({
+              monitors: {
+                ...visualizerSettings.monitors,
+                [display.id]: { enabled: !isEnabled }
+              }
+            });
+          }
+        };
+      })
+    },
     {
       label: "Launch on Startup",
       type: "checkbox",
@@ -2014,20 +2056,23 @@ app.whenReady().then(() => {
 
   refreshTrayMenu();
 
-  screen.on("display-metrics-changed", resizeOverlayToPrimaryDisplay);
-  screen.on("display-added", resizeOverlayToPrimaryDisplay);
-  screen.on("display-removed", resizeOverlayToPrimaryDisplay);
+  screen.on("display-metrics-changed", () => {
+    syncOverlayWindows();
+    resizeAllOverlays();
+  });
+  screen.on("display-added", syncOverlayWindows);
+  screen.on("display-removed", syncOverlayWindows);
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createOverlayWindow();
+    if (overlayWindows.size === 0) {
+      syncOverlayWindows();
     }
   });
 });
 
 app.on("second-instance", () => {
-  if (overlayWindow && !overlayWindow.isDestroyed()) {
-    resizeOverlayToPrimaryDisplay();
+  if (overlayWindows.size > 0) {
+    resizeAllOverlays();
     sendVisualizerSettings();
   }
 });
