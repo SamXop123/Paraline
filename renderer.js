@@ -224,6 +224,11 @@ let visualizerState = {
 const params = new URLSearchParams(window.location.search);
 const debugEnabled = params.get("debug") === "1";
 
+// Cleanup tracking variables
+let debugIntervalId = null;
+let animationFrameId = null;
+let resizeHandler = null;
+
 const ADAPTIVE_FALLBACK_ACCENT = "#4facfe";
 const ADAPTIVE_TRANSITION_RATE = 0.14;
 
@@ -615,7 +620,7 @@ function updateAudioLevel(now) {
 }
 
 function renderFrame(now) {
-  requestAnimationFrame(renderFrame);
+  animationFrameId = requestAnimationFrame(renderFrame);
 
   if (visualizerState.hidden) {
     context.clearRect(0, 0, width, height);
@@ -871,7 +876,8 @@ function applySettings(nextSettings) {
   rebuildCachedPaint();
 }
 
-window.addEventListener("resize", resizeCanvas);
+resizeHandler = resizeCanvas;
+window.addEventListener("resize", resizeHandler);
 
 if (window.audioBridge) {
   window.audioBridge.onLevel((payload) => {
@@ -908,14 +914,50 @@ if (window.visualizerSettings) {
   }
 }
 
+// Comprehensive cleanup function for all resources
+function cleanupResources() {
+  // Clear debug interval
+  if (debugIntervalId) {
+    clearInterval(debugIntervalId);
+    debugIntervalId = null;
+  }
+  
+  // Cancel animation frame
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  
+  // Remove resize event listener
+  if (resizeHandler) {
+    window.removeEventListener("resize", resizeHandler);
+    resizeHandler = null;
+  }
+  
+  console.log("[Renderer] All resources cleaned up");
+}
+
+// Clear all resources on window unload
+window.addEventListener('beforeunload', cleanupResources);
+
+// Also cleanup on visibility change to hidden (when user switches tabs)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    // Optional: pause heavy operations when tab is hidden
+    console.log("[Renderer] Tab hidden, pausing operations");
+  } else {
+    console.log("[Renderer] Tab visible, resuming operations");
+  }
+});
+
 createDebugPanel();
 refreshBridgeStatus();
 if (debugEnabled) {
-  setInterval(refreshBridgeStatus, 1000);
+  debugIntervalId = setInterval(refreshBridgeStatus, 1000);
 }
 
 resizeCanvas();
-requestAnimationFrame(renderFrame);
+animationFrameId = requestAnimationFrame(renderFrame);
 
 // --- macOS Glassmorphic Context Menu Integration ---
 
