@@ -98,6 +98,28 @@ test("settingsStore - Legacy Theme Automation Migration", () => {
   assert.strictEqual(sanitized.themeAutomation.nightStartHour, DEFAULT_SETTINGS.themeAutomation.nightStartHour);
 });
 
+test("settingsStore - Theme Automation parses and clamps check interval strings", () => {
+  const cases = [
+    ["15", 15],
+    [15, 15],
+    ["0", 1],
+    ["99999", 120],
+    ["abc", DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes],
+    [null, DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes],
+    [{}, DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes],
+    [[], DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes]
+  ];
+
+  for (const [checkIntervalMinutes, expected] of cases) {
+    const sanitized = sanitizeSettings({
+      selectedTheme: "ambientWave",
+      themeAutomation: { checkIntervalMinutes }
+    });
+    assert.strictEqual(sanitized.themeAutomation.checkIntervalMinutes, expected);
+    assert.strictEqual(typeof sanitized.themeAutomation.checkIntervalMinutes, "number");
+  }
+});
+
 test("settingsStore - Theme Automation avoids equal hours", () => {
   const input = {
     themeAutomation: {
