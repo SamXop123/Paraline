@@ -619,6 +619,7 @@ function renderFrame(now) {
 
   if (visualizerState.hidden) {
     context.clearRect(0, 0, width, height);
+    lastFrameAt = performance.now();
     return;
   }
 
