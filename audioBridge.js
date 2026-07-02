@@ -3,7 +3,7 @@ const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-function createAudioBridge(sendLevel, onStatusChange = () => {}) {
+function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = () => {}) {
   let helperProcess = null;
 
   let helperStatus = {
@@ -149,6 +149,8 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}) {
 
           if (message.type === "level" && typeof message.value === "number") {
             sendLevel(message.value);
+          } else if (message.type === "colors" && Array.isArray(message.value)) {
+            sendColors(message.value);
           }
         } catch {
           console.warn("Invalid helper message received");
