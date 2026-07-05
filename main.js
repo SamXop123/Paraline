@@ -727,6 +727,26 @@ function isValidProfileName(name) {
   return SAFE_PROFILE_NAME_RE.test(name);
 }
 
+function sanitizeBackupProfiles(profiles = {}) {
+  const safeProfiles = {};
+
+  for (const [name, profile] of Object.entries(profiles || {})) {
+    if (
+      typeof name !== "string" ||
+      name === "__proto__" ||
+      name === "constructor" ||
+      name === "prototype" ||
+      !isValidProfileName(name)
+    ) {
+      continue;
+    }
+
+    safeProfiles[name] = sanitizeSettings(profile || {});
+  }
+
+  return safeProfiles;
+}
+
 function hasThemeProfile(profiles, profileName) {
   return Object.prototype.hasOwnProperty.call(profiles, profileName);
 }
@@ -2083,21 +2103,7 @@ app.whenReady().then(() => {
 
       settingsStore.save(cleanSettings);
 
-    const safeProfiles = {};
-
-    for (const [name, profile] of Object.entries(importedBackup.profiles || {})) {
-
-        if (
-            typeof name !== "string" ||
-            name === "__proto__" ||
-            name === "constructor" ||
-            name === "prototype"
-        ) {
-            continue;
-        }
-
-        safeProfiles[name] = sanitizeSettings(profile || {});
-    }
+    const safeProfiles = sanitizeBackupProfiles(importedBackup.profiles);
 
     settingsStore.saveProfiles(safeProfiles);
 
@@ -2217,3 +2223,7 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
+
+module.exports = {
+  _sanitizeBackupProfiles: sanitizeBackupProfiles
+};
