@@ -218,6 +218,7 @@ function updateWallpaperColors(colors) {
 }
 
 function queryRegistryAndExtractColors() {
+  if (process.platform !== "win32") return;
   const { exec } = require("child_process");
   exec('reg query "HKCU\\Control Panel\\Desktop" /v Wallpaper', (err, stdout) => {
     if (err) return;
@@ -2372,6 +2373,11 @@ app.on("before-quit", () => {
   isQuitting = true;
   stopSimulatedAudioFallback();
   destroyAllOverlayWindows();
+
+  if (wallpaperPollInterval) {
+    clearInterval(wallpaperPollInterval);
+    wallpaperPollInterval = null;
+  }
 
   if (audioBridge) {
     audioBridge.stop();
