@@ -787,15 +787,26 @@ refreshThemeProfiles();
 
     function initHotkeySettings() {
         const hotkeys = [
-            { inputId: 'hotkey-toggle-pause', btnId: 'btn-edit-toggle-pause', key: 'togglePause' },
-            { inputId: 'hotkey-toggle-hide', btnId: 'btn-edit-toggle-hide', key: 'toggleHide' },
-            { inputId: 'hotkey-cycle-theme', btnId: 'btn-edit-cycle-theme', key: 'cycleTheme' }
+            { inputId: 'hotkey-toggle-pause', btnId: 'btn-edit-toggle-pause', clearBtnId: 'btn-clear-toggle-pause', key: 'togglePause' },
+            { inputId: 'hotkey-toggle-hide', btnId: 'btn-edit-toggle-hide', clearBtnId: 'btn-clear-toggle-hide', key: 'toggleHide' },
+            { inputId: 'hotkey-cycle-theme', btnId: 'btn-edit-cycle-theme', clearBtnId: 'btn-clear-cycle-theme', key: 'cycleTheme' }
         ];
 
-        hotkeys.forEach(({ inputId, btnId, key }) => {
+        hotkeys.forEach(({ inputId, btnId, clearBtnId, key }) => {
             const input = document.getElementById(inputId);
             const btn = document.getElementById(btnId);
+            const clearBtn = document.getElementById(clearBtnId);
             if (!input || !btn) return;
+
+            // Handle Clear button click
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    if (activeRecordingKey !== null) return;
+                    input.value = 'None';
+                    dispatchHotkeyUpdate(key, 'None');
+                    showHotkeyStatus(`✓ ${hotkeyNames[key]} hotkey cleared`);
+                });
+            }
 
             btn.addEventListener('click', () => {
                 if (activeRecordingKey === null) {
@@ -823,12 +834,14 @@ refreshThemeProfiles();
                     btn.style.borderColor = '#e74c3c';
                     btn.style.color = '#e74c3c';
                     
-                    // Disable other buttons
+                    // Disable other buttons and ALL clear buttons
                     hotkeys.forEach(hk => {
                         if (hk.key !== key) {
                             const otherBtn = document.getElementById(hk.btnId);
                             if (otherBtn) otherBtn.disabled = true;
                         }
+                        const otherClearBtn = document.getElementById(hk.clearBtnId);
+                        if (otherClearBtn) otherClearBtn.disabled = true;
                     });
                     
                     input.focus();
@@ -848,8 +861,14 @@ refreshThemeProfiles();
                 e.preventDefault();
                 e.stopPropagation();
 
-                // Clear hotkey if Backspace or Escape is pressed
-                if (e.key === 'Backspace' || e.key === 'Escape') {
+                // Discard edit if Escape is pressed
+                if (e.key === 'Escape') {
+                    exitEditMode(key, false);
+                    return;
+                }
+
+                // Clear hotkey if Backspace or Delete is pressed
+                if (e.key === 'Backspace' || e.key === 'Delete') {
                     input.value = 'None';
                     dispatchHotkeyUpdate(key, 'None');
                     exitEditMode(key, true);
@@ -967,6 +986,8 @@ refreshThemeProfiles();
             hotkeys.forEach(h => {
                 const otherBtn = document.getElementById(h.btnId);
                 if (otherBtn) otherBtn.disabled = false;
+                const otherClearBtn = document.getElementById(h.clearBtnId);
+                if (otherClearBtn) otherClearBtn.disabled = false;
             });
         }
     }

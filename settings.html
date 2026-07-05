@@ -550,14 +550,15 @@
 
                 <div class="settings-group">
                     <h3>Global Hotkeys</h3>
-                    <p class="setting-desc">Control Paraline globally even when it is minimized or running in the background. Click "Edit" and press a key combination to customize (e.g. <code>Ctrl+Alt+P</code>). Press <code>Backspace</code> or <code>Escape</code> during edit to clear/disable.</p>
+                    <p class="setting-desc">Control Paraline globally even when it is minimized or running in the background. Click "Edit" and press a key combination to customize (e.g. <code>Ctrl+Alt+P</code>). Press <code>Backspace</code> or <code>Delete</code> during edit to clear/disable, or <code>Escape</code> to cancel.</p>
                     
-                    <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px; max-width: 450px;">
+                    <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px; max-width: 500px;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <label for="hotkey-toggle-pause" style="margin-bottom: 0; font-size: 14px; color: #e2e8f0; font-weight: 500;">Pause / Resume Visualizer:</label>
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <input type="text" id="hotkey-toggle-pause" class="styled-select" style="width: 140px; text-align: center; font-family: monospace; font-size: 13px; font-weight: 600; background: rgba(0, 0, 0, 0.2);" readonly placeholder="Press keys..." />
                                 <button id="btn-edit-toggle-pause" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; min-width: 60px; justify-content: center; height: 32px;">Edit</button>
+                                <button id="btn-clear-toggle-pause" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; min-width: 60px; justify-content: center; height: 32px;">Clear</button>
                             </div>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -565,6 +566,7 @@
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <input type="text" id="hotkey-toggle-hide" class="styled-select" style="width: 140px; text-align: center; font-family: monospace; font-size: 13px; font-weight: 600; background: rgba(0, 0, 0, 0.2);" readonly placeholder="Press keys..." />
                                 <button id="btn-edit-toggle-hide" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; min-width: 60px; justify-content: center; height: 32px;">Edit</button>
+                                <button id="btn-clear-toggle-hide" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; min-width: 60px; justify-content: center; height: 32px;">Clear</button>
                             </div>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -572,10 +574,11 @@
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <input type="text" id="hotkey-cycle-theme" class="styled-select" style="width: 140px; text-align: center; font-family: monospace; font-size: 13px; font-weight: 600; background: rgba(0, 0, 0, 0.2);" readonly placeholder="Press keys..." />
                                 <button id="btn-edit-cycle-theme" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; min-width: 60px; justify-content: center; height: 32px;">Edit</button>
+                                <button id="btn-clear-cycle-theme" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; min-width: 60px; justify-content: center; height: 32px;">Clear</button>
                             </div>
                         </div>
                     </div>
-                    <div id="hotkey-status-msg" style="color: #2ecc71; font-size: 13px; margin-top: 10px; font-weight: 500; height: 18px; opacity: 0; transition: opacity 0.3s ease; text-align: right; max-width: 450px;">✓ Hotkey updated successfully</div>
+                    <div id="hotkey-status-msg" style="color: #2ecc71; font-size: 13px; margin-top: 10px; font-weight: 500; height: 18px; opacity: 0; transition: opacity 0.3s ease; text-align: right; max-width: 500px;">✓ Hotkey updated successfully</div>
                 </div>
 
                 <div class="settings-group">
