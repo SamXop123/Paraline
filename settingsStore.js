@@ -180,7 +180,7 @@ const DEFAULT_SETTINGS = Object.freeze({
 });
 
 const VALID_MAIN_THEMES = new Set(["ambientWave", "reactiveBorder", "flowBorder", "sideBars", "crimsonDusk", "flatRipples", "dotParticles", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "auroraDrift"]);
-const VALID_COLOR_MODES = new Set(["manual", "adaptive"]);
+const VALID_COLOR_MODES = new Set(["manual", "adaptive", "wallpaper"]);
 const VALID_PERFORMANCE_MODES = new Set(["performance", "balanced", "quality"]);
 const VALID_FPS_LIMITS = new Set(["default", "battery", "unlocked"]);
 const VALID_AMBIENT_TONES = new Set(["blue", "purple", "warm", "custom"]);
@@ -655,6 +655,7 @@ function sanitizeSettings(input = {}) {
     selectedTheme: pick(source.selectedTheme, VALID_MAIN_THEMES, DEFAULT_SETTINGS.selectedTheme),
     colorMode: pick(source.colorMode, VALID_COLOR_MODES, DEFAULT_SETTINGS.colorMode),
     customColors: customColors,
+    wallpaperColors: sanitizeCustomColors(source.wallpaperColors, undefined),
     themeAutomation: sanitizeThemeAutomation(source.themeAutomation),
     shortcuts: sanitizeShortcuts(source.shortcuts),
     performanceMode: pick(source.performanceMode, VALID_PERFORMANCE_MODES, DEFAULT_SETTINGS.performanceMode),

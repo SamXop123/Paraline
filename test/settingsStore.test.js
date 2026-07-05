@@ -211,6 +211,33 @@ test("settingsStore - Focus Mode sanitization and clamping", () => {
   assert.strictEqual(sanitizedMin.focusMode.transitionDuration, 0.1);
 });
 
+test("settingsStore - wallpaperColors sanitization", () => {
+  // Test invalid length
+  const inputInvalidLen = {
+    selectedTheme: "ambientWave",
+    wallpaperColors: ["#ffffff", "#000000"]
+  };
+  const sanitized1 = sanitizeSettings(inputInvalidLen);
+  assert.deepStrictEqual(sanitized1.wallpaperColors, undefined); // should be stripped or fallback, but not invalid array
+
+  // Test invalid hex format
+  const inputInvalidHex = {
+    selectedTheme: "ambientWave",
+    wallpaperColors: ["#ffffff", "#000000", "invalid"]
+  };
+  const sanitized2 = sanitizeSettings(inputInvalidHex);
+  assert.deepStrictEqual(sanitized2.wallpaperColors, undefined);
+
+  // Test valid hex format
+  const inputValid = {
+    selectedTheme: "ambientWave",
+    wallpaperColors: ["#111111", "#222222", "#333333"]
+  };
+  const sanitized3 = sanitizeSettings(inputValid);
+  assert.deepStrictEqual(sanitized3.wallpaperColors, ["#111111", "#222222", "#333333"]);
+});
+
+
 test("settings backup import profiles - validates names and sanitizes valid profiles", () => {
   const importedProfiles = JSON.parse(`{
     "Clean Profile": {

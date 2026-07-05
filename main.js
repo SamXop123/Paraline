@@ -201,6 +201,183 @@ function getSystemColorState() {
   };
 }
 
+let latestWallpaperColors = ["#00f2fe", "#4facfe", "#8ee2ff"];
+let wallpaperPollInterval = null;
+let lastWallpaperPathNode = null;
+
+function updateWallpaperColors(colors) {
+  if (!Array.isArray(colors) || colors.length !== 3) {
+    return;
+  }
+  if (JSON.stringify(colors) === JSON.stringify(latestWallpaperColors)) {
+    return;
+  }
+  latestWallpaperColors = colors;
+  console.log("[Paraline] New wallpaper colors:", latestWallpaperColors);
+  sendVisualizerSettings();
+}
+
+function queryRegistryAndExtractColors() {
+  if (process.platform !== "win32") return;
+  const { exec } = require("child_process");
+  exec('reg query "HKCU\\Control Panel\\Desktop" /v Wallpaper', (err, stdout) => {
+    if (err) return;
+    const match = stdout.match(/Wallpaper\\s+REG_SZ\\s+(.*)/);
+    if (!match || !match[1]) return;
+    
+    const wallpaperPath = match[1].trim();
+    if (wallpaperPath === lastWallpaperPathNode) return;
+    
+    lastWallpaperPathNode = wallpaperPath;
+    
+    const colors = extractColorsFromImageNode(wallpaperPath);
+    if (colors) {
+      updateWallpaperColors(colors);
+    }
+  });
+}
+
+function extractColorsFromImageNode(wallpaperPath) {
+  try {
+    if (!fs.existsSync(wallpaperPath)) {
+      return null;
+    }
+    const img = nativeImage.createFromPath(wallpaperPath);
+    if (img.isEmpty()) {
+      return null;
+    }
+    const resized = img.resize({ width: 32, height: 32 });
+    const buffer = resized.toBitmap();
+    
+    const colorBuckets = {};
+    for (let i = 0; i < buffer.length; i += 4) {
+      const b = buffer[i];
+      const g = buffer[i + 1];
+      const r = buffer[i + 2];
+      const a = buffer[i + 3];
+      
+      if (a < 128) continue;
+      
+      const qr = Math.floor(r / 16);
+      const qg = Math.floor(g / 16);
+      const qb = Math.floor(b / 16);
+      const key = (qr << 8) | (qg << 4) | qb;
+      
+      if (!colorBuckets[key]) {
+        colorBuckets[key] = [];
+      }
+      colorBuckets[key].push({ r, g, b });
+    }
+    
+    const sortedBuckets = Object.values(colorBuckets).sort((a, b) => b.length - a.length);
+    const distinctColors = [];
+    
+    for (const bucket of sortedBuckets) {
+      let sumR = 0, sumG = 0, sumB = 0;
+      for (const c of bucket) {
+        sumR += c.r;
+        sumG += c.g;
+        sumB += c.b;
+      }
+      const avg = {
+        r: Math.round(sumR / bucket.length),
+        g: Math.round(sumG / bucket.length),
+        b: Math.round(sumB / bucket.length)
+      };
+      
+      let isDistinct = true;
+      for (const selected of distinctColors) {
+        const dist = Math.sqrt(
+          Math.pow(avg.r - selected.r, 2) +
+          Math.pow(avg.g - selected.g, 2) +
+          Math.pow(avg.b - selected.b, 2)
+        );
+        if (dist < 45) {
+          isDistinct = false;
+          break;
+        }
+      }
+      
+      if (isDistinct) {
+        distinctColors.push(avg);
+        if (distinctColors.length === 3) break;
+      }
+    }
+    
+    if (distinctColors.length < 3) {
+      for (const bucket of sortedBuckets) {
+        let sumR = 0, sumG = 0, sumB = 0;
+        for (const c of bucket) {
+          sumR += c.r;
+          sumG += c.g;
+          sumB += c.b;
+        }
+        const avg = {
+          r: Math.round(sumR / bucket.length),
+          g: Math.round(sumG / bucket.length),
+          b: Math.round(sumB / bucket.length)
+        };
+        const alreadyAdded = distinctColors.some(c => 
+          Math.sqrt(Math.pow(c.r - avg.r, 2) + Math.pow(c.g - avg.g, 2) + Math.pow(c.b - avg.b, 2)) < 5
+        );
+        if (!alreadyAdded) {
+          distinctColors.push(avg);
+          if (distinctColors.length === 3) break;
+        }
+      }
+    }
+    
+    if (distinctColors.length === 0) {
+      distinctColors.push({ r: 79, g: 172, b: 254 });
+    }
+    
+    while (distinctColors.length < 3) {
+      const base = distinctColors[0];
+      if (distinctColors.length === 1) {
+        distinctColors.push({
+          r: Math.max(0, Math.min(255, Math.round(base.r + 0.2 * 255))),
+          g: Math.max(0, Math.min(255, Math.round(base.g + 0.2 * 255))),
+          b: Math.max(0, Math.min(255, Math.round(base.b + 0.2 * 255)))
+        });
+      } else if (distinctColors.length === 2) {
+        distinctColors.push({
+          r: Math.max(0, Math.min(255, Math.round(base.r - 0.2 * 255))),
+          g: Math.max(0, Math.min(255, Math.round(base.g - 0.2 * 255))),
+          b: Math.max(0, Math.min(255, Math.round(base.b - 0.2 * 255)))
+        });
+      }
+    }
+    
+    const hexColor = c => '#' + [c.r, c.g, c.b].map(x => x.toString(16).padStart(2, '0')).join('');
+    return distinctColors.map(hexColor);
+  } catch (error) {
+    console.error("Error extracting colors in main process:", error);
+    return null;
+  }
+}
+
+function reconcileWallpaperPolling() {
+  const needsNodePolling = 
+    visualizerSettings && 
+    visualizerSettings.colorMode === "wallpaper" && 
+    (!audioBridge || audioBridge.getStatus().mode !== "helper");
+    
+  if (needsNodePolling) {
+    if (!wallpaperPollInterval) {
+      console.log("[Paraline] Starting Node.js wallpaper polling...");
+      queryRegistryAndExtractColors();
+      wallpaperPollInterval = setInterval(queryRegistryAndExtractColors, 5000);
+    }
+  } else {
+    if (wallpaperPollInterval) {
+      console.log("[Paraline] Stopping Node.js wallpaper polling...");
+      clearInterval(wallpaperPollInterval);
+      wallpaperPollInterval = null;
+      lastWallpaperPathNode = null;
+    }
+  }
+}
+
 function applyStartupSettings(launchOnStartup) {
   app.setLoginItemSettings({
     openAtLogin: launchOnStartup,
@@ -384,7 +561,8 @@ function getRendererSettings() {
     hidden: isHidden,
     version: APP_VERSION,
     helperConnected: helperConnected,
-    shortcutRegistrationFailures: shortcutRegistrationFailures
+    shortcutRegistrationFailures: shortcutRegistrationFailures,
+    wallpaperColors: latestWallpaperColors
   };
 }
 
@@ -442,6 +620,7 @@ function updateSettings(nextSettings) {
 
   sendVisualizerSettings();
   refreshTrayMenu();
+  reconcileWallpaperPolling();
 }
 
 function togglePaused() {
@@ -686,6 +865,7 @@ function handleAudioBridgeStatusChange(status) {
     stopSimulatedAudioFallback();
   }
   refreshTrayMenu();
+  reconcileWallpaperPolling();
 }
 
 function resetCurrentThemeSettings() {
@@ -1787,6 +1967,7 @@ app.whenReady().then(() => {
   visualizerSettings = settingsStore.save(settingsStore.load());
   applyStartupSettings(visualizerSettings.launchOnStartup);
   registerGlobalShortcuts();
+  reconcileWallpaperPolling();
 
   if (app.isPackaged) {
     autoUpdater.checkForUpdatesAndNotify();
@@ -2165,7 +2346,9 @@ app.whenReady().then(() => {
   audioBridge = createAudioBridge((value) => {
     stopSimulatedAudioFallback();
     sendAudioLevel(value, "helper");
-  }, handleAudioBridgeStatusChange);
+  }, handleAudioBridgeStatusChange, (colors) => {
+    updateWallpaperColors(colors);
+  });
 
   // Defer starting the audio bridge to prevent startup resource contention and SmartScreen lags from blocking Electron initialization
   setTimeout(() => {
@@ -2197,6 +2380,11 @@ app.on("before-quit", () => {
   stopSimulatedAudioFallback();
   destroyAllOverlayWindows();
   stopFocusModePolling();
+
+  if (wallpaperPollInterval) {
+    clearInterval(wallpaperPollInterval);
+    wallpaperPollInterval = null;
+  }
 
   if (audioBridge) {
     audioBridge.stop();

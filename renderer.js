@@ -332,6 +332,28 @@ function buildAdaptivePalette(themeId) {
 }
 
 function syncAdaptivePaletteTarget() {
+  if (visualizerState.colorMode === "wallpaper") {
+    const colors = visualizerState.wallpaperColors || ["#00f2fe", "#4facfe", "#8ee2ff"];
+    const paletteKey = [
+      "wallpaper",
+      visualizerState.selectedTheme,
+      ...colors
+    ].join(":");
+
+    if (adaptivePaletteState.key === paletteKey) {
+      return false;
+    }
+
+    adaptivePaletteState.key = paletteKey;
+    adaptivePaletteState.target = colors.map(hexToRgbTriplet);
+
+    if (!adaptivePaletteState.current.length) {
+      adaptivePaletteState.current = clonePalette(adaptivePaletteState.target);
+    }
+
+    return true;
+  }
+
   const paletteKey = [
     visualizerState.selectedTheme,
     visualizerState.systemAppearance,
@@ -353,7 +375,7 @@ function syncAdaptivePaletteTarget() {
 }
 
 function stepAdaptivePalette() {
-  if (visualizerState.colorMode !== "adaptive") {
+  if (visualizerState.colorMode !== "adaptive" && visualizerState.colorMode !== "wallpaper") {
     return false;
   }
 
@@ -392,17 +414,17 @@ function getAdaptivePaletteHex() {
 }
 
 function getResolvedThemeSettings(themeId, settings) {
-  if (visualizerState.colorMode !== "adaptive") {
+  if (visualizerState.colorMode !== "adaptive" && visualizerState.colorMode !== "wallpaper") {
     return settings;
   }
 
-  const adaptiveColors = getAdaptivePaletteHex();
+  const resolvedColors = getAdaptivePaletteHex();
 
   if (themeId === "ambientWave") {
     return {
       ...settings,
       tone: "custom",
-      customColors: adaptiveColors
+      customColors: resolvedColors
     };
   }
 
@@ -410,14 +432,25 @@ function getResolvedThemeSettings(themeId, settings) {
     return {
       ...settings,
       colorStyle: "custom",
-      customColors: adaptiveColors
+      customColors: resolvedColors
     };
   }
 
   if (themeId === "dotParticles" || themeId === "snowBubbleParticles") {
     return {
       ...settings,
-      customColors: adaptiveColors
+      customColors: resolvedColors
+    };
+  }
+
+  if (themeId === "auroraDrift") {
+    return {
+      ...settings,
+      gradientStops: [
+        { pos: 0.0, color: resolvedColors[0] },
+        { pos: 0.5, color: resolvedColors[1] },
+        { pos: 1.0, color: resolvedColors[2] }
+      ]
     };
   }
 
@@ -468,7 +501,7 @@ function getSideBraidsSettings() {
 }
 
 function getAuroraDriftSettings() {
-  return visualizerState.auroraDrift || {};
+  return getResolvedThemeSettings("auroraDrift", visualizerState.auroraDrift || {});
 }
 
 function getActiveAudioMultiplier() {

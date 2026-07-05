@@ -1,5 +1,8 @@
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using Microsoft.Win32;
 
 namespace Paraline.AudioBridge;
 
@@ -9,6 +12,7 @@ internal static class Program
     private static void Main()
     {
         WasapiLoopbackCapture? capture = null;
+        DateTime lastWallpaperCheck = DateTime.MinValue;
 
         while (true)
         {
@@ -29,6 +33,23 @@ internal static class Program
                 });
 
                 Console.WriteLine(payload);
+
+                // Periodically check wallpaper (every 5 seconds)
+                if ((DateTime.Now - lastWallpaperCheck).TotalSeconds >= 5)
+                {
+                    lastWallpaperCheck = DateTime.Now;
+                    var colors = WallpaperColorExtractor.GetWallpaperColors();
+                    if (colors != null)
+                    {
+                        var colorsPayload = JsonSerializer.Serialize(new
+                        {
+                            type = "colors",
+                            value = colors
+                        });
+                        Console.WriteLine(colorsPayload);
+                    }
+                }
+
                 Thread.Sleep(33);
             }
             catch (Exception ex)
@@ -451,3 +472,193 @@ internal interface IAudioCaptureClient
     int ReleaseBuffer(uint numFramesRead);
     int GetNextPacketSize(out uint numFramesInNextPacket);
 }
+
+internal static class WallpaperColorExtractor
+{
+    private static string? _lastWallpaperPath = null;
+    private static List<string>? _lastColors = null;
+
+    public static List<string>? GetWallpaperColors()
+    {
+        try
+        {
+            string? wallpaperPath = Registry.GetValue(@"HKEY_CURRENT_USER\Control Panel\Desktop", "Wallpaper", null) as string;
+            
+            if (string.IsNullOrEmpty(wallpaperPath) || !File.Exists(wallpaperPath))
+            {
+                return null;
+            }
+
+            if (wallpaperPath == _lastWallpaperPath && _lastColors != null)
+            {
+                return _lastColors;
+            }
+
+            var colors = ExtractColors(wallpaperPath);
+            if (colors != null && colors.Count == 3)
+            {
+                _lastWallpaperPath = wallpaperPath;
+                _lastColors = colors;
+                return colors;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[WallpaperColorExtractor] Error: {ex.Message}");
+        }
+
+        return null;
+    }
+
+    private static List<string>? ExtractColors(string path)
+    {
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var originalBitmap = new Bitmap(stream);
+            using var resizedBitmap = new Bitmap(32, 32);
+            
+            using (var g = Graphics.FromImage(resizedBitmap))
+            {
+                g.InterpolationMode = InterpolationMode.HighQualityBilinear;
+                g.DrawImage(originalBitmap, 0, 0, 32, 32);
+            }
+
+            var colorBuckets = new Dictionary<int, List<Color>>();
+            for (int y = 0; y < resizedBitmap.Height; y++)
+            {
+                for (int x = 0; x < resizedBitmap.Width; x++)
+                {
+                    Color pixel = resizedBitmap.GetPixel(x, y);
+                    // Quantize R, G, B to 4 bits each (16 levels)
+                    int qr = pixel.R / 16;
+                    int qg = pixel.G / 16;
+                    int qb = pixel.B / 16;
+                    int bucketKey = (qr << 8) | (qg << 4) | qb;
+
+                    if (!colorBuckets.ContainsKey(bucketKey))
+                    {
+                        colorBuckets[bucketKey] = new List<Color>();
+                    }
+                    colorBuckets[bucketKey].Add(pixel);
+                }
+            }
+
+            var sortedBuckets = colorBuckets.OrderByDescending(kvp => kvp.Value.Count).ToList();
+            var distinctColors = new List<Color>();
+
+            foreach (var bucket in sortedBuckets)
+            {
+                // Calculate average color of the bucket
+                long totalR = 0, totalG = 0, totalB = 0;
+                foreach (var c in bucket.Value)
+                {
+                    totalR += c.R;
+                    totalG += c.G;
+                    totalB += c.B;
+                }
+                int count = bucket.Value.Count;
+                var avgColor = Color.FromArgb((int)(totalR / count), (int)(totalG / count), (int)(totalB / count));
+
+                // Check if distinct enough from already selected colors
+                bool isDistinct = true;
+                foreach (var selected in distinctColors)
+                {
+                    double dist = ColorDistance(avgColor, selected);
+                    if (dist < 45.0) // Threshold for color difference
+                    {
+                        isDistinct = false;
+                        break;
+                    }
+                }
+
+                if (isDistinct)
+                {
+                    distinctColors.Add(avgColor);
+                    if (distinctColors.Count == 3)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            // If we didn't find 3 distinct colors, lower the threshold and try again
+            if (distinctColors.Count < 3)
+            {
+                foreach (var bucket in sortedBuckets)
+                {
+                    long totalR = 0, totalG = 0, totalB = 0;
+                    foreach (var c in bucket.Value)
+                    {
+                        totalR += c.R;
+                        totalG += c.G;
+                        totalB += c.B;
+                    }
+                    int count = bucket.Value.Count;
+                    var avgColor = Color.FromArgb((int)(totalR / count), (int)(totalG / count), (int)(totalB / count));
+
+                    bool alreadyAdded = distinctColors.Any(c => ColorDistance(c, avgColor) < 5.0);
+                    if (!alreadyAdded)
+                    {
+                        distinctColors.Add(avgColor);
+                        if (distinctColors.Count == 3)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // If still fewer than 3, pad with variations of the first color, or a default fallback
+            if (distinctColors.Count == 0)
+            {
+                distinctColors.Add(Color.FromArgb(79, 172, 254)); // #4facfe
+            }
+
+            while (distinctColors.Count < 3)
+            {
+                var baseColor = distinctColors[0];
+                if (distinctColors.Count == 1)
+                {
+                    // Create a lighter variant
+                    distinctColors.Add(ShiftColor(baseColor, 0.2));
+                }
+                else if (distinctColors.Count == 2)
+                {
+                    // Create a darker variant
+                    distinctColors.Add(ShiftColor(baseColor, -0.2));
+                }
+            }
+
+            return distinctColors.Select(c => $"#{c.R:X2}{c.G:X2}{c.B:X2}").ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[WallpaperColorExtractor] ExtractColors failed: {ex.Message}");
+        }
+
+        return null;
+    }
+
+    private static double ColorDistance(Color c1, Color c2)
+    {
+        int dr = c1.R - c2.R;
+        int dg = c1.G - c2.G;
+        int db = c1.B - c2.B;
+        return Math.Sqrt(dr * dr + dg * dg + db * db);
+    }
+
+    private static Color ShiftColor(Color c, double amount)
+    {
+        int r = clamp((int)(c.R + amount * 255));
+        int g = clamp((int)(c.G + amount * 255));
+        int b = clamp((int)(c.B + amount * 255));
+        return Color.FromArgb(r, g, b);
+    }
+
+    private static int clamp(int val)
+    {
+        return Math.Max(0, Math.Min(255, val));
+    }
+}
+
