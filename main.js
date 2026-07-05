@@ -2190,6 +2190,7 @@ app.on("before-quit", () => {
   isQuitting = true;
   stopSimulatedAudioFallback();
   destroyAllOverlayWindows();
+  stopFocusModePolling();
 
   if (audioBridge) {
     audioBridge.stop();
