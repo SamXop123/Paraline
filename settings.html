@@ -420,6 +420,7 @@
                             <input type="text" id="aurora-preset-name-input" class="styled-select" placeholder="New Profile Name" style="flex: 1; padding: 6px 12px; font-size: 13px; box-sizing: border-box;">
                             <button class="btn-secondary" id="btn-save-aurora-preset" style="padding: 6px 12px; font-size: 13px;">Save Engine Profile</button>
                         </div>
+                        <div id="aurora-status-msg" class="profile-status-msg" role="status" aria-live="polite"></div>
                     </div>
                 </div>
                 <div class="settings-group">
@@ -472,6 +473,7 @@
                             Duplicate
                         </button>
                     </div>
+                    <div id="profile-status-msg" class="profile-status-msg" role="status" aria-live="polite"></div>
                 </div>
 
                 <div class="settings-group">
@@ -489,6 +491,7 @@
                             Import Settings Backup
                         </button>
                     </div>
+                    <div id="backup-status-msg" class="profile-status-msg" role="status" aria-live="polite"></div>
                 </div>
             </section>
 
@@ -767,6 +770,18 @@
             </section>
         </main>
     </div>
+
+    <!-- Shared inline confirm modal — replaces window.confirm() for profile operations -->
+    <div id="inline-confirm-modal" class="inline-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="inline-confirm-text">
+        <div class="inline-confirm-box">
+            <p id="inline-confirm-text"></p>
+            <div class="inline-confirm-actions">
+                <button class="btn-confirm-cancel" id="btn-inline-confirm-cancel">Cancel</button>
+                <button class="btn-confirm-ok" id="btn-inline-confirm-ok">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <script src="settings.js"></script>
 </body>
 
