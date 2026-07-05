@@ -330,10 +330,16 @@ function sanitizeThemeAutomation(input = {}) {
     nightStart = DEFAULT_SETTINGS.themeAutomation.nightStartHour;
   }
 
+  const interval = typeof input.checkIntervalMinutes === "number"
+    ? input.checkIntervalMinutes
+    : (typeof input.checkIntervalMinutes === "string" && input.checkIntervalMinutes.trim() !== ""
+      ? Number(input.checkIntervalMinutes)
+      : NaN);
+
   return {
     enabled: typeof input.enabled === "boolean" ? input.enabled : DEFAULT_SETTINGS.themeAutomation.enabled,
-    checkIntervalMinutes: typeof input.checkIntervalMinutes === "number"
-      ? Math.max(1, Math.min(120, input.checkIntervalMinutes))
+    checkIntervalMinutes: Number.isFinite(interval)
+      ? Math.max(1, Math.min(120, interval))
       : DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes,
     mode: typeof input.mode === "string" ? input.mode : DEFAULT_SETTINGS.themeAutomation.mode,
     dayTheme: pick(input.dayTheme, VALID_MAIN_THEMES, DEFAULT_SETTINGS.themeAutomation.dayTheme),

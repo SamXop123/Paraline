@@ -907,6 +907,26 @@ function isValidProfileName(name) {
   return SAFE_PROFILE_NAME_RE.test(name);
 }
 
+function sanitizeBackupProfiles(profiles = {}) {
+  const safeProfiles = {};
+
+  for (const [name, profile] of Object.entries(profiles || {})) {
+    if (
+      typeof name !== "string" ||
+      name === "__proto__" ||
+      name === "constructor" ||
+      name === "prototype" ||
+      !isValidProfileName(name)
+    ) {
+      continue;
+    }
+
+    safeProfiles[name] = sanitizeSettings(profile || {});
+  }
+
+  return safeProfiles;
+}
+
 function hasThemeProfile(profiles, profileName) {
   return Object.prototype.hasOwnProperty.call(profiles, profileName);
 }
@@ -2199,7 +2219,7 @@ app.whenReady().then(() => {
 
       const rawProfileName = path.basename(filePath, ".json");
       if (!isValidProfileName(rawProfileName)) {
-        return { success: false, error: "Invalid profile name: the filename contains reserved or disallowed characters." };
+        return { success: false, error: "Invalid profile name: The filename contains unsupported characters. Please rename the file using only letters, numbers, spaces, hyphens, underscores, and parentheses (maximum 64 characters)." };
       }
       const profileName = rawProfileName;
       const profiles = settingsStore.loadProfiles();
@@ -2264,21 +2284,7 @@ app.whenReady().then(() => {
 
       settingsStore.save(cleanSettings);
 
-    const safeProfiles = {};
-
-    for (const [name, profile] of Object.entries(importedBackup.profiles || {})) {
-
-        if (
-            typeof name !== "string" ||
-            name === "__proto__" ||
-            name === "constructor" ||
-            name === "prototype"
-        ) {
-            continue;
-        }
-
-        safeProfiles[name] = sanitizeSettings(profile || {});
-    }
+    const safeProfiles = sanitizeBackupProfiles(importedBackup.profiles);
 
     settingsStore.saveProfiles(safeProfiles);
 
@@ -2373,6 +2379,7 @@ app.on("before-quit", () => {
   isQuitting = true;
   stopSimulatedAudioFallback();
   destroyAllOverlayWindows();
+  stopFocusModePolling();
 
   if (wallpaperPollInterval) {
     clearInterval(wallpaperPollInterval);
@@ -2404,3 +2411,7 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
+
+module.exports = {
+  _sanitizeBackupProfiles: sanitizeBackupProfiles
+};

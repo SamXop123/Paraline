@@ -7,6 +7,43 @@ const {
   sanitizeSettings
 } = require("../settingsStore");
 
+const Module = require("module");
+const originalRequire = Module.prototype.require;
+Module.prototype.require = function (id) {
+  if (id === "electron") {
+    return {
+      app: {
+        getVersion: () => "0.0.0-test",
+        requestSingleInstanceLock: () => true,
+        whenReady: () => ({ then: () => {} }),
+        on: () => {},
+        quit: () => {},
+        isPackaged: false
+      },
+      BrowserWindow: { getFocusedWindow: () => null },
+      ipcMain: { handle: () => {}, on: () => {} },
+      Menu: {},
+      Tray: function Tray() {},
+      nativeImage: {},
+      screen: {},
+      shell: {},
+      dialog: {},
+      nativeTheme: {},
+      systemPreferences: {},
+      powerMonitor: {},
+      globalShortcut: {}
+    };
+  }
+
+  if (id === "electron-updater") {
+    return { autoUpdater: { checkForUpdatesAndNotify: () => {} } };
+  }
+
+  return originalRequire.apply(this, arguments);
+};
+const { _sanitizeBackupProfiles } = require("../main");
+Module.prototype.require = originalRequire;
+
 test("settingsStore - Default Settings Creation", () => {
   const defaults = createDefaultSettings();
   assert.ok(defaults.onboardingSeen === false);
@@ -98,6 +135,28 @@ test("settingsStore - Legacy Theme Automation Migration", () => {
   assert.strictEqual(sanitized.themeAutomation.nightStartHour, DEFAULT_SETTINGS.themeAutomation.nightStartHour);
 });
 
+test("settingsStore - Theme Automation parses and clamps check interval strings", () => {
+  const cases = [
+    ["15", 15],
+    [15, 15],
+    ["0", 1],
+    ["99999", 120],
+    ["abc", DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes],
+    [null, DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes],
+    [{}, DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes],
+    [[], DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes]
+  ];
+
+  for (const [checkIntervalMinutes, expected] of cases) {
+    const sanitized = sanitizeSettings({
+      selectedTheme: "ambientWave",
+      themeAutomation: { checkIntervalMinutes }
+    });
+    assert.strictEqual(sanitized.themeAutomation.checkIntervalMinutes, expected);
+    assert.strictEqual(typeof sanitized.themeAutomation.checkIntervalMinutes, "number");
+  }
+});
+
 test("settingsStore - Theme Automation avoids equal hours", () => {
   const input = {
     themeAutomation: {
@@ -178,4 +237,41 @@ test("settingsStore - wallpaperColors sanitization", () => {
   assert.deepStrictEqual(sanitized3.wallpaperColors, ["#111111", "#222222", "#333333"]);
 });
 
+
+test("settings backup import profiles - validates names and sanitizes valid profiles", () => {
+  const importedProfiles = JSON.parse(`{
+    "Clean Profile": {
+      "selectedTheme": "sideBars",
+      "sideBars": {
+        "customThickness": 100,
+        "customGap": 0,
+        "customSensitivity": -50
+      }
+    },
+    "bad/profile:name": {
+      "selectedTheme": "reactiveBorder"
+    },
+    "__proto__": {
+      "selectedTheme": "auroraDrift"
+    },
+    "constructor": {
+      "selectedTheme": "flowBorder"
+    },
+    "prototype": {
+      "selectedTheme": "dotParticles"
+    }
+  }`);
+
+  const safeProfiles = _sanitizeBackupProfiles(importedProfiles);
+
+  assert.deepStrictEqual(Object.keys(safeProfiles), ["Clean Profile"]);
+  assert.strictEqual(safeProfiles["Clean Profile"].selectedTheme, "sideBars");
+  assert.strictEqual(safeProfiles["Clean Profile"].sideBars.customThickness, 20);
+  assert.strictEqual(safeProfiles["Clean Profile"].sideBars.customGap, 2);
+  assert.strictEqual(safeProfiles["Clean Profile"].sideBars.customSensitivity, 1);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "bad/profile:name"), false);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "__proto__"), false);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "constructor"), false);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "prototype"), false);
+});
 
