@@ -2018,7 +2018,7 @@ app.whenReady().then(() => {
 
       const rawProfileName = path.basename(filePath, ".json");
       if (!isValidProfileName(rawProfileName)) {
-        return { success: false, error: "Invalid profile name: the filename contains reserved or disallowed characters." };
+        return { success: false, error: "Invalid profile name: The filename contains unsupported characters. Please rename the file using only letters, numbers, spaces, hyphens, underscores, and parentheses (maximum 64 characters)." };
       }
       const profileName = rawProfileName;
       const profiles = settingsStore.loadProfiles();
