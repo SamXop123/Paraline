@@ -604,17 +604,38 @@ function migrateLegacySettings(input = {}) {
   return migrated;
 }
 
+// Coerces a value to a finite number, accepting numbers as well as numeric
+// strings (e.g. "0.4", "20", "2.5"). Returns null when the value cannot be
+// interpreted as a finite number, so callers can fall back to a default.
+function toFiniteNumber(val) {
+  if (typeof val === "number") {
+    return Number.isFinite(val) ? val : null;
+  }
+  if (typeof val === "string" && val.trim() !== "") {
+    const num = Number(val);
+    return Number.isFinite(num) ? num : null;
+  }
+  return null;
+}
+
 function sanitizeFocusMode(input = {}) {
   const enabled = typeof input.enabled === "boolean" ? input.enabled : DEFAULT_SETTINGS.focusMode.enabled;
-  const dimOpacity = typeof input.dimOpacity === "number" && Number.isFinite(input.dimOpacity)
-    ? Math.max(0, Math.min(1, input.dimOpacity))
+
+  const dimOpacityNum = toFiniteNumber(input.dimOpacity);
+  const dimOpacity = dimOpacityNum !== null
+    ? Math.max(0, Math.min(1, dimOpacityNum))
     : DEFAULT_SETTINGS.focusMode.dimOpacity;
-  const idleTimeout = typeof input.idleTimeout === "number" && Number.isFinite(input.idleTimeout)
-    ? Math.max(1, Math.min(60, input.idleTimeout))
+
+  const idleTimeoutNum = toFiniteNumber(input.idleTimeout);
+  const idleTimeout = idleTimeoutNum !== null
+    ? Math.max(1, Math.min(60, idleTimeoutNum))
     : DEFAULT_SETTINGS.focusMode.idleTimeout;
-  const transitionDuration = typeof input.transitionDuration === "number" && Number.isFinite(input.transitionDuration)
-    ? Math.max(0.1, Math.min(10, input.transitionDuration))
+
+  const transitionDurationNum = toFiniteNumber(input.transitionDuration);
+  const transitionDuration = transitionDurationNum !== null
+    ? Math.max(0.1, Math.min(10, transitionDurationNum))
     : DEFAULT_SETTINGS.focusMode.transitionDuration;
+
   return { enabled, dimOpacity, idleTimeout, transitionDuration };
 }
 
