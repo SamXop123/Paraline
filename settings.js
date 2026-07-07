@@ -591,6 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Load from local storage if available
+    const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
     try {
         const savedPresets = localStorage.getItem('paraline_presets');
         if (savedPresets) {
@@ -599,7 +600,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
                 const sanitized = {};
                 for (const [key, val] of Object.entries(parsed)) {
-                    if (isSafePresetName(key) && Array.isArray(val) && val.length === 3) {
+                    if (
+                        isSafePresetName(key) &&
+                        Array.isArray(val) &&
+                        val.length === 3 &&
+                        val.every(c => typeof c === "string" && HEX_COLOR_RE.test(c))
+                    ) {
                         sanitized[key] = val;
                     }
                 }
