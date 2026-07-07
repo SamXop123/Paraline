@@ -1,0 +1,76 @@
+name: Discord Release Announcement
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Webhook
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+        shell: python
+        run: |
+          import urllib.request
+          import json
+          import os
+
+          webhook_url = os.environ.get('DISCORD_WEBHOOK_URL')
+          body = os.environ.get('RELEASE_BODY', '')
+          name = os.environ.get('RELEASE_NAME', '')
+          tag = os.environ.get('RELEASE_TAG', '')
+          url = os.environ.get('RELEASE_URL', '')
+
+          if not webhook_url:
+              print("Webhook URL is missing!")
+              exit(1)
+
+          # Fallback if release name is empty
+          if not name:
+              name = tag
+
+          # Truncate body if it is too long for Discord embed limits (4096 max)
+          if len(body) > 1500:
+              body = body[:1500] + "\n\n... (truncated, click link to view full changelog)"
+
+          payload = {
+              "username": "Paraline",
+              "avatar_url": "https://raw.githubusercontent.com/SamXop123/Paraline/main/assets/appicon.png",
+              "content": "📢 @everyone **A new update is here!**",
+              "embeds": [{
+                  "title": f"🚀 Release: {name}",
+                  "url": url,
+                  "description": body if body else "*No release notes provided.*",
+                  "color": 54527,  # Paraline Accent Blue (#00d4ff)
+                  "thumbnail": {
+                      "url": "https://raw.githubusercontent.com/SamXop123/Paraline/main/assets/appicon.png"
+                  },
+                  "fields": [
+                      {"name": "Version", "value": f"`{tag}`", "inline": True},
+                      {"name": "Changelog & Assets", "value": f"[View on GitHub]({url})", "inline": True}
+                  ],
+                  "footer": {
+                      "text": "Paraline Auto-Announce",
+                      "icon_url": "https://raw.githubusercontent.com/SamXop123/Paraline/main/assets/appicon.png"
+                  }
+              }]
+          }
+
+          req = urllib.request.Request(
+              webhook_url,
+              data=json.dumps(payload).encode('utf-8'),
+              headers={'Content-Type': 'application/json', 'User-Agent': 'Paraline-Webhook'}
+          )
+          
+          try:
+              with urllib.request.urlopen(req) as response:
+                  print("Webhook sent successfully status:", response.status)
+          except Exception as e:
+              print("Error sending webhook:", e)
+              exit(1)
