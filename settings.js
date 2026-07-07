@@ -268,7 +268,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (intervalMinutes) {
         intervalMinutes.addEventListener('change', (e) => {
-            const val = parseInt(e.target.value, 10) || 30;
+            let val = parseInt(e.target.value, 10);
+            if (isNaN(val)) {
+                val = 30;
+            }
+            // Clamp to the input's declared min/max (1-120) so the UI value
+            // always matches what actually gets saved and used.
+            val = Math.max(1, Math.min(120, val));
+            intervalMinutes.value = val;
             updateAutomationSetting({ checkIntervalMinutes: val });
         });
     }
