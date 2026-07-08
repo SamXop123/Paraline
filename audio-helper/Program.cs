@@ -123,11 +123,14 @@ internal sealed class WasapiLoopbackCapture : IDisposable
         (_sampleFormat, _bytesPerSample) = DetectSampleFormat(_mixFormatPointer, _mixFormat);
         _channelCount = _mixFormat.nChannels;
 
+        Marshal.ThrowExceptionForHR(_audioClient.GetDevicePeriod(out var defaultPeriod, out var minimumPeriod));
+        var bufferDuration = Math.Max(minimumPeriod, TimeSpan.FromMilliseconds(10).Ticks);
+
         Marshal.ThrowExceptionForHR(
             _audioClient.Initialize(
                 AudioClientShareMode.Shared,
                 AudioClientStreamFlags.Loopback,
-                0,
+                bufferDuration,
                 0,
                 _mixFormatPointer,
                 IntPtr.Zero));
