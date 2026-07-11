@@ -79,7 +79,11 @@ export function DownloadButton({ className, variant = "primary", children, style
         alert("The download request timed out. Please try again or visit our GitHub releases directly.");
       } else {
         // Fallback
-        window.open("https://github.com/SamXop123/Paraline/releases/latest", "_blank");
+        window.open(
+          "https://github.com/SamXop123/Paraline/releases/latest",
+          "_blank",
+          "noopener,noreferrer"
+        );
       }
     }
   };

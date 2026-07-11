@@ -1,6 +1,6 @@
 {
   "name": "paraline",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Windows desktop audio visualizer with transparent edge-light overlays and real-time system audio capture.",
   "main": "main.js",
   "scripts": {

@@ -268,7 +268,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (intervalMinutes) {
         intervalMinutes.addEventListener('change', (e) => {
-            const val = parseInt(e.target.value, 10) || 30;
+            let val = parseInt(e.target.value, 10);
+            if (isNaN(val)) {
+                val = 30;
+            }
+            // Clamp to the input's declared min/max (1-120) so the UI value
+            // always matches what actually gets saved and used.
+            val = Math.max(1, Math.min(120, val));
+            intervalMinutes.value = val;
             updateAutomationSetting({ checkIntervalMinutes: val });
         });
     }
@@ -647,6 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Load from local storage if available
+    const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
     try {
         const savedPresets = localStorage.getItem('paraline_presets');
         if (savedPresets) {
@@ -655,7 +663,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)) {
                 const sanitized = {};
                 for (const [key, val] of Object.entries(parsed)) {
-                    if (isSafePresetName(key) && Array.isArray(val) && val.length === 3) {
+                    if (
+                        isSafePresetName(key) &&
+                        Array.isArray(val) &&
+                        val.length === 3 &&
+                        val.every(c => typeof c === "string" && HEX_COLOR_RE.test(c))
+                    ) {
                         sanitized[key] = val;
                     }
                 }
@@ -758,6 +771,87 @@ refreshThemeProfiles();
         }
     }
 
+    // ----------------------------------------
+    // PROFILE STATUS TOAST
+    // ----------------------------------------
+    const profileStatusTimers = {};
+
+    /**
+     * Shows an auto-dismissing inline status message instead of alert().
+     * @param {string} elementId  - ID of the .profile-status-msg element
+     * @param {string} message    - Text to display
+     * @param {boolean} isError   - true for red error style, false for green success
+     * @param {boolean} persistent - if true, never auto-hides
+     */
+    function showProfileStatus(elementId, message, isError = false, persistent = false) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+
+        el.textContent = message;
+        el.className = 'profile-status-msg ' + (isError ? 'error' : 'success');
+
+        // Trigger reflow so the transition fires even when class was already applied
+        // eslint-disable-next-line no-unused-expressions
+        el.offsetHeight;
+        el.classList.add('visible');
+
+        if (profileStatusTimers[elementId]) {
+            clearTimeout(profileStatusTimers[elementId]);
+            delete profileStatusTimers[elementId];
+        }
+
+        if (!persistent) {
+            profileStatusTimers[elementId] = setTimeout(() => {
+                el.classList.remove('visible');
+            }, 3000);
+        }
+    }
+
+    // ----------------------------------------
+    // INLINE CONFIRM MODAL (replaces window.confirm)
+    // ----------------------------------------
+
+    /**
+     * Shows a styled, non-blocking confirm dialog and resolves with the user's choice.
+     * @param {string} message - Question to ask the user
+     * @returns {Promise<boolean>} - resolves true (OK) or false (Cancel)
+     */
+    function showInlineConfirm(message) {
+        return new Promise((resolve) => {
+            const modal   = document.getElementById('inline-confirm-modal');
+            const textEl  = document.getElementById('inline-confirm-text');
+            const btnOk   = document.getElementById('btn-inline-confirm-ok');
+            const btnCancel = document.getElementById('btn-inline-confirm-cancel');
+
+            if (!modal || !textEl || !btnOk || !btnCancel) {
+                // Fallback to native if DOM elements are missing
+                resolve(window.confirm(message));
+                return;
+            }
+
+            textEl.textContent = message;
+            modal.classList.add('visible');
+
+            function cleanup(result) {
+                modal.classList.remove('visible');
+                btnOk.removeEventListener('click', onOk);
+                btnCancel.removeEventListener('click', onCancel);
+                modal.removeEventListener('click', onBackdrop);
+                resolve(result);
+            }
+
+            function onOk()      { cleanup(true);  }
+            function onCancel()  { cleanup(false); }
+            function onBackdrop(e) {
+                if (e.target === modal) cleanup(false);
+            }
+
+            btnOk.addEventListener('click', onOk);
+            btnCancel.addEventListener('click', onCancel);
+            modal.addEventListener('click', onBackdrop);
+        });
+    }
+
     function dispatchHotkeyUpdate(settingKey, value) {
         if (!window.visualizerSettings) return;
         if (!cachedSettings.shortcuts) cachedSettings.shortcuts = {};
@@ -769,15 +863,26 @@ refreshThemeProfiles();
 
     function initHotkeySettings() {
         const hotkeys = [
-            { inputId: 'hotkey-toggle-pause', btnId: 'btn-edit-toggle-pause', key: 'togglePause' },
-            { inputId: 'hotkey-toggle-hide', btnId: 'btn-edit-toggle-hide', key: 'toggleHide' },
-            { inputId: 'hotkey-cycle-theme', btnId: 'btn-edit-cycle-theme', key: 'cycleTheme' }
+            { inputId: 'hotkey-toggle-pause', btnId: 'btn-edit-toggle-pause', clearBtnId: 'btn-clear-toggle-pause', key: 'togglePause' },
+            { inputId: 'hotkey-toggle-hide', btnId: 'btn-edit-toggle-hide', clearBtnId: 'btn-clear-toggle-hide', key: 'toggleHide' },
+            { inputId: 'hotkey-cycle-theme', btnId: 'btn-edit-cycle-theme', clearBtnId: 'btn-clear-cycle-theme', key: 'cycleTheme' }
         ];
 
-        hotkeys.forEach(({ inputId, btnId, key }) => {
+        hotkeys.forEach(({ inputId, btnId, clearBtnId, key }) => {
             const input = document.getElementById(inputId);
             const btn = document.getElementById(btnId);
+            const clearBtn = document.getElementById(clearBtnId);
             if (!input || !btn) return;
+
+            // Handle Clear button click
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    if (activeRecordingKey !== null) return;
+                    input.value = 'None';
+                    dispatchHotkeyUpdate(key, 'None');
+                    showHotkeyStatus(`✓ ${hotkeyNames[key]} hotkey cleared`);
+                });
+            }
 
             btn.addEventListener('click', () => {
                 if (activeRecordingKey === null) {
@@ -805,12 +910,14 @@ refreshThemeProfiles();
                     btn.style.borderColor = '#e74c3c';
                     btn.style.color = '#e74c3c';
                     
-                    // Disable other buttons
+                    // Disable other buttons and ALL clear buttons
                     hotkeys.forEach(hk => {
                         if (hk.key !== key) {
                             const otherBtn = document.getElementById(hk.btnId);
                             if (otherBtn) otherBtn.disabled = true;
                         }
+                        const otherClearBtn = document.getElementById(hk.clearBtnId);
+                        if (otherClearBtn) otherClearBtn.disabled = true;
                     });
                     
                     input.focus();
@@ -830,8 +937,14 @@ refreshThemeProfiles();
                 e.preventDefault();
                 e.stopPropagation();
 
-                // Clear hotkey if Backspace or Escape is pressed
-                if (e.key === 'Backspace' || e.key === 'Escape') {
+                // Discard edit if Escape is pressed
+                if (e.key === 'Escape') {
+                    exitEditMode(key, false);
+                    return;
+                }
+
+                // Clear hotkey if Backspace or Delete is pressed
+                if (e.key === 'Backspace' || e.key === 'Delete') {
                     input.value = 'None';
                     dispatchHotkeyUpdate(key, 'None');
                     exitEditMode(key, true);
@@ -949,6 +1062,8 @@ refreshThemeProfiles();
             hotkeys.forEach(h => {
                 const otherBtn = document.getElementById(h.btnId);
                 if (otherBtn) otherBtn.disabled = false;
+                const otherClearBtn = document.getElementById(h.clearBtnId);
+                if (otherClearBtn) otherClearBtn.disabled = false;
             });
         }
     }
@@ -1131,7 +1246,8 @@ refreshThemeProfiles();
         const btnResetTheme = document.getElementById('btn-reset-theme');
         if (btnResetTheme) {
             btnResetTheme.addEventListener('click', async () => {
-                if (confirm("Reset theme settings to default?")) {
+                const ok = await showInlineConfirm("Reset theme settings to default?");
+                if (ok) {
                     await window.paralineApp.resetActiveThemeSettings();
                     location.reload();
                 }
@@ -1159,24 +1275,24 @@ refreshThemeProfiles();
             const profileName = themeProfileNameInput.value.trim();
 
             if (!profileName) {
-                alert("Profile name cannot be empty.");
+                showProfileStatus('profile-status-msg', "Profile name cannot be empty.", true);
                 return;
             }
 
             const validation = isValidProfileName(profileName);
             if (!validation.valid) {
-                alert(validation.message);
+                showProfileStatus('profile-status-msg', validation.message, true);
                 return;
             }
 
             const result = await window.paralineApp.saveThemeProfile(profileName);
             if (!result) {
-                alert(`Failed to save profile "${profileName}". The name is invalid or rejected by the system.`);
+                showProfileStatus('profile-status-msg', `Failed to save profile "${profileName}". The name is invalid or rejected by the system.`, true);
                 return;
             }
 
             themeProfileNameInput.value = '';
-            alert(`Theme profile "${profileName}" saved!`);
+            showProfileStatus('profile-status-msg', `✓ Theme profile "${profileName}" saved!`);
 
             refreshThemeProfiles();
         });
@@ -1201,7 +1317,7 @@ refreshThemeProfiles();
             if (!selectedProfile) return;
 
             await window.paralineApp.deleteThemeProfile(selectedProfile);
-            alert("Theme profile deleted successfully.");
+            showProfileStatus('profile-status-msg', `✓ Theme profile deleted successfully.`);
 
             refreshThemeProfiles();
         });
@@ -1214,14 +1330,14 @@ refreshThemeProfiles();
                 const result = await window.paralineApp.duplicateThemeProfile(selectedProfile);
 
                 if (!result || !result.success) {
-                    alert(result?.error || "Failed to duplicate profile");
+                    showProfileStatus('profile-status-msg', result?.error || "Failed to duplicate profile", true);
                     return;
                 }
 
-                alert(`Profile duplicated as "${result.profileName}"`);
+                showProfileStatus('profile-status-msg', `✓ Profile duplicated as "${result.profileName}"`);
                 await refreshThemeProfiles(result.profileName);
             } catch (error) {
-                alert("Failed to duplicate profile");
+                showProfileStatus('profile-status-msg', "Failed to duplicate profile", true);
                 console.error(error);
             }
         });
@@ -1233,7 +1349,7 @@ refreshThemeProfiles();
 
             const res = await window.paralineApp.exportThemeProfile(selectedProfile);
             if (res && res.success) {
-                alert("Theme profile exported successfully!");
+                showProfileStatus('profile-status-msg', "✓ Theme profile exported successfully!");
             }
         });
 
@@ -1241,10 +1357,10 @@ refreshThemeProfiles();
             const res = await window.paralineApp.importThemeProfile();
 
             if (res && res.success) {
-                alert(`Theme profile "${res.profileName}" imported successfully!`);
+                showProfileStatus('profile-status-msg', `✓ Theme profile "${res.profileName}" imported successfully!`);
                 refreshThemeProfiles();
             } else if (res && res.error) {
-                alert(`Failed to import theme: ${res.error}`);
+                showProfileStatus('profile-status-msg', `Failed to import theme: ${res.error}`, true);
             }
         });
 
@@ -1253,32 +1369,32 @@ refreshThemeProfiles();
                 const res = await window.paralineApp.exportAllSettings();
 
                 if (res && res.success) {
-                    alert("Settings backup exported successfully!");
+                    showProfileStatus('backup-status-msg', "✓ Settings backup exported successfully!");
                 } else if (res && res.error) {
-                    alert(`Failed to export settings backup: ${res.error}`);
+                    showProfileStatus('backup-status-msg', `Failed to export settings backup: ${res.error}`, true);
                 }
             });
         }
 
         if (btnImportAllSettings) {
             btnImportAllSettings.addEventListener('click', async () => {
-                if (!confirm("Import a settings backup? This will replace your current settings and theme profiles.")) {
-                    return;
-                }
+                const ok = await showInlineConfirm("Import a settings backup? This will replace your current settings and theme profiles.");
+                if (!ok) return;
 
                 const res = await window.paralineApp.importAllSettings();
 
                 if (res && res.success) {
-                    alert("Settings backup imported successfully! The app will reload to apply changes.");
-                    location.reload();
+                    showProfileStatus('backup-status-msg', "✓ Settings backup imported! Reloading...");
+                    setTimeout(() => location.reload(), 1200);
                 } else if (res && res.error) {
-                    alert(`Failed to import settings backup: ${res.error}`);
+                    showProfileStatus('backup-status-msg', `Failed to import settings backup: ${res.error}`, true);
                 }
             });
         }
 
         btnResetThemeProfile.addEventListener('click', async () => {
-            if (confirm("Are you sure you want to restore default settings? This will reset all your theme customizations.")) {
+            const ok = await showInlineConfirm("Are you sure you want to restore default settings? This will reset all your theme customizations.");
+            if (ok) {
                 await window.paralineApp.resetThemeSettings();
                 location.reload();
             }
@@ -2069,7 +2185,7 @@ refreshThemeProfiles();
             if (e.target !== previewBar) return;
             let stops = cachedSettings.auroraDrift?.gradientStops || [];
             if (stops.length >= 6) {
-                alert("Maximum 6 gradient stops allowed!");
+                showProfileStatus('aurora-status-msg', "Maximum 6 gradient stops allowed!", true);
                 return;
             }
             
@@ -2157,11 +2273,11 @@ refreshThemeProfiles();
         btnSave.addEventListener('click', () => {
             const name = inputName.value.trim();
             if (!name) {
-                alert("Please enter a profile name!");
+                showProfileStatus('aurora-status-msg', "Please enter a profile name!", true);
                 return;
             }
             if (!isSafePresetName(name)) {
-                alert("Profile name contains reserved characters. Please choose a different name.");
+                showProfileStatus('aurora-status-msg', "Profile name contains reserved characters. Please choose a different name.", true);
                 return;
             }
 
@@ -2169,7 +2285,7 @@ refreshThemeProfiles();
             // known fields are ever written to localStorage.
             const clean = sanitizeAuroraPreset({ ...cachedSettings.auroraDrift });
             if (!clean) {
-                alert("Could not save profile: current Aurora settings appear invalid.");
+                showProfileStatus('aurora-status-msg', "Could not save profile: current Aurora settings appear invalid.", true);
                 return;
             }
             customAuroraPresets[name] = clean;
@@ -2181,7 +2297,7 @@ refreshThemeProfiles();
             refreshAuroraPresetsDropdown();
             document.getElementById('aurora-custom-preset-select').value = name;
             inputName.value = '';
-            alert(`Engine profile "${name}" successfully saved!`);
+            showProfileStatus('aurora-status-msg', `✓ Engine profile "${name}" successfully saved!`);
         });
     }
 
@@ -2192,35 +2308,36 @@ refreshThemeProfiles();
         btnLoad.addEventListener('click', () => {
             const name = dropdownSelect.value;
             if (!name || !customAuroraPresets[name]) {
-                alert("Please select a valid saved profile first!");
+                showProfileStatus('aurora-status-msg', "Please select a valid saved profile first!", true);
                 return;
             }
             
             const profileData = customAuroraPresets[name];
             dispatchAuroraAdvancedUpdate(profileData);
             syncAuroraUI();
-            alert(`Engine profile "${name}" successfully loaded!`);
+            showProfileStatus('aurora-status-msg', `✓ Engine profile "${name}" successfully loaded!`);
         });
     }
 
     // Delete Preset button
     const btnDelete = document.getElementById('btn-delete-aurora-preset');
     if (btnDelete && dropdownSelect) {
-        btnDelete.addEventListener('click', () => {
+        btnDelete.addEventListener('click', async () => {
             const name = dropdownSelect.value;
             if (!name || !customAuroraPresets[name]) {
-                alert("Please select a profile to delete!");
+                showProfileStatus('aurora-status-msg', "Please select a profile to delete!", true);
                 return;
             }
-            
-            if (confirm(`Are you sure you want to delete profile "${name}"?`)) {
+
+            const ok = await showInlineConfirm(`Are you sure you want to delete profile "${name}"?`);
+            if (ok) {
                 delete customAuroraPresets[name];
                 try {
                     localStorage.setItem('paraline_aurora_presets', JSON.stringify(customAuroraPresets));
                 } catch(e) {}
-                
+
                 refreshAuroraPresetsDropdown();
-                alert(`Profile "${name}" successfully deleted!`);
+                showProfileStatus('aurora-status-msg', `✓ Profile "${name}" successfully deleted!`);
             }
         });
     }

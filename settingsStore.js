@@ -186,7 +186,7 @@ const DEFAULT_SETTINGS = Object.freeze({
 });
 
 const VALID_MAIN_THEMES = new Set(["ambientWave", "reactiveBorder", "flowBorder", "sideBars", "crimsonDusk", "flatRipples", "dotParticles", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "auroraDrift"]);
-const VALID_COLOR_MODES = new Set(["manual", "adaptive"]);
+const VALID_COLOR_MODES = new Set(["manual", "adaptive", "wallpaper"]);
 const VALID_PERFORMANCE_MODES = new Set(["performance", "balanced", "quality"]);
 const VALID_FPS_LIMITS = new Set(["default", "battery", "unlocked"]);
 const VALID_AMBIENT_TONES = new Set(["blue", "purple", "warm", "custom"]);
@@ -338,10 +338,16 @@ function sanitizeThemeAutomation(input = {}) {
     nightStart = DEFAULT_SETTINGS.themeAutomation.nightStartHour;
   }
 
+  const interval = typeof input.checkIntervalMinutes === "number"
+    ? input.checkIntervalMinutes
+    : (typeof input.checkIntervalMinutes === "string" && input.checkIntervalMinutes.trim() !== ""
+      ? Number(input.checkIntervalMinutes)
+      : NaN);
+
   return {
     enabled: typeof input.enabled === "boolean" ? input.enabled : DEFAULT_SETTINGS.themeAutomation.enabled,
-    checkIntervalMinutes: typeof input.checkIntervalMinutes === "number"
-      ? Math.max(1, Math.min(120, input.checkIntervalMinutes))
+    checkIntervalMinutes: Number.isFinite(interval)
+      ? Math.max(1, Math.min(120, interval))
       : DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes,
     mode: typeof input.mode === "string" ? input.mode : DEFAULT_SETTINGS.themeAutomation.mode,
     dayTheme: pick(input.dayTheme, VALID_MAIN_THEMES, DEFAULT_SETTINGS.themeAutomation.dayTheme),
@@ -606,17 +612,38 @@ function migrateLegacySettings(input = {}) {
   return migrated;
 }
 
+// Coerces a value to a finite number, accepting numbers as well as numeric
+// strings (e.g. "0.4", "20", "2.5"). Returns null when the value cannot be
+// interpreted as a finite number, so callers can fall back to a default.
+function toFiniteNumber(val) {
+  if (typeof val === "number") {
+    return Number.isFinite(val) ? val : null;
+  }
+  if (typeof val === "string" && val.trim() !== "") {
+    const num = Number(val);
+    return Number.isFinite(num) ? num : null;
+  }
+  return null;
+}
+
 function sanitizeFocusMode(input = {}) {
   const enabled = typeof input.enabled === "boolean" ? input.enabled : DEFAULT_SETTINGS.focusMode.enabled;
-  const dimOpacity = typeof input.dimOpacity === "number" && Number.isFinite(input.dimOpacity)
-    ? Math.max(0, Math.min(1, input.dimOpacity))
+
+  const dimOpacityNum = toFiniteNumber(input.dimOpacity);
+  const dimOpacity = dimOpacityNum !== null
+    ? Math.max(0, Math.min(1, dimOpacityNum))
     : DEFAULT_SETTINGS.focusMode.dimOpacity;
-  const idleTimeout = typeof input.idleTimeout === "number" && Number.isFinite(input.idleTimeout)
-    ? Math.max(1, Math.min(60, input.idleTimeout))
+
+  const idleTimeoutNum = toFiniteNumber(input.idleTimeout);
+  const idleTimeout = idleTimeoutNum !== null
+    ? Math.max(1, Math.min(60, idleTimeoutNum))
     : DEFAULT_SETTINGS.focusMode.idleTimeout;
-  const transitionDuration = typeof input.transitionDuration === "number" && Number.isFinite(input.transitionDuration)
-    ? Math.max(0.1, Math.min(10, input.transitionDuration))
+
+  const transitionDurationNum = toFiniteNumber(input.transitionDuration);
+  const transitionDuration = transitionDurationNum !== null
+    ? Math.max(0.1, Math.min(10, transitionDurationNum))
     : DEFAULT_SETTINGS.focusMode.transitionDuration;
+
   return { enabled, dimOpacity, idleTimeout, transitionDuration };
 }
 
@@ -669,6 +696,7 @@ function sanitizeSettings(input = {}) {
     selectedTheme: pick(source.selectedTheme, VALID_MAIN_THEMES, DEFAULT_SETTINGS.selectedTheme),
     colorMode: pick(source.colorMode, VALID_COLOR_MODES, DEFAULT_SETTINGS.colorMode),
     customColors: customColors,
+    wallpaperColors: sanitizeCustomColors(source.wallpaperColors, undefined),
     themeAutomation: sanitizeThemeAutomation(source.themeAutomation),
     shortcuts: sanitizeShortcuts(source.shortcuts),
     performanceMode: pick(source.performanceMode, VALID_PERFORMANCE_MODES, DEFAULT_SETTINGS.performanceMode),
