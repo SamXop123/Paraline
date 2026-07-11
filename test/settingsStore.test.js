@@ -152,3 +152,35 @@ test("settingsStore - Focus Mode sanitization and clamping", () => {
   assert.strictEqual(sanitizedMin.focusMode.transitionDuration, 0.1);
 });
 
+test("settingsStore - Color Modulation sanitization and clamping", () => {
+  const input = {
+    selectedTheme: "ambientWave",
+    colorModulation: {
+      enabled: true,
+      mode: "invalid_mode", // should clamp/fallback to "amplitude"
+      sensitivity: 6.5,      // should clamp to 5.0
+      transitionSpeed: 1.5   // should clamp to 1.0
+    }
+  };
+  const sanitized = sanitizeSettings(input);
+  assert.strictEqual(sanitized.colorModulation.enabled, true);
+  assert.strictEqual(sanitized.colorModulation.mode, "amplitude");
+  assert.strictEqual(sanitized.colorModulation.sensitivity, 5.0);
+  assert.strictEqual(sanitized.colorModulation.transitionSpeed, 1.0);
+
+  const inputMin = {
+    selectedTheme: "ambientWave",
+    colorModulation: {
+      enabled: false,
+      mode: "beat",
+      sensitivity: 0.5,      // should clamp to 1.0
+      transitionSpeed: 0.001  // should clamp to 0.01
+    }
+  };
+  const sanitizedMin = sanitizeSettings(inputMin);
+  assert.strictEqual(sanitizedMin.colorModulation.enabled, false);
+  assert.strictEqual(sanitizedMin.colorModulation.mode, "beat");
+  assert.strictEqual(sanitizedMin.colorModulation.sensitivity, 1.0);
+  assert.strictEqual(sanitizedMin.colorModulation.transitionSpeed, 0.01);
+});
+

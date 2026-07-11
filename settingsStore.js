@@ -129,6 +129,12 @@ const DEFAULT_SETTINGS = Object.freeze({
     idleTimeout: 5,
     transitionDuration: 1.5
   }),
+  colorModulation: Object.freeze({
+    enabled: false,
+    mode: "amplitude",
+    sensitivity: 1.3,
+    transitionSpeed: 0.1
+  }),
   auroraDrift: Object.freeze({
     // Standard settings
     auroraStyle: "cinematic",
@@ -222,6 +228,7 @@ const VALID_AURORA_PALETTES = new Set(["cyanViolet", "emeraldSky", "sunsetDream"
 const VALID_AURORA_AUDIO = new Set(["subtle", "balanced", "responsive"]);
 const VALID_AURORA_SOFTNESS = new Set(["misty", "smooth", "defined"]);
 const VALID_AURORA_DENSITY = new Set(["light", "balanced", "rich"]);
+const VALID_COLOR_MODULATION_MODES = new Set(["amplitude", "beat"]);
 
 function createDefaultSettings() {
   return {
@@ -233,6 +240,7 @@ function createDefaultSettings() {
     shortcuts: { ...DEFAULT_SETTINGS.shortcuts },
     performanceMode: DEFAULT_SETTINGS.performanceMode,
     focusMode: { ...DEFAULT_SETTINGS.focusMode },
+    colorModulation: { ...DEFAULT_SETTINGS.colorModulation },
     fpsLimit: DEFAULT_SETTINGS.fpsLimit,
     ambientWave: { ...DEFAULT_SETTINGS.ambientWave },
     reactiveBorder: { ...DEFAULT_SETTINGS.reactiveBorder },
@@ -612,6 +620,18 @@ function sanitizeFocusMode(input = {}) {
   return { enabled, dimOpacity, idleTimeout, transitionDuration };
 }
 
+function sanitizeColorModulation(input = {}) {
+  const enabled = typeof input.enabled === "boolean" ? input.enabled : DEFAULT_SETTINGS.colorModulation.enabled;
+  const mode = pick(input.mode, VALID_COLOR_MODULATION_MODES, DEFAULT_SETTINGS.colorModulation.mode);
+  const sensitivity = typeof input.sensitivity === "number" && Number.isFinite(input.sensitivity)
+    ? Math.max(1.0, Math.min(5.0, input.sensitivity))
+    : DEFAULT_SETTINGS.colorModulation.sensitivity;
+  const transitionSpeed = typeof input.transitionSpeed === "number" && Number.isFinite(input.transitionSpeed)
+    ? Math.max(0.01, Math.min(1.0, input.transitionSpeed))
+    : DEFAULT_SETTINGS.colorModulation.transitionSpeed;
+  return { enabled, mode, sensitivity, transitionSpeed };
+}
+
 function sanitizeShortcuts(input) {
   const safeInput = (input && typeof input === "object") ? input : {};
   const shortcuts = {
@@ -654,6 +674,7 @@ function sanitizeSettings(input = {}) {
     performanceMode: pick(source.performanceMode, VALID_PERFORMANCE_MODES, DEFAULT_SETTINGS.performanceMode),
     fpsLimit: pick(source.fpsLimit, VALID_FPS_LIMITS, DEFAULT_SETTINGS.fpsLimit),
     focusMode: sanitizeFocusMode(source.focusMode),
+    colorModulation: sanitizeColorModulation(source.colorModulation),
     ambientWave: sanitizeAmbientWave(source.ambientWave),
     reactiveBorder: sanitizeReactiveBorder(source.reactiveBorder),
     flowBorder: sanitizeFlowBorder(source.flowBorder),

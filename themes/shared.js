@@ -24,6 +24,9 @@
     if (style.mode === "rainbow") {
       return `hsla(${normalizedDistance * 360 + animationOffset}, ${style.saturation}%, ${style.lightness + lightnessBoost}%, ${opacity})`;
     }
+    if (style.mode === "single") {
+      return `hsla(${style.hue}, ${style.saturation}%, ${style.lightness + lightnessBoost}%, ${opacity})`;
+    }
 
     const hueBlend = Math.sin(normalizedDistance * Math.PI * 2 + animationOffset * 0.025) * 0.5 + 0.5;
     const hue = style.hueA + (style.hueB - style.hueA) * hueBlend;
@@ -201,6 +204,9 @@
     let key;
     if (style.mode === "rainbow") {
       key = `r:${style.saturation}:${style.lightness}:${qDist}:${qOffset}:${qOpacity}:${qBoost}`;
+    } else if (style.mode === "single") {
+      const qHue = style.hue | 0;
+      key = `s:${qHue}:${style.saturation}:${style.lightness}:${qDist}:${qOffset}:${qOpacity}:${qBoost}`;
     } else {
       const qHueA = style.hueA | 0;
       const qHueB = style.hueB | 0;

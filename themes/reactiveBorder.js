@@ -20,7 +20,10 @@
     warmGlow: { mode: "range", hueA: 22, hueB: 48, saturation: 96, lightness: 68 }
   };
 
-  function getReactiveColorStyle(settings) {
+  function getReactiveColorStyle(settings, colorModulation, dynamicHue) {
+    if (colorModulation && colorModulation.enabled && typeof dynamicHue === "number") {
+      return { mode: "single", hue: dynamicHue, saturation: 95, lightness: 60 };
+    }
     if (settings.colorStyle === "custom" && settings.customColors && settings.customColors.length >= 2) {
       const hsl1 = hexToHsl(settings.customColors[0]);
       const hsl2 = hexToHsl(settings.customColors[1]);
@@ -115,10 +118,12 @@
       time,
       smoothedLevel,
       settings,
-      performanceMode = 'balanced'
+      performanceMode = 'balanced',
+      colorModulation,
+      dynamicHue
     } = options;
 
-    const reactiveStyle = getReactiveColorStyle(settings);
+    const reactiveStyle = getReactiveColorStyle(settings, colorModulation, dynamicHue);
     const intensityMultiplier = getReactiveIntensityMultiplier(settings);
     const glowMultiplier = getGlowMultiplier(settings.glowStrength);
     const thicknessBase = settings.borderThickness === "thick"

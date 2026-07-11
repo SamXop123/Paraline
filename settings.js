@@ -382,6 +382,69 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ----------------------------------------
+    // COLOR MODULATION BINDINGS
+    // ----------------------------------------
+    const colorModulationMode = document.getElementById('color-modulation-mode');
+    const colorModulationControls = document.getElementById('color-modulation-controls');
+    const colorModulationSensitivity = document.getElementById('color-modulation-sensitivity');
+    const colorModulationSpeed = document.getElementById('color-modulation-speed');
+
+    function toggleColorModulationControls(mode) {
+        if (!colorModulationControls) return;
+        if (mode === 'none') {
+            colorModulationControls.style.display = 'none';
+        } else {
+            colorModulationControls.style.display = 'block';
+            
+            // Show/hide sensitivity based on mode
+            const sensitivityContainer = document.getElementById('container-modulation-sensitivity');
+            if (sensitivityContainer) {
+                sensitivityContainer.style.display = mode === 'beat' ? 'block' : 'none';
+            }
+        }
+    }
+
+    function updateColorModulationSetting(patch) {
+        if (window.visualizerSettings) {
+            const currentMod = cachedSettings.colorModulation || {};
+            const nextMod = { ...currentMod, ...patch };
+            cachedSettings.colorModulation = nextMod;
+            window.visualizerSettings.update({
+                colorModulation: nextMod
+            });
+        }
+    }
+
+    if (colorModulationMode) {
+        colorModulationMode.addEventListener('change', (e) => {
+            const mode = e.target.value;
+            toggleColorModulationControls(mode);
+            updateColorModulationSetting({
+                enabled: mode !== 'none',
+                mode: mode === 'none' ? 'amplitude' : mode
+            });
+        });
+    }
+
+    if (colorModulationSensitivity) {
+        colorModulationSensitivity.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value) || 1.3;
+            const valEl = document.getElementById('val-color-modulation-sensitivity');
+            if (valEl) valEl.textContent = val.toFixed(1);
+            updateColorModulationSetting({ sensitivity: val });
+        });
+    }
+
+    if (colorModulationSpeed) {
+        colorModulationSpeed.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value) || 0.10;
+            const valEl = document.getElementById('val-color-modulation-speed');
+            if (valEl) valEl.textContent = val.toFixed(2);
+            updateColorModulationSetting({ transitionSpeed: val });
+        });
+    }
+
     const themeSelector = document.getElementById('theme-selector');
     if (themeSelector) {
         themeSelector.addEventListener('change', (e) => {
@@ -1394,6 +1457,28 @@ refreshThemeProfiles();
                     if (valEl) valEl.textContent = `${duration.toFixed(1)}s`;
                 }
             }
+
+            // Load color modulation settings
+            if (settings.colorModulation) {
+                const mod = settings.colorModulation;
+                const modeVal = mod.enabled ? mod.mode : 'none';
+                if (colorModulationMode) {
+                    colorModulationMode.value = modeVal;
+                    toggleColorModulationControls(modeVal);
+                }
+                if (colorModulationSensitivity) {
+                    const sens = mod.sensitivity !== undefined ? mod.sensitivity : 1.3;
+                    colorModulationSensitivity.value = sens;
+                    const valEl = document.getElementById('val-color-modulation-sensitivity');
+                    if (valEl) valEl.textContent = sens.toFixed(1);
+                }
+                if (colorModulationSpeed) {
+                    const speed = mod.transitionSpeed !== undefined ? mod.transitionSpeed : 0.10;
+                    colorModulationSpeed.value = speed;
+                    const valEl = document.getElementById('val-color-modulation-speed');
+                    if (valEl) valEl.textContent = speed.toFixed(2);
+                }
+            }
             
             // set custom variables into UI if they exist globally or on the active theme
             const activeThemeData = settings[settings.selectedTheme] || {};
@@ -1507,6 +1592,30 @@ refreshThemeProfiles();
                     focusModeTransitionDuration.value = fm.transitionDuration;
                     const valEl = document.getElementById('val-focus-mode-transition-duration');
                     if (valEl) valEl.textContent = `${fm.transitionDuration.toFixed(1)}s`;
+                }
+            }
+
+            // Sync color modulation settings
+            if (nextSettings.colorModulation) {
+                const mod = nextSettings.colorModulation;
+                if (mod.enabled !== undefined || mod.mode !== undefined) {
+                    const enabled = mod.enabled !== undefined ? mod.enabled : (cachedSettings.colorModulation?.enabled ?? false);
+                    const mode = mod.mode !== undefined ? mod.mode : (cachedSettings.colorModulation?.mode ?? 'amplitude');
+                    const modeVal = enabled ? mode : 'none';
+                    if (colorModulationMode) {
+                        colorModulationMode.value = modeVal;
+                        toggleColorModulationControls(modeVal);
+                    }
+                }
+                if (colorModulationSensitivity && mod.sensitivity !== undefined) {
+                    colorModulationSensitivity.value = mod.sensitivity;
+                    const valEl = document.getElementById('val-color-modulation-sensitivity');
+                    if (valEl) valEl.textContent = mod.sensitivity.toFixed(1);
+                }
+                if (colorModulationSpeed && mod.transitionSpeed !== undefined) {
+                    colorModulationSpeed.value = mod.transitionSpeed;
+                    const valEl = document.getElementById('val-color-modulation-speed');
+                    if (valEl) valEl.textContent = mod.transitionSpeed.toFixed(2);
                 }
             }
 
