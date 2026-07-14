@@ -247,7 +247,7 @@ export function ThemeShowcase() {
               Premium Motion Aesthetics.
             </h2>
             <p className="text-muted/80 text-lg max-w-xl font-light">
-              Click any theme below to preview its unique motion physics, or instantly apply it to your running desktop client in real-time.
+              Browse and preview studio-grade edge visualizer themes directly on the website.
             </p>
           </div>
           <div className="flex items-center gap-3 rounded-full border border-cyan-500/20 bg-cyan-500/[0.05] px-5 py-3 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
@@ -255,7 +255,7 @@ export function ThemeShowcase() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-cyan-100">Direct Sync Active</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-100">Local Preview Only</span>
           </div>
         </div>
 
@@ -335,7 +335,7 @@ export function ThemeShowcase() {
               <CheckCircle2 className="h-4 w-4 text-cyan-400" strokeWidth={3} />
             </div>
             <p className="text-sm font-semibold text-white tracking-wide">
-              Activated <span className="text-cyan-400">{appliedTheme}</span>
+              Previewing <span className="text-cyan-400">{appliedTheme}</span>
             </p>
           </motion.div>
         )}
