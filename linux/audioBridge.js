@@ -4,15 +4,15 @@ function findAudioCaptureUtility() {
   try {
     child_process.execSync("which parec", { stdio: "ignore" });
     return {
-      command: "parec",
-      args: ["-d", "@DEFAULT_MONITOR@", "--format=s16le", "--channels=2", "--rate=44100", "--raw"]
+      command: "stdbuf",
+      args: ["-o0", "parec", "-d", "@DEFAULT_MONITOR@", "--format=s16le", "--channels=2", "--rate=44100", "--raw", "--latency-msec=33", "--process-time-msec=33"]
     };
   } catch {
     try {
       child_process.execSync("which pw-record", { stdio: "ignore" });
       return {
-        command: "pw-record",
-        args: ["-P", "{ stream.capture.sink=true }", "--format=s16", "--channels=2", "--rate=44100", "--raw", "-"]
+        command: "stdbuf",
+        args: ["-o0", "pw-record", "-P", "{ stream.capture.sink=true }", "--format=s16", "--channels=2", "--rate=44100", "--raw", "--latency=33ms", "-"]
       };
     } catch {
       return null;
