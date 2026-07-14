@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Keep GitHub Actions workflows up-to-date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Keep npm dependencies in the root up-to-date
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Keep npm dependencies in the landing app up-to-date
+  - package-ecosystem: "npm"
+    directory: "/landing"
+    schedule:
+      interval: "weekly"
+
+  # Keep NuGet dependencies for the audio-helper up-to-date
+  - package-ecosystem: "nuget"
+    directory: "/audio-helper"
+    schedule:
+      interval: "weekly"
