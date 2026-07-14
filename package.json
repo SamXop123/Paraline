@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "start:linux": "electron ./linux/main.js",
     "dev": "electron .",
     "landing:dev": "npm --prefix landing run dev",
     "landing:build": "npm --prefix landing run build",
