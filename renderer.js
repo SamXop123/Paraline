@@ -695,7 +695,12 @@ function updateColorModulation(now, deltaMs) {
     if (dynamicHue < 0) dynamicHue += 360;
   } else if (mod.mode === "amplitude") {
     const targetHue = 180 + smoothedLevel * 160;
-    dynamicHue = dynamicHue + (targetHue - dynamicHue) * transitionSpeed;
+    let diff = targetHue - dynamicHue;
+    while (diff < -180) diff += 360;
+    while (diff > 180) diff -= 360;
+    const t = 1 - Math.pow(1 - transitionSpeed, deltaMs / 16.67);
+    dynamicHue = (dynamicHue + diff * t) % 360;
+    if (dynamicHue < 0) dynamicHue += 360;
   }
 }
 

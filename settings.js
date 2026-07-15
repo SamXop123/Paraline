@@ -1136,6 +1136,13 @@ refreshThemeProfiles();
     function syncThemeUI(themeId) {
         renderThemeSettings(themeId);
         
+        // Hide color modulation container for unsupported themes
+        const modulationContainer = document.getElementById('color-modulation-container');
+        if (modulationContainer) {
+            const supportsModulation = (themeId === 'reactiveBorder' || themeId === 'flowBorder');
+            modulationContainer.style.display = supportsModulation ? 'block' : 'none';
+        }
+        
         // Load custom colors of the newly selected theme if they exist, or fall back to global custom colors
         const themeData = cachedSettings[themeId] || {};
         if (themeData.customColors && themeData.customColors.length === 3) {
