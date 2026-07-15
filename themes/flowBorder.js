@@ -20,7 +20,10 @@
     warm: { mode: "range", hueA: 20, hueB: 52, saturation: 94, lightness: 68 }
   };
 
-  function getFlowBorderStyle(settings) {
+  function getFlowBorderStyle(settings, colorModulation, dynamicHue) {
+    if (colorModulation && colorModulation.enabled && typeof dynamicHue === "number") {
+      return { mode: "single", hue: dynamicHue, saturation: 95, lightness: 60 };
+    }
     if (settings.colorStyle === "custom" && settings.customColors && settings.customColors.length >= 2) {
       const hsl1 = hexToHsl(settings.customColors[0]);
       const hsl2 = hexToHsl(settings.customColors[1]);
@@ -189,10 +192,12 @@
       smoothedLevel,
       flowTravelDistance,
       settings,
-      performanceMode = 'balanced'
+      performanceMode = 'balanced',
+      colorModulation,
+      dynamicHue
     } = options;
 
-    const colorStyle = getFlowBorderStyle(settings);
+    const colorStyle = getFlowBorderStyle(settings, colorModulation, dynamicHue);
     const glowMultiplier = getGlowMultiplier(settings.glowStrength);
     const thickness = getFlowBorderThickness(settings) + smoothedLevel * (0.95 + glowMultiplier * 0.18);
     const edgeOffset = Math.max(1, thickness * 0.5) + 1;

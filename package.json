@@ -1,10 +1,11 @@
 {
   "name": "paraline",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Windows desktop audio visualizer with transparent edge-light overlays and real-time system audio capture.",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "start:linux": "electron ./linux/main.js",
     "dev": "electron .",
     "landing:dev": "npm --prefix landing run dev",
     "landing:build": "npm --prefix landing run build",
@@ -24,8 +25,8 @@
   "author": "SamXop123",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^37.0.0",
-    "electron-builder": "^26.8.1",
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3",
     "vite": "^8.0.13"
   },
   "dependencies": {

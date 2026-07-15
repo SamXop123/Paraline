@@ -1,0 +1,15 @@
+{
+  "uuid": "paraline-companion@samxop123.github.com",
+  "name": "Paraline Companion",
+  "description": "Runs in the background to help the Paraline app run smoothly as an overlay in GNOME.",
+  "shell-version": [
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50",
+    "51"
+  ],
+  "url": "https://github.com/SamXop123/Paraline"
+}

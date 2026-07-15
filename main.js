@@ -2386,6 +2386,10 @@ app.on("before-quit", () => {
     wallpaperPollInterval = null;
   }
 
+  if (themeAgent) {
+    themeAgent.stop();
+  }
+
   if (audioBridge) {
     audioBridge.stop();
   }

@@ -252,6 +252,10 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
     isStopping = true;
     clearRetryTimer();
     clearRecoveryTimer();
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
     
     if (helperProcess) {
       helperProcess.kill();

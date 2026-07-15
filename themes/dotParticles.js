@@ -22,6 +22,7 @@
   let lastSwitchAt = -10;
   let globalDirection = 1;
   let beatPulse = 0;
+  let runningAverage = 0.15; // Running average level for dynamic beat detection threshold
   const HEX_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
   function normalizeHexColor(color) {
@@ -192,8 +193,16 @@
   }
 
   function updateDirectionController(settings, time, smoothedLevel) {
+    // Update the running average dynamically (Exponential Moving Average)
+    runningAverage += (smoothedLevel - runningAverage) * 0.02;
+    runningAverage = Math.max(0.04, Math.min(0.6, runningAverage));
+
+    // Dynamic thresholds adapting to the running average volume
+    const dynamicThreshold = Math.max(0.06, runningAverage * 1.3);
+    const riseThreshold = Math.max(0.003, runningAverage * 0.08);
+
     const levelRise = smoothedLevel - lastLevel;
-    const strongBeat = smoothedLevel > 0.34 && levelRise > 0.012;
+    const strongBeat = smoothedLevel > dynamicThreshold && levelRise > riseThreshold;
     const canSwitch = time - lastSwitchAt > 1.6;
 
     if (strongBeat) {
