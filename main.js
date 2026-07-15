@@ -2381,6 +2381,10 @@ app.on("before-quit", () => {
   destroyAllOverlayWindows();
   stopFocusModePolling();
 
+  if (themeAgent) {
+    themeAgent.stop();
+  }
+
   if (wallpaperPollInterval) {
     clearInterval(wallpaperPollInterval);
     wallpaperPollInterval = null;
