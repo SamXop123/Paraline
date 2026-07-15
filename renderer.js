@@ -93,6 +93,11 @@ let lastDebugPaintAt = 0;
 let lastFrameAt = 0;
 let edgeGradient;
 let flowTravelDistance = 0;
+let dynamicHue = 200;
+let targetBeatHue = 200;
+let beatDetectorAverage = 0.1;
+let lastBeatTime = 0;
+const BEAT_COOLDOWN_MS = 250;
 let visualizerState = {
   selectedTheme: "ambientWave",
   colorMode: "manual",
@@ -217,6 +222,12 @@ let visualizerState = {
     colorSaturation: 1.0,
     atmosphericFade: 1.0,
     edgeFeathering: 1.0
+  },
+  colorModulation: {
+    enabled: false,
+    mode: "amplitude",
+    sensitivity: 1.3,
+    transitionSpeed: 0.1
   },
   paused: false
 };
@@ -652,6 +663,42 @@ function updateAudioLevel(now) {
   smoothedLevel += ((incomingLevel + breathing) - smoothedLevel) * response;
 }
 
+function updateColorModulation(now, deltaMs) {
+  if (visualizerState.paused) {
+    return;
+  }
+
+  const mod = visualizerState.colorModulation;
+  if (!mod || !mod.enabled) {
+    return;
+  }
+
+  const sensitivity = typeof mod.sensitivity === "number" ? mod.sensitivity : 1.3;
+  const transitionSpeed = typeof mod.transitionSpeed === "number" ? mod.transitionSpeed : 0.1;
+
+  if (mod.mode === "beat") {
+    const decay = Math.pow(0.98, deltaMs / 16.67);
+    beatDetectorAverage = beatDetectorAverage * decay + incomingLevel * (1.0 - decay);
+
+    const threshold = Math.max(0.05, beatDetectorAverage * sensitivity);
+
+    if (incomingLevel > threshold && (now - lastBeatTime) > BEAT_COOLDOWN_MS) {
+      lastBeatTime = now;
+      targetBeatHue = (targetBeatHue + 60) % 360;
+    }
+
+    let diff = targetBeatHue - dynamicHue;
+    while (diff < -180) diff += 360;
+    while (diff > 180) diff -= 360;
+    const t = 1 - Math.pow(1 - transitionSpeed, deltaMs / 16.67);
+    dynamicHue = (dynamicHue + diff * t) % 360;
+    if (dynamicHue < 0) dynamicHue += 360;
+  } else if (mod.mode === "amplitude") {
+    const targetHue = 180 + smoothedLevel * 160;
+    dynamicHue = dynamicHue + (targetHue - dynamicHue) * transitionSpeed;
+  }
+}
+
 function renderFrame(now) {
   animationFrameId = requestAnimationFrame(renderFrame);
 
@@ -704,6 +751,7 @@ function renderFrame(now) {
   }
 
   updateAudioLevel(now);
+  updateColorModulation(now, deltaMs);
 
   const adaptivePaletteChanged = stepAdaptivePalette();
 
@@ -721,7 +769,9 @@ function renderFrame(now) {
       time,
       smoothedLevel,
       settings: getReactiveBorderSettings(),
-      performanceMode: visualizerState.performanceMode
+      performanceMode: visualizerState.performanceMode,
+      colorModulation: visualizerState.colorModulation,
+      dynamicHue
     });
   } else if (visualizerState.selectedTheme === "flowBorder") {
     drawFlowBorder({
@@ -731,7 +781,9 @@ function renderFrame(now) {
       smoothedLevel,
       flowTravelDistance,
       settings: getFlowBorderSettings(),
-      performanceMode: visualizerState.performanceMode
+      performanceMode: visualizerState.performanceMode,
+      colorModulation: visualizerState.colorModulation,
+      dynamicHue
     });
   } else if (visualizerState.selectedTheme === "sideBars") {
     drawSideBars({
@@ -895,6 +947,10 @@ function applySettings(nextSettings) {
     auroraDrift: {
       ...visualizerState.auroraDrift,
       ...(nextSettings?.auroraDrift || {})
+    },
+    colorModulation: {
+      ...visualizerState.colorModulation,
+      ...(nextSettings?.colorModulation || {})
     }
   };
 

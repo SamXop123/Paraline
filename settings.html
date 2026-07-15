@@ -137,6 +137,37 @@
                         <!-- Populated dynamically by settings.js based on selected theme -->
                     </div>
                 </div>
+
+                <div class="settings-group" id="color-modulation-container">
+                    <h3>Audio-Reactive Color Modulation</h3>
+                    <p class="setting-desc">Let audio frequency beats or volume dynamically shift visualizer colors.</p>
+                    
+                    <div class="input-group" style="margin-top: 10px; margin-bottom: 16px;">
+                        <select class="styled-select" id="color-modulation-mode">
+                            <option value="none">None</option>
+                            <option value="beat">Beat Sync (Hue Cycle)</option>
+                            <option value="amplitude">Amplitude Mapping (Volume Gradient)</option>
+                        </select>
+                    </div>
+
+                    <div id="color-modulation-controls" style="display: none;">
+                        <div class="slider-control" id="container-modulation-sensitivity">
+                            <div class="slider-header">
+                                <label for="color-modulation-sensitivity">Beat Detection Sensitivity</label>
+                                <span class="slider-value" id="val-color-modulation-sensitivity">1.3</span>
+                            </div>
+                            <input type="range" id="color-modulation-sensitivity" min="1.0" max="5.0" step="0.1" value="1.3">
+                        </div>
+
+                        <div class="slider-control" id="container-modulation-speed" style="margin-top: 16px;">
+                            <div class="slider-header">
+                                <label for="color-modulation-speed">Color Transition Speed</label>
+                                <span class="slider-value" id="val-color-modulation-speed">0.10</span>
+                            </div>
+                            <input type="range" id="color-modulation-speed" min="0.01" max="1.0" step="0.01" value="0.10">
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Advanced Settings Tab (Custom Options) -->
