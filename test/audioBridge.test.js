@@ -7,17 +7,46 @@
 
 const test = require("node:test");
 const assert = require("node:assert");
+const { EventEmitter } = require("node:events");
 
 // _createStdoutHandler is a pure factory — no Electron, spawn, or fs involved.
 // We need to stub 'electron' so the top-level require in audioBridge.js doesn't crash.
 const Module = require("module");
 const orig = Module.prototype.require;
+const realFs = orig.call(module, "fs");
+const realChildProcess = orig.call(module, "child_process");
+let fakeHelperExists = false;
+let fakeSpawn = null;
+
 Module.prototype.require = function (id) {
   if (id === "electron") return { app: { getAppPath: () => "/fake" } };
+  if (id === "fs") {
+    return new Proxy(realFs, {
+      get(target, prop) {
+        if (prop === "existsSync") {
+          return (...args) => fakeHelperExists || target.existsSync(...args);
+        }
+
+        return target[prop];
+      }
+    });
+  }
+  if (id === "child_process") {
+    return new Proxy(realChildProcess, {
+      get(target, prop) {
+        if (prop === "spawn") {
+          return (...args) => fakeSpawn ? fakeSpawn(...args) : target.spawn(...args);
+        }
+
+        return target[prop];
+      }
+    });
+  }
+
   return orig.apply(this, arguments);
 };
 
-const { _createStdoutHandler } = require("../audioBridge");
+const { createAudioBridge, _createStdoutHandler } = require("../audioBridge");
 
 const MAX_BYTES = 64 * 1024;        // mirrors audioBridge default
 const BIG = Buffer.alloc(MAX_BYTES + 1, "x");   // always triggers overflow
@@ -113,4 +142,62 @@ test("_createStdoutHandler - reset() clears state", () => {
   h2.reset();
   h2.handleChunk(SMALL);
   assert.strictEqual(lines.length, 1, "After reset, valid chunk should produce a line");
+});
+
+// ---------------------------------------------------------------------------
+// Test 6 - stop() clears a pending crash retry timer
+// ---------------------------------------------------------------------------
+test("createAudioBridge - stop clears pending retry timer", () => {
+  const originalSetTimeout = global.setTimeout;
+  const originalClearTimeout = global.clearTimeout;
+  const scheduledTimers = [];
+  const spawnedProcesses = [];
+
+  global.setTimeout = (callback, delay) => {
+    const timer = { callback, delay, cleared: false };
+    scheduledTimers.push(timer);
+    return timer;
+  };
+
+  global.clearTimeout = (timer) => {
+    if (timer) timer.cleared = true;
+  };
+
+  fakeHelperExists = true;
+  fakeSpawn = () => {
+    const proc = new EventEmitter();
+    proc.stdout = new EventEmitter();
+    proc.stderr = new EventEmitter();
+    proc.kill = () => {
+      proc.killed = true;
+    };
+    spawnedProcesses.push(proc);
+    return proc;
+  };
+
+  try {
+    const bridge = createAudioBridge(() => {});
+
+    bridge.start();
+    assert.strictEqual(spawnedProcesses.length, 1, "start() should spawn the helper once");
+
+    spawnedProcesses[0].emit("exit", 1);
+    assert.strictEqual(scheduledTimers.length, 1, "helper exit should schedule one retry");
+    assert.strictEqual(scheduledTimers[0].cleared, false, "retry should be pending before stop()");
+
+    bridge.stop();
+    assert.strictEqual(scheduledTimers[0].cleared, true, "stop() should clear the pending retry");
+
+    scheduledTimers[0].callback();
+    assert.strictEqual(
+      spawnedProcesses.length,
+      1,
+      "cleared retry callback must not restart the helper after stop()"
+    );
+  } finally {
+    global.setTimeout = originalSetTimeout;
+    global.clearTimeout = originalClearTimeout;
+    fakeHelperExists = false;
+    fakeSpawn = null;
+  }
 });

@@ -29,8 +29,8 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
   let overflowCount = 0;
   let isStopping = false;
   let recoveryTimer = null;
-  let successStartTime = null;
   let retryTimer = null;
+  let successStartTime = null;
 
   function updateStatus(nextStatus) {
     if (
@@ -205,12 +205,7 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
           reason: `Helper crashed. Restarting ${retryCount}/${MAX_IMMEDIATE_RETRIES} (retrying in ${Math.round(delay/1000)}s)`
         });
 
-        retryTimer = setTimeout(() => {
-          retryTimer = null;
-          if (!isStopping) {
-            start();
-          }
-        }, delay);
+        scheduleRetry(delay);
 
         return;
       }
@@ -222,12 +217,7 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
           reason: `Helper crashed. Extended recovery mode (${retryCount}/${MAX_TOTAL_RETRIES}). Next retry in ${Math.round(delay/1000)}s`
         });
 
-        retryTimer = setTimeout(() => {
-          retryTimer = null;
-          if (!isStopping) {
-            start();
-          }
-        }, delay);
+        scheduleRetry(delay);
 
         return;
       }
@@ -246,8 +236,21 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
     });
   }
 
+  function scheduleRetry(delay) {
+    clearRetryTimer();
+
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+
+      if (!isStopping) {
+        start();
+      }
+    }, delay);
+  }
+
   function stop() {
     isStopping = true;
+    clearRetryTimer();
     clearRecoveryTimer();
     if (retryTimer) {
       clearTimeout(retryTimer);
@@ -296,6 +299,13 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
     if (recoveryTimer) {
       clearTimeout(recoveryTimer);
       recoveryTimer = null;
+    }
+  }
+
+  function clearRetryTimer() {
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
     }
   }
 
