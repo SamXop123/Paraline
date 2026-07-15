@@ -30,6 +30,7 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
   let isStopping = false;
   let recoveryTimer = null;
   let successStartTime = null;
+  let retryTimer = null;
 
   function updateStatus(nextStatus) {
     if (
@@ -204,7 +205,8 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
           reason: `Helper crashed. Restarting ${retryCount}/${MAX_IMMEDIATE_RETRIES} (retrying in ${Math.round(delay/1000)}s)`
         });
 
-        setTimeout(() => {
+        retryTimer = setTimeout(() => {
+          retryTimer = null;
           if (!isStopping) {
             start();
           }
@@ -220,7 +222,8 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
           reason: `Helper crashed. Extended recovery mode (${retryCount}/${MAX_TOTAL_RETRIES}). Next retry in ${Math.round(delay/1000)}s`
         });
 
-        setTimeout(() => {
+        retryTimer = setTimeout(() => {
+          retryTimer = null;
           if (!isStopping) {
             start();
           }
@@ -246,6 +249,10 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
   function stop() {
     isStopping = true;
     clearRecoveryTimer();
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
     
     if (helperProcess) {
       helperProcess.kill();
