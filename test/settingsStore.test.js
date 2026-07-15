@@ -241,6 +241,7 @@ test("settingsStore - Color Modulation sanitization and clamping", () => {
   assert.strictEqual(sanitizedMin.colorModulation.mode, "beat");
   assert.strictEqual(sanitizedMin.colorModulation.sensitivity, 1.0);
   assert.strictEqual(sanitizedMin.colorModulation.transitionSpeed, 0.01);
+});
 test("settingsStore - wallpaperColors sanitization", () => {
   // Test invalid length
   const inputInvalidLen = {
