@@ -206,7 +206,7 @@
       key = `r:${style.saturation}:${style.lightness}:${qDist}:${qOffset}:${qOpacity}:${qBoost}`;
     } else if (style.mode === "single") {
       const qHue = style.hue | 0;
-      key = `s:${qHue}:${style.saturation}:${style.lightness}:${qDist}:${qOffset}:${qOpacity}:${qBoost}`;
+      key = `s:${qHue}:${style.saturation}:${style.lightness}:${qOpacity}:${qBoost}`;
     } else {
       const qHueA = style.hueA | 0;
       const qHueB = style.hueB | 0;

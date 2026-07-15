@@ -677,7 +677,7 @@ function updateColorModulation(now, deltaMs) {
   const transitionSpeed = typeof mod.transitionSpeed === "number" ? mod.transitionSpeed : 0.1;
 
   if (mod.mode === "beat") {
-    const decay = 0.98;
+    const decay = Math.pow(0.98, deltaMs / 16.67);
     beatDetectorAverage = beatDetectorAverage * decay + incomingLevel * (1.0 - decay);
 
     const threshold = Math.max(0.05, beatDetectorAverage * sensitivity);
@@ -690,7 +690,8 @@ function updateColorModulation(now, deltaMs) {
     let diff = targetBeatHue - dynamicHue;
     while (diff < -180) diff += 360;
     while (diff > 180) diff -= 360;
-    dynamicHue = (dynamicHue + diff * transitionSpeed) % 360;
+    const t = 1 - Math.pow(1 - transitionSpeed, deltaMs / 16.67);
+    dynamicHue = (dynamicHue + diff * t) % 360;
     if (dynamicHue < 0) dynamicHue += 360;
   } else if (mod.mode === "amplitude") {
     const targetHue = 180 + smoothedLevel * 160;
