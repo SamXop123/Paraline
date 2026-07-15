@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, Plus, X } from "lucide-react";
 import { usePreviewStore } from "@/store/preview";
@@ -201,6 +201,15 @@ export function ThemeShowcase() {
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
 
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const compareButtonRef = useRef<HTMLButtonElement>(null);
+
+  const openCompareModal = useCallback(() => {
+    setIsCompareModalOpen(true);
+  }, []);
+
+  const closeCompareModal = useCallback(() => {
+    setIsCompareModalOpen(false);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -365,7 +374,8 @@ export function ThemeShowcase() {
             <div className="h-6 w-[1px] bg-white/10" />
 
             <button
-              onClick={() => setIsCompareModalOpen(true)}
+              ref={compareButtonRef}
+              onClick={openCompareModal}
               disabled={compareList.length < 2}
               className="rounded-full bg-white px-6 py-2 text-[12px] font-bold text-black transition-all hover:bg-white/90 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
             >
@@ -384,8 +394,9 @@ export function ThemeShowcase() {
 
       <ThemeComparisonModal
         isOpen={isCompareModalOpen}
-        onClose={() => setIsCompareModalOpen(false)}
+        onClose={closeCompareModal}
         compareList={compareList}
+        triggerRef={compareButtonRef}
       />
     </section>
   );
