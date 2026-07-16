@@ -3,17 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { 
   Home, 
   Image as ImageIcon, 
   Settings, 
-  FileText, 
   HelpCircle, 
   Download, 
   HeadphonesIcon,
   ChevronLeft,
-  ChevronRight,
   Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -57,18 +55,29 @@ const supportItems = [
   { name: "Github", href: GITHUB_URL, icon: Github, external: true },
 ];
 
+function subscribeToHashChange(callback: () => void) {
+  window.addEventListener("hashchange", callback);
+  return () => window.removeEventListener("hashchange", callback);
+}
+
+function getHashSnapshot() {
+  return window.location.hash;
+}
+
+function getServerHashSnapshot() {
+  return "";
+}
+
 export function Sidebar() {
   const { isOpen, toggle } = useSidebarStore();
   const pathname = usePathname();
-  const [activeHash, setActiveHash] = useState("");
+  const activeHash = useSyncExternalStore(
+    subscribeToHashChange,
+    getHashSnapshot,
+    getServerHashSnapshot
+  );
 
   useEffect(() => {
-    setActiveHash(window.location.hash);
-    
-    const handleHashChange = () => {
-      setActiveHash(window.location.hash);
-    };
-
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         useSidebarStore.getState().setIsOpen(false);
@@ -78,13 +87,11 @@ export function Sidebar() {
     // Auto-close sidebar on mobile devices by default on mount
     handleResize();
     
-    window.addEventListener("hashchange", handleHashChange);
     window.addEventListener("resize", handleResize);
     return () => {
-      window.removeEventListener("hashchange", handleHashChange);
       window.removeEventListener("resize", handleResize);
     };
-  }, [pathname]);
+  }, []);
 
   const checkIsActive = (href: string) => {
     if (href.includes('#')) {
@@ -169,11 +176,6 @@ export function Sidebar() {
                     <Link
                       href={item.href}
                       onClick={() => {
-                        if (item.href.includes('#')) {
-                          setActiveHash('#' + item.href.split('#')[1]);
-                        } else {
-                          setActiveHash('');
-                        }
                         if (window.innerWidth < 1024 && isOpen) {
                           toggle();
                         }

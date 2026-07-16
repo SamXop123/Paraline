@@ -100,7 +100,7 @@ export default function SystemRequirements() {
             System Requirements
           </h1>
           <p className="text-lg text-muted max-w-2xl mx-auto font-light tracking-wide">
-            Make sure your machine is ready to run Paraline's high-performance audio engine and visualizers before downloading.
+            Make sure your machine is ready to run Paraline&apos;s high-performance audio engine and visualizers before downloading.
           </p>
         </motion.div>
 
