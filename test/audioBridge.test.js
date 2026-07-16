@@ -52,6 +52,30 @@ const MAX_BYTES = 64 * 1024;        // mirrors audioBridge default
 const BIG = Buffer.alloc(MAX_BYTES + 1, "x");   // always triggers overflow
 const SMALL = Buffer.from(JSON.stringify({ type: "level", value: 0.5 }) + "\n");
 
+function createFakeHelperProcess({ writable = true, destroyed = false, writableEnded = false } = {}) {
+  const proc = new EventEmitter();
+  const stdin = new EventEmitter();
+  const writes = [];
+
+  stdin.writable = writable;
+  stdin.destroyed = destroyed;
+  stdin.writableEnded = writableEnded;
+  stdin.write = (payload, callback) => {
+    writes.push(payload);
+    if (callback) callback(null);
+    return true;
+  };
+
+  proc.stdin = stdin;
+  proc.stdout = new EventEmitter();
+  proc.stderr = new EventEmitter();
+  proc.kill = () => {
+    proc.killed = true;
+  };
+  proc.writes = writes;
+  return proc;
+}
+
 // ---------------------------------------------------------------------------
 // Test 1 — single overflow calls onOverflow and NOT onKill
 // ---------------------------------------------------------------------------
@@ -197,6 +221,164 @@ test("createAudioBridge - stop clears pending retry timer", () => {
   } finally {
     global.setTimeout = originalSetTimeout;
     global.clearTimeout = originalClearTimeout;
+    fakeHelperExists = false;
+    fakeSpawn = null;
+  }
+});
+
+test("createAudioBridge - sends and deduplicates wallpaper polling state", () => {
+  const spawnedProcesses = [];
+  fakeHelperExists = true;
+  fakeSpawn = () => {
+    const proc = createFakeHelperProcess();
+    spawnedProcesses.push(proc);
+    return proc;
+  };
+
+  try {
+    const bridge = createAudioBridge(() => {});
+
+    assert.doesNotThrow(() => bridge.setColorMode("manual"));
+    bridge.setColorMode("wallpaper");
+    bridge.start();
+
+    assert.deepStrictEqual(spawnedProcesses[0].writes, [
+      '{"type":"wallpaper-enabled","value":true}\n'
+    ]);
+
+    bridge.setColorMode("wallpaper");
+    bridge.setColorMode("manual");
+    bridge.setColorMode("system");
+    bridge.setColorMode("wallpaper");
+
+    assert.deepStrictEqual(spawnedProcesses[0].writes, [
+      '{"type":"wallpaper-enabled","value":true}\n',
+      '{"type":"wallpaper-enabled","value":false}\n',
+      '{"type":"wallpaper-enabled","value":true}\n'
+    ]);
+  } finally {
+    fakeHelperExists = false;
+    fakeSpawn = null;
+  }
+});
+
+test("createAudioBridge - defaults unknown modes to disabled", () => {
+  fakeHelperExists = true;
+  const proc = createFakeHelperProcess();
+  fakeSpawn = () => proc;
+
+  try {
+    const bridge = createAudioBridge(() => {});
+    bridge.setColorMode("adaptive");
+    bridge.setColorMode("unexpected");
+    bridge.start();
+
+    assert.deepStrictEqual(proc.writes, [
+      '{"type":"wallpaper-enabled","value":false}\n'
+    ]);
+  } finally {
+    fakeHelperExists = false;
+    fakeSpawn = null;
+  }
+});
+
+test("createAudioBridge - replays the latest state after helper restart", () => {
+  const originalSetTimeout = global.setTimeout;
+  const originalClearTimeout = global.clearTimeout;
+  const scheduledTimers = [];
+  const spawnedProcesses = [];
+
+  global.setTimeout = (callback, delay) => {
+    const timer = { callback, delay, cleared: false };
+    scheduledTimers.push(timer);
+    return timer;
+  };
+  global.clearTimeout = (timer) => {
+    if (timer) timer.cleared = true;
+  };
+  fakeHelperExists = true;
+  fakeSpawn = () => {
+    const proc = createFakeHelperProcess();
+    spawnedProcesses.push(proc);
+    return proc;
+  };
+
+  try {
+    const bridge = createAudioBridge(() => {});
+    bridge.setColorMode("wallpaper");
+    bridge.start();
+    spawnedProcesses[0].emit("exit", 1);
+    scheduledTimers[0].callback();
+
+    assert.strictEqual(spawnedProcesses.length, 2);
+    assert.deepStrictEqual(spawnedProcesses[1].writes, [
+      '{"type":"wallpaper-enabled","value":true}\n'
+    ]);
+  } finally {
+    global.setTimeout = originalSetTimeout;
+    global.clearTimeout = originalClearTimeout;
+    fakeHelperExists = false;
+    fakeSpawn = null;
+  }
+});
+
+test("createAudioBridge - closed helper stdin does not throw", () => {
+  fakeHelperExists = true;
+  const proc = createFakeHelperProcess({ writable: false, writableEnded: true });
+  fakeSpawn = () => proc;
+
+  try {
+    const bridge = createAudioBridge(() => {});
+    assert.doesNotThrow(() => bridge.start());
+    assert.doesNotThrow(() => bridge.setColorMode("wallpaper"));
+    assert.doesNotThrow(() => proc.stdin.emit("error", new Error("closed")));
+    assert.deepStrictEqual(proc.writes, []);
+  } finally {
+    fakeHelperExists = false;
+    fakeSpawn = null;
+  }
+});
+
+test("createAudioBridge - synchronous stdin write failure does not throw", () => {
+  fakeHelperExists = true;
+  const proc = createFakeHelperProcess();
+  proc.stdin.write = () => {
+    throw new Error("broken pipe");
+  };
+  fakeSpawn = () => proc;
+
+  try {
+    const bridge = createAudioBridge(() => {});
+    assert.doesNotThrow(() => bridge.start());
+    assert.doesNotThrow(() => bridge.setColorMode("wallpaper"));
+  } finally {
+    fakeHelperExists = false;
+    fakeSpawn = null;
+  }
+});
+
+test("createAudioBridge - level and colors stdout messages remain unchanged", () => {
+  const levels = [];
+  const colors = [];
+  fakeHelperExists = true;
+  const proc = createFakeHelperProcess();
+  fakeSpawn = () => proc;
+
+  try {
+    const bridge = createAudioBridge(
+      (value) => levels.push(value),
+      () => {},
+      (value) => colors.push(value)
+    );
+    bridge.start();
+    proc.stdout.emit("data", Buffer.from(
+      '{"type":"level","value":0.75}\n' +
+      '{"type":"colors","value":["#111111","#222222","#333333"]}\n'
+    ));
+
+    assert.deepStrictEqual(levels, [0.75]);
+    assert.deepStrictEqual(colors, [["#111111", "#222222", "#333333"]]);
+  } finally {
     fakeHelperExists = false;
     fakeSpawn = null;
   }

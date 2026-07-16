@@ -13,6 +13,9 @@ internal static class Program
     {
         WasapiLoopbackCapture? capture = null;
         DateTime lastWallpaperCheck = DateTime.MinValue;
+        bool wasWallpaperPollingEnabled = false;
+
+        WallpaperPollingControl.StartReading();
 
         while (true)
         {
@@ -34,12 +37,17 @@ internal static class Program
 
                 Console.WriteLine(payload);
 
-                // Periodically check wallpaper (every 5 seconds)
-                if ((DateTime.Now - lastWallpaperCheck).TotalSeconds >= 5)
+                bool wallpaperPollingEnabled = WallpaperPollingControl.Enabled;
+                if (!wallpaperPollingEnabled)
+                {
+                    lastWallpaperCheck = DateTime.MinValue;
+                }
+                // Check immediately when enabled, then every 5 seconds while enabled.
+                else if (!wasWallpaperPollingEnabled || (DateTime.Now - lastWallpaperCheck).TotalSeconds >= 5)
                 {
                     lastWallpaperCheck = DateTime.Now;
                     var colors = WallpaperColorExtractor.GetWallpaperColors();
-                    if (colors != null)
+                    if (colors != null && WallpaperPollingControl.Enabled)
                     {
                         var colorsPayload = JsonSerializer.Serialize(new
                         {
@@ -49,6 +57,7 @@ internal static class Program
                         Console.WriteLine(colorsPayload);
                     }
                 }
+                wasWallpaperPollingEnabled = wallpaperPollingEnabled;
 
                 Thread.Sleep(33);
             }
@@ -74,6 +83,54 @@ internal static class Program
                 // Wait 1 second before attempting to bind to the new default audio endpoint
                 Thread.Sleep(1000);
             }
+        }
+    }
+}
+
+internal static class WallpaperPollingControl
+{
+    private static int _enabled;
+
+    internal static bool Enabled => Volatile.Read(ref _enabled) == 1;
+
+    internal static void StartReading()
+    {
+        _ = Task.Run(ReadCommands);
+    }
+
+    private static void ReadCommands()
+    {
+        string? line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            TryApplyCommand(line);
+        }
+    }
+
+    internal static bool TryApplyCommand(string line)
+    {
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(line);
+            JsonElement root = document.RootElement;
+            if (
+                root.ValueKind != JsonValueKind.Object ||
+                !root.TryGetProperty("type", out JsonElement type) ||
+                type.ValueKind != JsonValueKind.String ||
+                type.GetString() != "wallpaper-enabled" ||
+                !root.TryGetProperty("value", out JsonElement value) ||
+                (value.ValueKind != JsonValueKind.True && value.ValueKind != JsonValueKind.False)
+            )
+            {
+                return false;
+            }
+
+            Volatile.Write(ref _enabled, value.GetBoolean() ? 1 : 0);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
         }
     }
 }
