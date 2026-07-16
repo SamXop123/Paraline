@@ -43,6 +43,7 @@
     "files": [
       "main.js",
       "renderer.js",
+      "rendererLoop.js",
       "preload.js",
       "audioBridge.js",
       "settingsStore.js",

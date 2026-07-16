@@ -237,7 +237,6 @@ const debugEnabled = params.get("debug") === "1";
 
 // Cleanup tracking variables
 let debugIntervalId = null;
-let animationFrameId = null;
 let resizeHandler = null;
 
 const ADAPTIVE_FALLBACK_ACCENT = "#4facfe";
@@ -705,11 +704,7 @@ function updateColorModulation(now, deltaMs) {
 }
 
 function renderFrame(now) {
-  animationFrameId = requestAnimationFrame(renderFrame);
-
   if (visualizerState.hidden) {
-    context.clearRect(0, 0, width, height);
-    lastFrameAt = performance.now();
     return;
   }
 
@@ -969,7 +964,17 @@ function applySettings(nextSettings) {
 
 
   rebuildCachedPaint();
+  rendererLoop.setHidden(visualizerState.hidden);
 }
+
+const rendererLoop = createRendererLoop({
+  renderFrame,
+  clearCanvas: () => context.clearRect(0, 0, width, height),
+  resetTiming: () => {
+    lastFrameAt = 0;
+  },
+  initialHidden: visualizerState.hidden
+});
 
 resizeHandler = resizeCanvas;
 window.addEventListener("resize", resizeHandler);
@@ -1017,11 +1022,8 @@ function cleanupResources() {
     debugIntervalId = null;
   }
   
-  // Cancel animation frame
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-    animationFrameId = null;
-  }
+  // Cancel animation rendering and prevent it from restarting
+  rendererLoop.destroy();
   
   // Remove resize event listener
   if (resizeHandler) {
@@ -1052,7 +1054,7 @@ if (debugEnabled) {
 }
 
 resizeCanvas();
-animationFrameId = requestAnimationFrame(renderFrame);
+rendererLoop.start();
 
 // --- macOS Glassmorphic Context Menu Integration ---
 
