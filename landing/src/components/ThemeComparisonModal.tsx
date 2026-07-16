@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronUp } from "lucide-react";
@@ -10,14 +10,74 @@ interface ThemeComparisonModalProps {
   isOpen: boolean;
   onClose: () => void;
   compareList: string[];
+  triggerRef: RefObject<HTMLButtonElement | null>;
 }
 
-export function ThemeComparisonModal({ isOpen, onClose, compareList }: ThemeComparisonModalProps) {
-  const [mounted, setMounted] = useState(false);
+const FOCUSABLE_SELECTOR = [
+  "a[href]", "area[href]", "button:not([disabled])",
+  "input:not([disabled]):not([type='hidden'])", "select:not([disabled])",
+  "textarea:not([disabled])", "iframe", "object", "embed",
+  "[contenteditable='true']", "[tabindex]:not([tabindex='-1'])"
+].join(",");
+
+function getFocusableElements(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(element => {
+    const style = window.getComputedStyle(element);
+    return style.display !== "none" && style.visibility !== "hidden" && element.getClientRects().length > 0;
+  });
+}
+
+const subscribeToClient = () => () => {};
+
+export function ThemeComparisonModal({ isOpen, onClose, compareList, triggerRef }: ThemeComparisonModalProps) {
+  const mounted = useSyncExternalStore(subscribeToClient, () => true, () => false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (!mounted || !isOpen) return;
+    const dialog = dialogRef.current;
+    const trigger = triggerRef.current;
+    if (!dialog) return;
+
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const focusableElements = getFocusableElements(dialog);
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && (activeElement === firstElement || !dialog.contains(activeElement))) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && (activeElement === lastElement || !dialog.contains(activeElement))) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      if (trigger?.isConnected && !trigger.disabled) {
+        trigger.focus();
+      }
+    };
+  }, [isOpen, mounted, onClose, triggerRef]);
 
   if (!mounted) return null;
 
@@ -54,11 +114,17 @@ export function ThemeComparisonModal({ isOpen, onClose, compareList }: ThemeComp
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
+            aria-hidden="true"
             className="absolute inset-0 bg-[#060913]/85 backdrop-blur-xl"
           />
 
           {/* Modal Container */}
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="theme-comparison-title"
+            tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -71,12 +137,14 @@ export function ThemeComparisonModal({ isOpen, onClose, compareList }: ThemeComp
                 <p className="text-[10px] font-extrabold text-cyan-500 uppercase tracking-[0.2em] mb-1">
                   Comparing
                 </p>
-                <h3 className="text-sm sm:text-base font-semibold text-white tracking-wide">
+                <h3 id="theme-comparison-title" className="text-sm sm:text-base font-semibold text-white tracking-wide">
                   {themesToCompare.map(t => t.name).join(" vs ")}
                 </h3>
               </div>
               <button
+                ref={closeButtonRef}
                 onClick={onClose}
+                aria-label="Close theme comparison"
                 className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
