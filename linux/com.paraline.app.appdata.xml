@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.paraline.app</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Paraline</name>
+  <summary>Windows/Linux desktop audio visualizer with transparent edge-light overlays</summary>
+  <description>
+    <p>
+      Paraline is a high-performance desktop audio visualizer that renders stunning, customizable transparent edge-light overlays that react in real-time to your system audio.
+    </p>
+  </description>
+  <launchable type="desktop-id">com.paraline.app.desktop</launchable>
+  <url type="homepage">https://paraline.vercel.app/</url>
+  <url type="vcs-browser">https://github.com/SamXop123/Paraline</url>
+  <url type="donation">https://github.com/sponsors/SamXop123</url>
+  <provides>
+    <binary>paraline</binary>
+  </provides>
+</component>
