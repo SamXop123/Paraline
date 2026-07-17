@@ -55,9 +55,57 @@ const supportItems = [
   { name: "Github", href: GITHUB_URL, icon: Github, external: true },
 ];
 
+const hashSubscribers = new Set<() => void>();
+let originalPushState: History["pushState"] | null = null;
+let originalReplaceState: History["replaceState"] | null = null;
+let currentHash = "";
+
+function notifyHashSubscribers() {
+  const nextHash = window.location.hash;
+  if (nextHash === currentHash) return;
+  currentHash = nextHash;
+  hashSubscribers.forEach((subscriber) => subscriber());
+}
+
+function installHashChangeListeners() {
+  currentHash = window.location.hash;
+  const pushState = window.history.pushState;
+  const replaceState = window.history.replaceState;
+  originalPushState = pushState;
+  originalReplaceState = replaceState;
+
+  window.history.pushState = function (this: History, data: unknown, unused: string, url?: string | URL | null) {
+    const result = pushState.call(this, data, unused, url);
+    notifyHashSubscribers();
+    return result;
+  };
+  window.history.replaceState = function (this: History, data: unknown, unused: string, url?: string | URL | null) {
+    const result = replaceState.call(this, data, unused, url);
+    notifyHashSubscribers();
+    return result;
+  };
+
+  window.addEventListener("hashchange", notifyHashSubscribers);
+  window.addEventListener("popstate", notifyHashSubscribers);
+}
+
+function removeHashChangeListeners() {
+  window.removeEventListener("hashchange", notifyHashSubscribers);
+  window.removeEventListener("popstate", notifyHashSubscribers);
+  if (originalPushState) window.history.pushState = originalPushState;
+  if (originalReplaceState) window.history.replaceState = originalReplaceState;
+  originalPushState = null;
+  originalReplaceState = null;
+}
+
 function subscribeToHashChange(callback: () => void) {
-  window.addEventListener("hashchange", callback);
-  return () => window.removeEventListener("hashchange", callback);
+  hashSubscribers.add(callback);
+  if (hashSubscribers.size === 1) installHashChangeListeners();
+
+  return () => {
+    hashSubscribers.delete(callback);
+    if (hashSubscribers.size === 0) removeHashChangeListeners();
+  };
 }
 
 function getHashSnapshot() {
