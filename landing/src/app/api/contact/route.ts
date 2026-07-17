@@ -1,10 +1,49 @@
 import { NextResponse } from "next/server";
 
+const MAX_PAYLOAD_BYTES = 100 * 1024;
+
+class PayloadTooLargeError extends Error {}
+
+async function parseJsonWithinLimit(request: Request) {
+  if (!request.body) {
+    return request.json();
+  }
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_PAYLOAD_BYTES) {
+        throw new PayloadTooLargeError("Contact request exceeds the payload limit.");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bodyBytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bodyBytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  const body = new TextDecoder().decode(bodyBytes);
+  return JSON.parse(body);
+}
+
 export async function POST(request: Request) {
   try {
     // Protect against oversized payloads by checking content-length header
     const contentLength = request.headers.get("content-length");
-    if (contentLength && parseInt(contentLength, 10) > 100 * 1024) { // 100KB limit
+    if (contentLength && parseInt(contentLength, 10) > MAX_PAYLOAD_BYTES) {
       return NextResponse.json(
         {
           success: false,
@@ -14,7 +53,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await parseJsonWithinLimit(request);
     const { name, email, subject, message } = body;
 
     // Validate presence of required fields first
@@ -194,6 +233,16 @@ export async function POST(request: Request) {
       message: "Message received and dispatched successfully.",
     });
   } catch (error) {
+    if (error instanceof PayloadTooLargeError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Payload too large. Maximum size is 100KB.",
+        },
+        { status: 413 }
+      );
+    }
+
     console.error("[CONTACT_API_ERROR]", error);
     return NextResponse.json(
       {
