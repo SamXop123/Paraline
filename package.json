@@ -13,6 +13,8 @@
     "build:helper": "dotnet publish .\\audio-helper\\Paraline.AudioBridge.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o .\\build\\audio-helper",
     "pack:win": "npm run build:helper && npm run validate:helper && electron-builder --dir --win nsis --x64",
     "dist:win": "npm run build:helper && npm run validate:helper && electron-builder --win nsis --x64",
+    "pack:linux": "electron-builder --dir --linux --x64",
+    "dist:linux": "electron-builder --linux --x64",
     "validate:helper": "node scripts/validate-helper.js",
     "test": "node --test test/**/*.test.js"
   },
@@ -58,16 +60,11 @@
       "themes/**/*",
       "previews/**/*",
       "package.json",
-      "assets/**/*"
+      "assets/**/*",
+      "linux/**/*"
     ],
-    "extraResources": [
-      {
-        "from": "build/audio-helper",
-        "to": "audio-helper",
-        "filter": [
-          "Paraline.AudioBridge.exe"
-        ]
-      }
+    "asarUnpack": [
+      "linux/extension/**/*"
     ],
     "win": {
       "target": [
@@ -78,7 +75,16 @@
           ]
         }
       ],
-      "icon": "assets/appicon.ico"
+      "icon": "assets/appicon.ico",
+      "extraResources": [
+        {
+          "from": "build/audio-helper",
+          "to": "audio-helper",
+          "filter": [
+            "Paraline.AudioBridge.exe"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -86,6 +92,15 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Paraline"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "rpm",
+        "deb"
+      ],
+      "category": "Utility",
+      "icon": "assets/appicon.png"
     },
     "publish": [
       {
