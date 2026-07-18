@@ -1,10 +1,15 @@
 const test = require("node:test");
 const assert = require("node:assert");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const {
   DEFAULT_SETTINGS,
   createDefaultSettings,
   createThemeDefaults,
-  sanitizeSettings
+  createSettingsStore,
+  sanitizeSettings,
+  sanitizeProfiles
 } = require("../settingsStore");
 
 const Module = require("module");
@@ -364,4 +369,88 @@ test("settings backup import profiles - validates names and sanitizes valid prof
   assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "__proto__"), false);
   assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "constructor"), false);
   assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "prototype"), false);
+});
+
+test("settingsStore - sanitizeProfiles rejects non-object input", () => {
+  assert.deepStrictEqual(sanitizeProfiles(null), {});
+  assert.deepStrictEqual(sanitizeProfiles(undefined), {});
+  assert.deepStrictEqual(sanitizeProfiles([]), {});
+  assert.deepStrictEqual(sanitizeProfiles("not an object"), {});
+  assert.deepStrictEqual(sanitizeProfiles(42), {});
+});
+
+test("settingsStore - sanitizeProfiles drops invalid names and non-object values, sanitizes the rest", () => {
+  const input = {
+    "Clean Profile": {
+      selectedTheme: "sideBars",
+      sideBars: { customThickness: 100, customGap: 0, customSensitivity: -50 }
+    },
+    "bad/profile:name": { selectedTheme: "reactiveBorder" },
+    "__proto__": { selectedTheme: "auroraDrift" },
+    "constructor": { selectedTheme: "flowBorder" },
+    "prototype": { selectedTheme: "dotParticles" },
+    "": { selectedTheme: "ambientWave" },
+    "Null Value": null,
+    "Array Value": []
+  };
+
+  const safeProfiles = sanitizeProfiles(input);
+
+  assert.deepStrictEqual(Object.keys(safeProfiles), ["Clean Profile"]);
+  assert.strictEqual(safeProfiles["Clean Profile"].selectedTheme, "sideBars");
+  assert.strictEqual(safeProfiles["Clean Profile"].sideBars.customThickness, 20);
+  assert.strictEqual(safeProfiles["Clean Profile"].sideBars.customGap, 2);
+  assert.strictEqual(safeProfiles["Clean Profile"].sideBars.customSensitivity, 1);
+});
+
+test("settingsStore - loadProfiles sanitizes profiles read from themeProfiles.json on disk", () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "paraline-test-"));
+  try {
+    const store = createSettingsStore(tmpDir);
+
+    const rawProfiles = {
+      "Clean Profile": {
+        selectedTheme: "sideBars",
+        sideBars: { customThickness: 100, customGap: 0, customSensitivity: -50 }
+      },
+      "bad/profile:name": { selectedTheme: "reactiveBorder" },
+      "__proto__": { selectedTheme: "auroraDrift" },
+      "constructor": { selectedTheme: "flowBorder" },
+      "prototype": { selectedTheme: "dotParticles" }
+    };
+
+    fs.mkdirSync(path.dirname(store.profilesPath), { recursive: true });
+    fs.writeFileSync(store.profilesPath, JSON.stringify(rawProfiles, null, 2));
+
+    const safeProfiles = store.loadProfiles();
+
+    assert.deepStrictEqual(Object.keys(safeProfiles), ["Clean Profile"]);
+    assert.strictEqual(safeProfiles["Clean Profile"].selectedTheme, "sideBars");
+    assert.strictEqual(safeProfiles["Clean Profile"].sideBars.customThickness, 20);
+    assert.strictEqual(safeProfiles["Clean Profile"].sideBars.customGap, 2);
+    assert.strictEqual(safeProfiles["Clean Profile"].sideBars.customSensitivity, 1);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "bad/profile:name"), false);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "__proto__"), false);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "constructor"), false);
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "prototype"), false);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test("settingsStore - loadProfiles returns {} when file is missing or corrupted", () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "paraline-test-"));
+  try {
+    const store = createSettingsStore(tmpDir);
+
+    // No file on disk yet.
+    assert.deepStrictEqual(store.loadProfiles(), {});
+
+    // Corrupted JSON should also fall back to {}.
+    fs.mkdirSync(path.dirname(store.profilesPath), { recursive: true });
+    fs.writeFileSync(store.profilesPath, "{ this is not valid json");
+    assert.deepStrictEqual(store.loadProfiles(), {});
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 });
