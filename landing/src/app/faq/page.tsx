@@ -70,7 +70,7 @@ export default function FAQPage() {
             FAQ
           </h1>
           <p className="text-lg text-muted max-w-2xl mx-auto font-light tracking-wide">
-            Everything you need to know about Paraline. Can't find an answer? Reach out on GitHub.
+            Everything you need to know about Paraline. Can&apos;t find an answer? Reach out on GitHub.
           </p>
         </motion.div>
 

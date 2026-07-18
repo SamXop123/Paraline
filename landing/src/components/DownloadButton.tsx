@@ -5,6 +5,25 @@ import { Download, Loader2, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+type Gtag = (command: "event", eventName: string, parameters: { location: string }) => void;
+
+declare global {
+  interface Window {
+    gtag?: Gtag;
+  }
+}
+
+interface DownloadApiResponse {
+  url: string;
+}
+
+function isDownloadApiResponse(value: unknown): value is DownloadApiResponse {
+  return typeof value === "object" &&
+    value !== null &&
+    "url" in value &&
+    typeof value.url === "string";
+}
+
 interface DownloadButtonProps {
   className?: string;
   variant?: "primary" | "secondary";
@@ -20,8 +39,8 @@ export function DownloadButton({ className, variant = "primary", children, style
     e.preventDefault();
     if (status !== "idle") return;
 
-    if (typeof window !== "undefined" && typeof (window as any).gtag === "function") {
-      (window as any).gtag("event", "download_click", {
+    if (typeof window !== "undefined" && typeof window.gtag === "function") {
+      window.gtag("event", "download_click", {
         location: location
       });
     }
@@ -38,7 +57,11 @@ export function DownloadButton({ className, variant = "primary", children, style
       
       if (!res.ok) throw new Error("Failed to connect");
       
-      const data = await res.json();
+      const data: unknown = await res.json();
+
+      if (!isDownloadApiResponse(data)) {
+        throw new Error("Invalid download response");
+      }
       
       setStatus("downloading");
       
@@ -71,11 +94,11 @@ export function DownloadButton({ className, variant = "primary", children, style
         }
       }, 800);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
       setStatus("idle");
       
-      if (error?.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         alert("The download request timed out. Please try again or visit our GitHub releases directly.");
       } else {
         // Fallback

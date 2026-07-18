@@ -1,5 +1,32 @@
 import { NextResponse } from "next/server";
 
+interface GitHubReleaseAsset {
+  name: string;
+  browser_download_url: string;
+}
+
+interface GitHubRelease {
+  assets: GitHubReleaseAsset[];
+  tag_name: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isGitHubReleaseAsset(value: unknown): value is GitHubReleaseAsset {
+  return isRecord(value) &&
+    typeof value.name === "string" &&
+    typeof value.browser_download_url === "string";
+}
+
+function isGitHubRelease(value: unknown): value is GitHubRelease {
+  return isRecord(value) &&
+    Array.isArray(value.assets) &&
+    value.assets.every(isGitHubReleaseAsset) &&
+    typeof value.tag_name === "string";
+}
+
 export async function GET() {
   try {
     // Simulate backend connection and package preparation delay (optional, for UX)
@@ -20,10 +47,14 @@ export async function GET() {
       throw new Error("Failed to fetch GitHub releases");
     }
 
-    const data = await response.json();
+    const data: unknown = await response.json();
+
+    if (!isGitHubRelease(data)) {
+      throw new Error("Invalid GitHub release response");
+    }
     
     // Find the actual .exe asset
-    const exeAsset = data.assets.find((asset: any) => asset.name.endsWith('.exe'));
+    const exeAsset = data.assets.find((asset) => asset.name.endsWith('.exe'));
     
     if (!exeAsset) {
       throw new Error("No executable found in the latest release");
@@ -36,10 +67,10 @@ export async function GET() {
       filename: exeAsset.name,
       message: "Download ready!"
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Download API Error:", error);
 
-    if (error?.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       return NextResponse.json(
         { success: false, message: "Request timed out fetching releases." },
         { status: 504 }

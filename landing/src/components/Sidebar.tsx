@@ -3,17 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { 
   Home, 
   Image as ImageIcon, 
   Settings, 
-  FileText, 
   HelpCircle, 
   Download, 
   HeadphonesIcon,
   ChevronLeft,
-  ChevronRight,
   Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -57,18 +55,77 @@ const supportItems = [
   { name: "Github", href: GITHUB_URL, icon: Github, external: true },
 ];
 
+const hashSubscribers = new Set<() => void>();
+let originalPushState: History["pushState"] | null = null;
+let originalReplaceState: History["replaceState"] | null = null;
+let currentHash = "";
+
+function notifyHashSubscribers() {
+  const nextHash = window.location.hash;
+  if (nextHash === currentHash) return;
+  currentHash = nextHash;
+  hashSubscribers.forEach((subscriber) => subscriber());
+}
+
+function installHashChangeListeners() {
+  currentHash = window.location.hash;
+  const pushState = window.history.pushState;
+  const replaceState = window.history.replaceState;
+  originalPushState = pushState;
+  originalReplaceState = replaceState;
+
+  window.history.pushState = function (this: History, data: unknown, unused: string, url?: string | URL | null) {
+    const result = pushState.call(this, data, unused, url);
+    notifyHashSubscribers();
+    return result;
+  };
+  window.history.replaceState = function (this: History, data: unknown, unused: string, url?: string | URL | null) {
+    const result = replaceState.call(this, data, unused, url);
+    notifyHashSubscribers();
+    return result;
+  };
+
+  window.addEventListener("hashchange", notifyHashSubscribers);
+  window.addEventListener("popstate", notifyHashSubscribers);
+}
+
+function removeHashChangeListeners() {
+  window.removeEventListener("hashchange", notifyHashSubscribers);
+  window.removeEventListener("popstate", notifyHashSubscribers);
+  if (originalPushState) window.history.pushState = originalPushState;
+  if (originalReplaceState) window.history.replaceState = originalReplaceState;
+  originalPushState = null;
+  originalReplaceState = null;
+}
+
+function subscribeToHashChange(callback: () => void) {
+  hashSubscribers.add(callback);
+  if (hashSubscribers.size === 1) installHashChangeListeners();
+
+  return () => {
+    hashSubscribers.delete(callback);
+    if (hashSubscribers.size === 0) removeHashChangeListeners();
+  };
+}
+
+function getHashSnapshot() {
+  return window.location.hash;
+}
+
+function getServerHashSnapshot() {
+  return "";
+}
+
 export function Sidebar() {
   const { isOpen, toggle } = useSidebarStore();
   const pathname = usePathname();
-  const [activeHash, setActiveHash] = useState("");
+  const activeHash = useSyncExternalStore(
+    subscribeToHashChange,
+    getHashSnapshot,
+    getServerHashSnapshot
+  );
 
   useEffect(() => {
-    setActiveHash(window.location.hash);
-    
-    const handleHashChange = () => {
-      setActiveHash(window.location.hash);
-    };
-
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         useSidebarStore.getState().setIsOpen(false);
@@ -78,13 +135,11 @@ export function Sidebar() {
     // Auto-close sidebar on mobile devices by default on mount
     handleResize();
     
-    window.addEventListener("hashchange", handleHashChange);
     window.addEventListener("resize", handleResize);
     return () => {
-      window.removeEventListener("hashchange", handleHashChange);
       window.removeEventListener("resize", handleResize);
     };
-  }, [pathname]);
+  }, []);
 
   const checkIsActive = (href: string) => {
     if (href.includes('#')) {
@@ -169,11 +224,6 @@ export function Sidebar() {
                     <Link
                       href={item.href}
                       onClick={() => {
-                        if (item.href.includes('#')) {
-                          setActiveHash('#' + item.href.split('#')[1]);
-                        } else {
-                          setActiveHash('');
-                        }
                         if (window.innerWidth < 1024 && isOpen) {
                           toggle();
                         }
