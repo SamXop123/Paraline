@@ -1,3 +1,12 @@
+const isTestEnv = process.env.NODE_ENV === 'test' || 
+                  process.env.npm_lifecycle_event === 'test' || 
+                  (process.argv && process.argv.some(arg => arg.includes('test')));
+
+if (process.platform === 'linux' && !isTestEnv) {
+  require('./linux/main.js');
+  return;
+}
+
 const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, screen, shell, dialog, nativeTheme, systemPreferences, powerMonitor, globalShortcut } = require("electron");
 const path = require("path");
 const fs = require("fs");
