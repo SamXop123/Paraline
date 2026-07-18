@@ -246,6 +246,17 @@ export function ThemeShowcase() {
     setTimeout(() => setAppliedTheme(null), 3000);
   };
 
+  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, theme: Theme) => {
+    if (event.target !== event.currentTarget) return;
+
+    if (event.key === "Enter") {
+      handleApply(theme);
+    } else if (event.key === " ") {
+      event.preventDefault();
+      handleApply(theme);
+    }
+  };
+
   return (
     <section id="themes" className="relative w-full py-24">
       <div className="mx-auto w-full max-w-7xl px-6 lg:px-8">
@@ -280,7 +291,11 @@ export function ThemeShowcase() {
               onMouseEnter={() => handleMouseEnter(theme.id)}
               onMouseLeave={handleMouseLeave}
               onClick={() => handleApply(theme)}
-              className={`group relative flex flex-col sm:flex-row cursor-pointer overflow-hidden rounded-[28px] border border-white/5 bg-[#0a0d16]/80 backdrop-blur-md p-6 sm:p-8 transition-all duration-500 hover:border-cyan-500/30 hover:shadow-[0_20px_60px_-15px_rgba(34,211,238,0.2)] ${theme.className}`}
+              onKeyDown={(event) => handleCardKeyDown(event, theme)}
+              role="button"
+              tabIndex={0}
+              aria-label={`Preview and apply ${theme.name} theme`}
+              className={`group relative flex flex-col sm:flex-row cursor-pointer overflow-hidden rounded-[28px] border border-white/5 bg-[#0a0d16]/80 backdrop-blur-md p-6 sm:p-8 transition-all duration-500 hover:border-cyan-500/30 hover:shadow-[0_20px_60px_-15px_rgba(34,211,238,0.2)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-4 focus-visible:ring-offset-[#060913] ${theme.className}`}
             >
               {/* Premium Glow effect on hover */}
               <div className="absolute -inset-[1px] -z-10 rounded-[28px] bg-gradient-to-r from-cyan-500/0 via-cyan-400/10 to-purple-500/0 opacity-0 transition-opacity duration-700 group-hover:opacity-100 blur-md" />
@@ -288,10 +303,12 @@ export function ThemeShowcase() {
               {/* Compare Button Toggle */}
               <button
                 onClick={(e) => toggleCompare(e, theme.id)}
-                className={`absolute top-4 right-4 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${
+                aria-pressed={compareList.includes(theme.id)}
+                aria-label={`${compareList.includes(theme.id) ? "Remove" : "Add"} ${theme.name} ${compareList.includes(theme.id) ? "from" : "to"} comparison`}
+                className={`absolute top-4 right-4 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all duration-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0d16] ${
                   compareList.includes(theme.id) 
                     ? "bg-cyan-500/20 text-cyan-400 border border-cyan-400/30 opacity-100 shadow-[0_0_15px_rgba(34,211,238,0.3)]" 
-                    : "bg-white/5 text-white/50 border border-white/10 opacity-0 group-hover:opacity-100 hover:bg-white/10 hover:text-white"
+                    : "bg-white/5 text-white/50 border border-white/10 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 {compareList.includes(theme.id) ? (

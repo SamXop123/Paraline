@@ -229,6 +229,7 @@ const VALID_AURORA_AUDIO = new Set(["subtle", "balanced", "responsive"]);
 const VALID_AURORA_SOFTNESS = new Set(["misty", "smooth", "defined"]);
 const VALID_AURORA_DENSITY = new Set(["light", "balanced", "rich"]);
 const VALID_COLOR_MODULATION_MODES = new Set(["amplitude", "beat"]);
+const VALID_THEME_AUTOMATION_MODES = new Set(["dayNight"]);
 
 function createDefaultSettings() {
   return {
@@ -349,7 +350,7 @@ function sanitizeThemeAutomation(input = {}) {
     checkIntervalMinutes: Number.isFinite(interval)
       ? Math.max(1, Math.min(120, interval))
       : DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes,
-    mode: typeof input.mode === "string" ? input.mode : DEFAULT_SETTINGS.themeAutomation.mode,
+    mode: pick(input.mode, VALID_THEME_AUTOMATION_MODES, DEFAULT_SETTINGS.themeAutomation.mode),
     dayTheme: pick(input.dayTheme, VALID_MAIN_THEMES, DEFAULT_SETTINGS.themeAutomation.dayTheme),
     nightTheme: pick(input.nightTheme, VALID_MAIN_THEMES, DEFAULT_SETTINGS.themeAutomation.nightTheme),
     dayStartHour: dayStart,
@@ -661,15 +662,26 @@ function sanitizeColorModulation(input = {}) {
 
 function sanitizeShortcuts(input) {
   const safeInput = (input && typeof input === "object") ? input : {};
+  const keys = ["togglePause", "toggleHide", "cycleTheme"];
+
   const shortcuts = {
     togglePause: typeof safeInput.togglePause === "string" ? safeInput.togglePause : DEFAULT_SETTINGS.shortcuts.togglePause,
     toggleHide: typeof safeInput.toggleHide === "string" ? safeInput.toggleHide : DEFAULT_SETTINGS.shortcuts.toggleHide,
     cycleTheme: typeof safeInput.cycleTheme === "string" ? safeInput.cycleTheme : DEFAULT_SETTINGS.shortcuts.cycleTheme
   };
 
+  // Normalize any casing/whitespace variant of "none" (e.g. "none", "NONE",
+  // " None ") to the canonical "None" sentinel used to mean "no shortcut
+  // assigned". Without this, Electron may try to register the literal
+  // string as an accelerator and fail instead of leaving the shortcut unset.
+  for (const key of keys) {
+    if (typeof shortcuts[key] === "string" && shortcuts[key].trim().toLowerCase() === "none") {
+      shortcuts[key] = "None";
+    }
+  }
+
   // Resolve duplicates by resetting subsequent duplicate actions to "None"
   const seen = new Set();
-  const keys = ["togglePause", "toggleHide", "cycleTheme"];
   for (const key of keys) {
     const val = shortcuts[key];
     if (val && val !== "None") {

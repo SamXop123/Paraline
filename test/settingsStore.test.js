@@ -135,6 +135,36 @@ test("settingsStore - Legacy Theme Automation Migration", () => {
   assert.strictEqual(sanitized.themeAutomation.nightStartHour, DEFAULT_SETTINGS.themeAutomation.nightStartHour);
 });
 
+test("settingsStore - Theme Automation rejects invalid mode and falls back to default", () => {
+  const input = {
+    selectedTheme: "ambientWave",
+    themeAutomation: {
+      enabled: true,
+      mode: "randomMode" // invalid, should fall back to default ("dayNight")
+    }
+  };
+  const sanitized = sanitizeSettings(input);
+  assert.strictEqual(sanitized.themeAutomation.enabled, true);
+  assert.strictEqual(sanitized.themeAutomation.mode, DEFAULT_SETTINGS.themeAutomation.mode);
+
+  // Also cover non-string / missing values
+  const cases = [undefined, null, 123, {}, [], ""];
+  for (const mode of cases) {
+    const result = sanitizeSettings({
+      selectedTheme: "ambientWave",
+      themeAutomation: { mode }
+    });
+    assert.strictEqual(result.themeAutomation.mode, DEFAULT_SETTINGS.themeAutomation.mode);
+  }
+
+  // Valid mode should pass through unchanged
+  const validResult = sanitizeSettings({
+    selectedTheme: "ambientWave",
+    themeAutomation: { mode: "dayNight" }
+  });
+  assert.strictEqual(validResult.themeAutomation.mode, "dayNight");
+});
+
 test("settingsStore - Theme Automation parses and clamps check interval strings", () => {
   const cases = [
     ["15", 15],
@@ -268,6 +298,36 @@ test("settingsStore - wallpaperColors sanitization", () => {
   assert.deepStrictEqual(sanitized3.wallpaperColors, ["#111111", "#222222", "#333333"]);
 });
 
+test("settingsStore - shortcuts normalize any casing of \"none\" to \"None\"", () => {
+  const input = {
+    selectedTheme: "ambientWave",
+    shortcuts: {
+      togglePause: "none",
+      toggleHide: "NONE",
+      cycleTheme: " NoNe "
+    }
+  };
+  const sanitized = sanitizeSettings(input);
+  assert.strictEqual(sanitized.shortcuts.togglePause, "None");
+  assert.strictEqual(sanitized.shortcuts.toggleHide, "None");
+  assert.strictEqual(sanitized.shortcuts.cycleTheme, "None");
+});
+
+test("settingsStore - shortcuts leave real accelerators and canonical None untouched", () => {
+  const input = {
+    selectedTheme: "ambientWave",
+    shortcuts: {
+      togglePause: "Ctrl+Alt+P",
+      toggleHide: "None",
+      cycleTheme: "Ctrl+Alt+T"
+    }
+  };
+  const sanitized = sanitizeSettings(input);
+  assert.strictEqual(sanitized.shortcuts.togglePause, "Ctrl+Alt+P");
+  assert.strictEqual(sanitized.shortcuts.toggleHide, "None");
+  assert.strictEqual(sanitized.shortcuts.cycleTheme, "Ctrl+Alt+T");
+});
+
 
 test("settings backup import profiles - validates names and sanitizes valid profiles", () => {
   const importedProfiles = JSON.parse(`{
@@ -305,4 +365,3 @@ test("settings backup import profiles - validates names and sanitizes valid prof
   assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "constructor"), false);
   assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "prototype"), false);
 });
-
