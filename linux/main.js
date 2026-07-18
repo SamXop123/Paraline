@@ -902,8 +902,6 @@ app.whenReady().then(() => {
 
   reconcileOverlayWindows();
 
-  createSettingsWindow();
-
   createTray();
 
   screen.on("display-metrics-changed", (_e, display) => {
@@ -931,7 +929,6 @@ app.whenReady().then(() => {
 app.on("second-instance", () => {
   reconcileOverlayWindows();
   sendVisualizerSettings();
-  createSettingsWindow();
 });
 
 app.on("activate", () => {
