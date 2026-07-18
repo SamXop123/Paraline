@@ -378,6 +378,13 @@ function reconcileWallpaperPolling() {
   }
 }
 
+function reconcileWallpaperColorSource() {
+  if (audioBridge) {
+    audioBridge.setColorMode(visualizerSettings && visualizerSettings.colorMode);
+  }
+  reconcileWallpaperPolling();
+}
+
 function applyStartupSettings(launchOnStartup) {
   app.setLoginItemSettings({
     openAtLogin: launchOnStartup,
@@ -620,7 +627,7 @@ function updateSettings(nextSettings) {
 
   sendVisualizerSettings();
   refreshTrayMenu();
-  reconcileWallpaperPolling();
+  reconcileWallpaperColorSource();
 }
 
 function togglePaused() {
@@ -865,7 +872,7 @@ function handleAudioBridgeStatusChange(status) {
     stopSimulatedAudioFallback();
   }
   refreshTrayMenu();
-  reconcileWallpaperPolling();
+  reconcileWallpaperColorSource();
 }
 
 function resetCurrentThemeSettings() {
@@ -890,6 +897,7 @@ function resetAllSettings() {
   registerGlobalShortcuts();
   sendVisualizerSettings();
   refreshTrayMenu();
+  reconcileWallpaperColorSource();
 }
 // Reserved JavaScript property names that must not be used as object keys.
 // Using these as keys on a plain object pollutes Object.prototype and affects
@@ -1967,7 +1975,7 @@ app.whenReady().then(() => {
   visualizerSettings = settingsStore.save(settingsStore.load());
   applyStartupSettings(visualizerSettings.launchOnStartup);
   registerGlobalShortcuts();
-  reconcileWallpaperPolling();
+  reconcileWallpaperColorSource();
 
   if (app.isPackaged) {
     autoUpdater.checkForUpdatesAndNotify();
@@ -2300,6 +2308,7 @@ app.whenReady().then(() => {
       registerGlobalShortcuts();
       sendVisualizerSettings();
       refreshTrayMenu();
+      reconcileWallpaperColorSource();
 
       return {                                    
         success: true,
@@ -2349,6 +2358,7 @@ app.whenReady().then(() => {
   }, handleAudioBridgeStatusChange, (colors) => {
     updateWallpaperColors(colors);
   });
+  reconcileWallpaperColorSource();
 
   // Defer starting the audio bridge to prevent startup resource contention and SmartScreen lags from blocking Electron initialization
   setTimeout(() => {

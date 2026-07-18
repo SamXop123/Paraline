@@ -31,6 +31,51 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
   let recoveryTimer = null;
   let retryTimer = null;
   let successStartTime = null;
+  let wallpaperPollingEnabled = false;
+  let lastSentWallpaperPollingEnabled = null;
+
+  function syncWallpaperPollingState() {
+    if (lastSentWallpaperPollingEnabled === wallpaperPollingEnabled) {
+      return;
+    }
+
+    const processStdin = helperProcess && helperProcess.stdin;
+    if (
+      !processStdin ||
+      processStdin.destroyed ||
+      processStdin.writable === false ||
+      processStdin.writableEnded
+    ) {
+      return;
+    }
+
+    const sentValue = wallpaperPollingEnabled;
+    const payload = JSON.stringify({
+      type: "wallpaper-enabled",
+      value: sentValue
+    }) + "\n";
+
+    try {
+      lastSentWallpaperPollingEnabled = sentValue;
+      processStdin.write(payload, (error) => {
+        if (
+          error &&
+          helperProcess &&
+          helperProcess.stdin === processStdin &&
+          lastSentWallpaperPollingEnabled === sentValue
+        ) {
+          lastSentWallpaperPollingEnabled = null;
+        }
+      });
+    } catch {
+      lastSentWallpaperPollingEnabled = null;
+    }
+  }
+
+  function setColorMode(mode) {
+    wallpaperPollingEnabled = mode === "wallpaper";
+    syncWallpaperPollingState();
+  }
 
   function updateStatus(nextStatus) {
     if (
@@ -83,8 +128,19 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
 
     helperProcess = spawn(helperBinary, [], {
       windowsHide: true,
-      stdio: ["ignore", "pipe", "pipe"]
+      stdio: ["pipe", "pipe", "pipe"]
     });
+
+    lastSentWallpaperPollingEnabled = null;
+    if (helperProcess.stdin && typeof helperProcess.stdin.on === "function") {
+      const processStdin = helperProcess.stdin;
+      processStdin.on("error", () => {
+        if (helperProcess && helperProcess.stdin === processStdin) {
+          lastSentWallpaperPollingEnabled = null;
+        }
+      });
+    }
+    syncWallpaperPollingState();
 
     helperProcess.stdout.on("data", (chunk) => {
       stdoutBuffer += chunk.toString();
@@ -319,7 +375,8 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
   return {
     start,
     stop,
-    getStatus
+    getStatus,
+    setColorMode
   };
 }
 
