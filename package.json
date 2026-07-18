@@ -1,6 +1,8 @@
 {
   "name": "paraline",
   "version": "2.3.0",
+  "homepage": "https://paraline.vercel.app/",
+  "desktopName": "com.paraline.app.desktop",
   "description": "Windows desktop audio visualizer with transparent edge-light overlays and real-time system audio capture.",
   "main": "main.js",
   "scripts": {
@@ -64,7 +66,8 @@
       "linux/**/*"
     ],
     "asarUnpack": [
-      "linux/extension/**/*"
+      "linux/extension/**/*",
+      "linux/com.paraline.app.appdata.xml"
     ],
     "win": {
       "target": [
@@ -100,7 +103,19 @@
         "deb"
       ],
       "category": "Utility",
-      "icon": "assets/appicon.png"
+      "icon": "assets/appicon.png",
+      "maintainer": "SamXop123 <samxop123@users.noreply.github.com>",
+      "syncDesktopName": true
+    },
+    "deb": {
+      "fpm": [
+        "linux/com.paraline.app.appdata.xml=/usr/share/metainfo/com.paraline.app.appdata.xml"
+      ]
+    },
+    "rpm": {
+      "fpm": [
+        "linux/com.paraline.app.appdata.xml=/usr/share/metainfo/com.paraline.app.appdata.xml"
+      ]
     },
     "publish": [
       {
