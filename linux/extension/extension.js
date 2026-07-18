@@ -57,12 +57,10 @@ export default class ParalineCompanionExtension extends Extension {
             }
 
             const title = window.get_title();
-            const wmClass = window.get_wm_class();
             
-            const isParaline = (title && title.toLowerCase().includes('paraline')) ||
-                               (wmClass && wmClass.toLowerCase().includes('paraline'));
+            const isVisualizer = title && title === 'Paraline Visualizer';
 
-            if (isParaline) {
+            if (isVisualizer) {
                 console.log(`[Paraline Extension] MATCHED Paraline window. Calling stick() and make_above().`);
                 if (typeof window.stick === 'function') {
                     window.stick();
