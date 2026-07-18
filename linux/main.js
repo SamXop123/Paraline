@@ -12,6 +12,9 @@ const {
   powerMonitor,
   globalShortcut
 } = require("electron");
+
+app.commandLine.appendSwitch("ozone-platform", "x11");
+
 const path = require("path");
 const fs = require("fs");
 
@@ -899,9 +902,7 @@ app.whenReady().then(() => {
 
   reconcileOverlayWindows();
 
-  if (visualizerSettings.onboardingSeen !== true) {
-    createOnboardingWindow();
-  }
+  createSettingsWindow();
 
   createTray();
 
