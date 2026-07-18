@@ -268,6 +268,36 @@ test("settingsStore - wallpaperColors sanitization", () => {
   assert.deepStrictEqual(sanitized3.wallpaperColors, ["#111111", "#222222", "#333333"]);
 });
 
+test("settingsStore - shortcuts normalize any casing of \"none\" to \"None\"", () => {
+  const input = {
+    selectedTheme: "ambientWave",
+    shortcuts: {
+      togglePause: "none",
+      toggleHide: "NONE",
+      cycleTheme: " NoNe "
+    }
+  };
+  const sanitized = sanitizeSettings(input);
+  assert.strictEqual(sanitized.shortcuts.togglePause, "None");
+  assert.strictEqual(sanitized.shortcuts.toggleHide, "None");
+  assert.strictEqual(sanitized.shortcuts.cycleTheme, "None");
+});
+
+test("settingsStore - shortcuts leave real accelerators and canonical None untouched", () => {
+  const input = {
+    selectedTheme: "ambientWave",
+    shortcuts: {
+      togglePause: "Ctrl+Alt+P",
+      toggleHide: "None",
+      cycleTheme: "Ctrl+Alt+T"
+    }
+  };
+  const sanitized = sanitizeSettings(input);
+  assert.strictEqual(sanitized.shortcuts.togglePause, "Ctrl+Alt+P");
+  assert.strictEqual(sanitized.shortcuts.toggleHide, "None");
+  assert.strictEqual(sanitized.shortcuts.cycleTheme, "Ctrl+Alt+T");
+});
+
 
 test("settings backup import profiles - validates names and sanitizes valid profiles", () => {
   const importedProfiles = JSON.parse(`{
@@ -305,4 +335,3 @@ test("settings backup import profiles - validates names and sanitizes valid prof
   assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "constructor"), false);
   assert.strictEqual(Object.prototype.hasOwnProperty.call(safeProfiles, "prototype"), false);
 });
-

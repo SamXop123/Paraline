@@ -661,15 +661,26 @@ function sanitizeColorModulation(input = {}) {
 
 function sanitizeShortcuts(input) {
   const safeInput = (input && typeof input === "object") ? input : {};
+  const keys = ["togglePause", "toggleHide", "cycleTheme"];
+
   const shortcuts = {
     togglePause: typeof safeInput.togglePause === "string" ? safeInput.togglePause : DEFAULT_SETTINGS.shortcuts.togglePause,
     toggleHide: typeof safeInput.toggleHide === "string" ? safeInput.toggleHide : DEFAULT_SETTINGS.shortcuts.toggleHide,
     cycleTheme: typeof safeInput.cycleTheme === "string" ? safeInput.cycleTheme : DEFAULT_SETTINGS.shortcuts.cycleTheme
   };
 
+  // Normalize any casing/whitespace variant of "none" (e.g. "none", "NONE",
+  // " None ") to the canonical "None" sentinel used to mean "no shortcut
+  // assigned". Without this, Electron may try to register the literal
+  // string as an accelerator and fail instead of leaving the shortcut unset.
+  for (const key of keys) {
+    if (typeof shortcuts[key] === "string" && shortcuts[key].trim().toLowerCase() === "none") {
+      shortcuts[key] = "None";
+    }
+  }
+
   // Resolve duplicates by resetting subsequent duplicate actions to "None"
   const seen = new Set();
-  const keys = ["togglePause", "toggleHide", "cycleTheme"];
   for (const key of keys) {
     const val = shortcuts[key];
     if (val && val !== "None") {
