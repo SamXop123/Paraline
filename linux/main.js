@@ -13,7 +13,7 @@ const {
   globalShortcut
 } = require("electron");
 
-app.commandLine.appendSwitch("ozone-platform", "x11");
+app.commandLine.appendSwitch("enable-transparent-visuals");
 
 const path = require("path");
 const fs = require("fs");
@@ -301,6 +301,7 @@ function createOverlayWindow(display) {
   overlayWindow.loadFile(path.join(__dirname, "../index.html"));
 
   overlayWindow.webContents.on("did-finish-load", () => {
+    overlayWindow.setIgnoreMouseEvents(true);
     setTimeout(() => {
       sendVisualizerSettingsToWindow(overlayWindow);
       overlayWindow.webContents.send("focus-mode-opacity", getCurrentFocusModeOpacity());
@@ -562,6 +563,7 @@ function showCustomContextMenu() {
     y: localY
   });
   overlayWindow.setIgnoreMouseEvents(false);
+  overlayWindow.setTitle("Paraline Visualizer (Active)");
 }
 
 function registerGlobalShortcuts() {
@@ -663,9 +665,11 @@ function setupIpcHandlers() {
     if (!overlayWindow) return;
     if (ignore) {
       overlayWindow.setIgnoreMouseEvents(true);
+      overlayWindow.setTitle("Paraline Visualizer");
       overlayWindow.blur();
     } else {
       overlayWindow.setIgnoreMouseEvents(false);
+      overlayWindow.setTitle("Paraline Visualizer (Active)");
     }
   });
 
