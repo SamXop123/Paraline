@@ -135,6 +135,36 @@ test("settingsStore - Legacy Theme Automation Migration", () => {
   assert.strictEqual(sanitized.themeAutomation.nightStartHour, DEFAULT_SETTINGS.themeAutomation.nightStartHour);
 });
 
+test("settingsStore - Theme Automation rejects invalid mode and falls back to default", () => {
+  const input = {
+    selectedTheme: "ambientWave",
+    themeAutomation: {
+      enabled: true,
+      mode: "randomMode" // invalid, should fall back to default ("dayNight")
+    }
+  };
+  const sanitized = sanitizeSettings(input);
+  assert.strictEqual(sanitized.themeAutomation.enabled, true);
+  assert.strictEqual(sanitized.themeAutomation.mode, DEFAULT_SETTINGS.themeAutomation.mode);
+
+  // Also cover non-string / missing values
+  const cases = [undefined, null, 123, {}, [], ""];
+  for (const mode of cases) {
+    const result = sanitizeSettings({
+      selectedTheme: "ambientWave",
+      themeAutomation: { mode }
+    });
+    assert.strictEqual(result.themeAutomation.mode, DEFAULT_SETTINGS.themeAutomation.mode);
+  }
+
+  // Valid mode should pass through unchanged
+  const validResult = sanitizeSettings({
+    selectedTheme: "ambientWave",
+    themeAutomation: { mode: "dayNight" }
+  });
+  assert.strictEqual(validResult.themeAutomation.mode, "dayNight");
+});
+
 test("settingsStore - Theme Automation parses and clamps check interval strings", () => {
   const cases = [
     ["15", 15],

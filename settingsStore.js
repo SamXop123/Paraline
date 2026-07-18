@@ -229,6 +229,7 @@ const VALID_AURORA_AUDIO = new Set(["subtle", "balanced", "responsive"]);
 const VALID_AURORA_SOFTNESS = new Set(["misty", "smooth", "defined"]);
 const VALID_AURORA_DENSITY = new Set(["light", "balanced", "rich"]);
 const VALID_COLOR_MODULATION_MODES = new Set(["amplitude", "beat"]);
+const VALID_THEME_AUTOMATION_MODES = new Set(["dayNight"]);
 
 function createDefaultSettings() {
   return {
@@ -349,7 +350,7 @@ function sanitizeThemeAutomation(input = {}) {
     checkIntervalMinutes: Number.isFinite(interval)
       ? Math.max(1, Math.min(120, interval))
       : DEFAULT_SETTINGS.themeAutomation.checkIntervalMinutes,
-    mode: typeof input.mode === "string" ? input.mode : DEFAULT_SETTINGS.themeAutomation.mode,
+    mode: pick(input.mode, VALID_THEME_AUTOMATION_MODES, DEFAULT_SETTINGS.themeAutomation.mode),
     dayTheme: pick(input.dayTheme, VALID_MAIN_THEMES, DEFAULT_SETTINGS.themeAutomation.dayTheme),
     nightTheme: pick(input.nightTheme, VALID_MAIN_THEMES, DEFAULT_SETTINGS.themeAutomation.nightTheme),
     dayStartHour: dayStart,
