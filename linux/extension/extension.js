@@ -1,4 +1,5 @@
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import Cairo from 'gi://cairo';
 
 export default class ParalineCompanionExtension extends Extension {
     enable() {
@@ -27,10 +28,10 @@ export default class ParalineCompanionExtension extends Extension {
                                     console.error(`[Paraline Extension] Error processing window: ${err}`);
                                 }
                              }
-                         }
-                     }
-                 }
-             }
+                          }
+                      }
+                  }
+              }
         } catch (err) {
             console.error(`[Paraline Extension] Error enabling extension: ${err}`);
         }
@@ -56,18 +57,52 @@ export default class ParalineCompanionExtension extends Extension {
                 return;
             }
 
-            const title = window.get_title();
-            
-            const isVisualizer = title && title === 'Paraline Visualizer';
+            const handleTitle = () => {
+                const title = window.get_title();
+                if (!title) return;
 
-            if (isVisualizer) {
-                console.log(`[Paraline Extension] MATCHED Paraline window. Calling stick() and make_above().`);
-                if (typeof window.stick === 'function') {
-                    window.stick();
+                const isVisualizer = title === 'Paraline Visualizer';
+                const isActiveVisualizer = title === 'Paraline Visualizer (Active)';
+
+                if (isVisualizer || isActiveVisualizer) {
+                    // Stick window to all workspaces
+                    if (typeof window.stick === 'function') {
+                        window.stick();
+                    }
+                    // Keep window always on top
+                    if (typeof window.make_above === 'function') {
+                        window.make_above();
+                    }
+
+                    // Get compositor private window actor to handle click-through natively on Wayland
+                    if (typeof window.get_compositor_private === 'function') {
+                        const actor = window.get_compositor_private();
+                        if (actor && typeof actor.set_input_region === 'function') {
+                            if (isVisualizer) {
+                                // Set input region to empty to make it click-through
+                                const region = new Cairo.Region();
+                                actor.set_input_region(region);
+                            } else {
+                                // Reset input region to default (null) to make it clickable
+                                actor.set_input_region(null);
+                            }
+                        }
+                    }
                 }
-                if (typeof window.make_above === 'function') {
-                    window.make_above();
-                }
+            };
+
+            // Process title immediately
+            handleTitle();
+
+            // Setup observer for asynchronous title updates (Wayland clients set title asynchronously)
+            if (typeof window.connect === 'function') {
+                window.connect('notify::title', () => {
+                    try {
+                        handleTitle();
+                    } catch (err) {
+                        console.error(`[Paraline Extension] Error in title notification callback: ${err}`);
+                    }
+                });
             }
         } catch (err) {
             console.error(`[Paraline Extension] Error in _handleWindow: ${err}`);
