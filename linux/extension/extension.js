@@ -139,7 +139,7 @@ export default class ParalineCompanionExtension extends Extension {
                     actor = window.get_compositor_private();
                 }
                 
-                const actorValid = !!actor && typeof actor.set_input_region === 'function';
+                const actorValid = !!actor;
                 console.warn(`[Paraline Extension Diagnostic] Clutter actor validity check: actorValid=${actorValid} (address: ${actor ? actor.toString() : "null"})`);
 
                 // 1. Stick check
@@ -179,10 +179,14 @@ export default class ParalineCompanionExtension extends Extension {
 
                 const prevSkip = getSkipTaskbar(window);
                 console.warn(`[Paraline Extension Diagnostic] Executing set_skip_taskbar(true). Previous skip_taskbar: ${prevSkip}`);
-                if (typeof window.set_skip_taskbar === 'function') {
-                    window.set_skip_taskbar(true);
-                } else {
-                    window.skip_taskbar = true;
+                try {
+                    if (typeof window.set_skip_taskbar === 'function') {
+                        window.set_skip_taskbar(true);
+                    } else {
+                        window.skip_taskbar = true;
+                    }
+                } catch (skipErr) {
+                    console.warn(`[Paraline Extension Diagnostic] EXCEPTION setting skip_taskbar: ${skipErr}`);
                 }
                 const nextSkip = getSkipTaskbar(window);
                 console.warn(`[Paraline Extension Diagnostic] Resulting skip_taskbar: ${nextSkip}`);
@@ -190,29 +194,38 @@ export default class ParalineCompanionExtension extends Extension {
                     console.warn(`[Paraline Extension Diagnostic] WARNING: set_skip_taskbar(true) was IGNORED or REJECTED by Mutter.`);
                 }
 
-                // 4. Input Region check
+                // 4. Input Region / Reactivity check
                 if (actorValid) {
                     const prevReactive = actor.reactive;
-                    console.warn(`[Paraline Extension Diagnostic] Modifying input region. Previous actor.reactive: ${prevReactive}`);
+                    console.warn(`[Paraline Extension Diagnostic] Modifying actor reactivity. Previous actor.reactive: ${prevReactive}`);
                     
                     try {
-                        if (isVisualizer) {
-                            const region = new Cairo.Region();
-                            actor.set_input_region(region);
-                            console.warn(`[Paraline Extension Diagnostic] Called actor.set_input_region(empty Cairo.Region).`);
-                        } else {
-                            actor.set_input_region(null);
-                            console.warn(`[Paraline Extension Diagnostic] Called actor.set_input_region(null).`);
-                        }
-                        
+                        actor.reactive = false;
                         const nextReactive = actor.reactive;
                         console.warn(`[Paraline Extension Diagnostic] Resulting actor.reactive: ${nextReactive}`);
-                        console.warn(`[Paraline Extension Diagnostic] input region modification: SUCCESS`);
+                        console.warn(`[Paraline Extension Diagnostic] actor reactivity modification: ${nextReactive === false ? "SUCCESS" : "FAILED"}`);
+                    } catch (reactivityErr) {
+                        console.warn(`[Paraline Extension Diagnostic] EXCEPTION modifying actor reactivity: ${reactivityErr}\nStack: ${reactivityErr.stack}`);
+                    }
+
+                    try {
+                        if (typeof actor.set_input_region === 'function') {
+                            if (isVisualizer) {
+                                const region = new Cairo.Region();
+                                actor.set_input_region(region);
+                                console.warn(`[Paraline Extension Diagnostic] Called actor.set_input_region(empty Cairo.Region).`);
+                            } else {
+                                actor.set_input_region(null);
+                                console.warn(`[Paraline Extension Diagnostic] Called actor.set_input_region(null).`);
+                            }
+                        } else {
+                            console.warn(`[Paraline Extension Diagnostic] actor.set_input_region is not a function.`);
+                        }
                     } catch (regionErr) {
                         console.warn(`[Paraline Extension Diagnostic] EXCEPTION modifying input region: ${regionErr}\nStack: ${regionErr.stack}`);
                     }
                 } else {
-                    console.warn(`[Paraline Extension Diagnostic] WARNING: Clutter actor input region modification skipped because actor or set_input_region is missing.`);
+                    console.warn(`[Paraline Extension Diagnostic] WARNING: Clutter actor input region modification skipped because actor is missing.`);
                 }
             }
 
