@@ -1,19 +1,40 @@
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import Cairo from 'gi://cairo';
+import Meta from 'gi://Meta';
+import * as Config from 'resource:///org/gnome/shell/misc/config.js';
 
 export default class ParalineCompanionExtension extends Extension {
     enable() {
         try {
+            console.warn(`[Paraline Extension Diagnostic] ==================================================`);
+            console.warn(`[Paraline Extension Diagnostic] Extension enabled successfully.`);
+            console.warn(`[Paraline Extension Diagnostic] GNOME Shell version: ${Config.PACKAGE_VERSION}`);
+
+            // Wayland session check
+            const isWayland = typeof Meta.is_wayland_compositor === 'function' && Meta.is_wayland_compositor();
+            console.warn(`[Paraline Extension Diagnostic] Wayland session confirmation: ${isWayland ? "YES (Native Wayland Compositor)" : "NO (X11)"}`);
+
+            // Workspace and window statistics
+            const workspaceManager = global.workspace_manager;
+            if (workspaceManager) {
+                const activeWs = workspaceManager.get_active_workspace();
+                const activeIndex = activeWs ? activeWs.index() : "unknown";
+                console.warn(`[Paraline Extension Diagnostic] Workspaces: total=${workspaceManager.n_workspaces}, active_index=${activeIndex}`);
+            } else {
+                console.warn(`[Paraline Extension Diagnostic] WARNING: workspaceManager is null!`);
+            }
+
+            // Track window creations
             this._windowCreatedId = global.display.connect('window-created', (display, window) => {
                 try {
-                    this._handleWindow(window);
+                    console.warn(`[Paraline Extension Diagnostic] Signal 'window-created' received.`);
+                    this._handleWindow(window, "window-created signal");
                 } catch (err) {
-                    console.error(`[Paraline Extension] Error handling window created: ${err}`);
+                    console.warn(`[Paraline Extension Diagnostic] EXCEPTION in window-created callback: ${err}\nStack: ${err.stack}`);
                 }
             });
 
-            // Process any already open Paraline windows
-            const workspaceManager = global.workspace_manager;
+            // Scan existing windows
             if (workspaceManager) {
                 const numWorkspaces = workspaceManager.n_workspaces;
                 for (let i = 0; i < numWorkspaces; i++) {
@@ -23,9 +44,9 @@ export default class ParalineCompanionExtension extends Extension {
                         if (windows) {
                             for (const win of windows) {
                                 try {
-                                    this._handleWindow(win);
+                                    this._handleWindow(win, `initial scan (workspace ${i})`);
                                 } catch (err) {
-                                    console.error(`[Paraline Extension] Error processing window: ${err}`);
+                                    console.warn(`[Paraline Extension Diagnostic] EXCEPTION processing window in initial scan: ${err}\nStack: ${err.stack}`);
                                 }
                              }
                           }
@@ -33,79 +54,182 @@ export default class ParalineCompanionExtension extends Extension {
                   }
               }
         } catch (err) {
-            console.error(`[Paraline Extension] Error enabling extension: ${err}`);
+            console.warn(`[Paraline Extension Diagnostic] EXCEPTION enabling extension: ${err}\nStack: ${err.stack}`);
         }
     }
 
     disable() {
         try {
+            console.warn(`[Paraline Extension Diagnostic] Disabling extension.`);
             if (this._windowCreatedId) {
                 global.display.disconnect(this._windowCreatedId);
                 this._windowCreatedId = null;
             }
         } catch (err) {
-            console.error(`[Paraline Extension] Error disabling extension: ${err}`);
+            console.warn(`[Paraline Extension Diagnostic] EXCEPTION disabling extension: ${err}\nStack: ${err.stack}`);
         }
     }
 
-    _handleWindow(window) {
+    _handleWindow(window, source) {
         try {
-            if (!window) return;
-            
-            // Safe type guard for Mutter window APIs
-            if (typeof window.get_title !== 'function' || typeof window.get_wm_class !== 'function') {
+            if (!window) {
+                console.warn(`[Paraline Extension Diagnostic] Received null window reference from source: ${source}`);
                 return;
             }
 
-            const handleTitle = () => {
-                const title = window.get_title();
-                if (!title) return;
+            // Check MetaWindow validity
+            console.warn(`[Paraline Extension Diagnostic] --------------------------------------------------`);
+            console.warn(`[Paraline Extension Diagnostic] Discovered window from source: ${source}`);
+            console.warn(`[Paraline Extension Diagnostic] MetaWindow validity check: object is defined (constructor: ${window.constructor ? window.constructor.name : "unknown"})`);
 
-                const isVisualizer = title === 'Paraline Visualizer';
-                const isActiveVisualizer = title === 'Paraline Visualizer (Active)';
+            // Extract window properties
+            const title = typeof window.get_title === 'function' ? window.get_title() : "n/a (no get_title)";
+            const wmClass = typeof window.get_wm_class === 'function' ? window.get_wm_class() : "n/a (no get_wm_class)";
+            const wmClassInstance = typeof window.get_wm_class_instance === 'function' ? window.get_wm_class_instance() : "n/a (no get_wm_class_instance)";
+            const role = typeof window.get_role === 'function' ? window.get_role() : "n/a (no get_role)";
+            
+            let gtkAppId = "n/a";
+            if (typeof window.get_gtk_application_id === 'function') {
+                gtkAppId = window.get_gtk_application_id();
+            } else if (typeof window.get_description === 'function') {
+                gtkAppId = `desc: ${window.get_description()}`;
+            }
 
-                if (isVisualizer || isActiveVisualizer) {
-                    // Stick window to all workspaces
-                    if (typeof window.stick === 'function') {
-                        window.stick();
-                    }
-                    // Keep window always on top
-                    if (typeof window.make_above === 'function') {
-                        window.make_above();
-                    }
-
-                    // Get compositor private window actor to handle click-through natively on Wayland
-                    if (typeof window.get_compositor_private === 'function') {
-                        const actor = window.get_compositor_private();
-                        if (actor && typeof actor.set_input_region === 'function') {
-                            if (isVisualizer) {
-                                // Set input region to empty to make it click-through
-                                const region = new Cairo.Region();
-                                actor.set_input_region(region);
-                            } else {
-                                // Reset input region to default (null) to make it clickable
-                                actor.set_input_region(null);
-                            }
-                        }
-                    }
+            let clientTypeStr = "unknown";
+            if (typeof window.get_client_type === 'function') {
+                const ct = window.get_client_type();
+                if (ct === Meta.WindowClientType.WAYLAND) {
+                    clientTypeStr = "WAYLAND";
+                } else if (ct === Meta.WindowClientType.X11) {
+                    clientTypeStr = "X11 (XWayland)";
+                } else {
+                    clientTypeStr = `OTHER (${ct})`;
                 }
-            };
+            }
 
-            // Process title immediately
-            handleTitle();
+            console.warn(`[Paraline Extension Diagnostic] Window properties:`);
+            console.warn(`  - Title: "${title}"`);
+            console.warn(`  - WM_CLASS: "${wmClass}"`);
+            console.warn(`  - WM_CLASS_instance: "${wmClassInstance}"`);
+            console.warn(`  - Window Role: "${role}"`);
+            console.warn(`  - Application ID: "${gtkAppId}"`);
+            console.warn(`  - Client Type: ${clientTypeStr}`);
 
-            // Setup observer for asynchronous title updates (Wayland clients set title asynchronously)
-            if (typeof window.connect === 'function') {
+            // Connect to destroy listener to monitor window recreation/lifecycle
+            if (typeof window.connect === 'function' && !window._paralineDestroyConnected) {
+                window.connect('unmanaged', () => {
+                    console.warn(`[Paraline Extension Diagnostic] Window DESTROYED: title="${title}" wm_class="${wmClass}"`);
+                });
+                window._paralineDestroyConnected = true;
+            }
+
+            // Check if this matches our visualizer
+            const isVisualizer = title === 'Paraline Visualizer';
+            const isActiveVisualizer = title === 'Paraline Visualizer (Active)';
+            const isMatch = isVisualizer || isActiveVisualizer;
+
+            console.warn(`[Paraline Extension Diagnostic] Window match test: isMatch=${isMatch} (title match)`);
+
+            if (isMatch) {
+                console.warn(`[Paraline Extension Diagnostic] Paraline Visualizer MATCHED. Starting compositor verification pipeline.`);
+
+                // Verify Clutter Actor
+                let actor = null;
+                if (typeof window.get_compositor_private === 'function') {
+                    actor = window.get_compositor_private();
+                }
+                
+                const actorValid = !!actor && typeof actor.set_input_region === 'function';
+                console.warn(`[Paraline Extension Diagnostic] Clutter actor validity check: actorValid=${actorValid} (address: ${actor ? actor.toString() : "null"})`);
+
+                // 1. Stick check
+                if (typeof window.stick === 'function' && typeof window.is_on_all_workspaces === 'function') {
+                    const prevStick = window.is_on_all_workspaces();
+                    console.warn(`[Paraline Extension Diagnostic] Executing stick(). Previous is_on_all_workspaces: ${prevStick}`);
+                    window.stick();
+                    const nextStick = window.is_on_all_workspaces();
+                    console.warn(`[Paraline Extension Diagnostic] Resulting is_on_all_workspaces: ${nextStick}`);
+                    if (nextStick === prevStick && !nextStick) {
+                        console.warn(`[Paraline Extension Diagnostic] WARNING: stick() operation was IGNORED or REJECTED by Mutter.`);
+                    }
+                } else {
+                    console.warn(`[Paraline Extension Diagnostic] WARNING: window.stick or window.is_on_all_workspaces is not a function!`);
+                }
+
+                // 2. Make Above check
+                if (typeof window.make_above === 'function' && typeof window.is_above === 'function') {
+                    const prevAbove = window.is_above();
+                    console.warn(`[Paraline Extension Diagnostic] Executing make_above(). Previous is_above: ${prevAbove}`);
+                    window.make_above();
+                    const nextAbove = window.is_above();
+                    console.warn(`[Paraline Extension Diagnostic] Resulting is_above: ${nextAbove}`);
+                    if (nextAbove === prevAbove && !nextAbove) {
+                        console.warn(`[Paraline Extension Diagnostic] WARNING: make_above() operation was IGNORED or REJECTED by Mutter.`);
+                    }
+                } else {
+                    console.warn(`[Paraline Extension Diagnostic] WARNING: window.make_above or window.is_above is not a function!`);
+                }
+
+                // 3. Skip Taskbar check
+                let getSkipTaskbar = (win) => {
+                    if (typeof win.get_skip_taskbar === 'function') return win.get_skip_taskbar();
+                    if ('skip_taskbar' in win) return win.skip_taskbar;
+                    return "unknown";
+                };
+
+                const prevSkip = getSkipTaskbar(window);
+                console.warn(`[Paraline Extension Diagnostic] Executing set_skip_taskbar(true). Previous skip_taskbar: ${prevSkip}`);
+                if (typeof window.set_skip_taskbar === 'function') {
+                    window.set_skip_taskbar(true);
+                } else {
+                    window.skip_taskbar = true;
+                }
+                const nextSkip = getSkipTaskbar(window);
+                console.warn(`[Paraline Extension Diagnostic] Resulting skip_taskbar: ${nextSkip}`);
+                if (nextSkip === prevSkip && !nextSkip) {
+                    console.warn(`[Paraline Extension Diagnostic] WARNING: set_skip_taskbar(true) was IGNORED or REJECTED by Mutter.`);
+                }
+
+                // 4. Input Region check
+                if (actorValid) {
+                    const prevReactive = actor.reactive;
+                    console.warn(`[Paraline Extension Diagnostic] Modifying input region. Previous actor.reactive: ${prevReactive}`);
+                    
+                    try {
+                        if (isVisualizer) {
+                            const region = new Cairo.Region();
+                            actor.set_input_region(region);
+                            console.warn(`[Paraline Extension Diagnostic] Called actor.set_input_region(empty Cairo.Region).`);
+                        } else {
+                            actor.set_input_region(null);
+                            console.warn(`[Paraline Extension Diagnostic] Called actor.set_input_region(null).`);
+                        }
+                        
+                        const nextReactive = actor.reactive;
+                        console.warn(`[Paraline Extension Diagnostic] Resulting actor.reactive: ${nextReactive}`);
+                        console.warn(`[Paraline Extension Diagnostic] input region modification: SUCCESS`);
+                    } catch (regionErr) {
+                        console.warn(`[Paraline Extension Diagnostic] EXCEPTION modifying input region: ${regionErr}\nStack: ${regionErr.stack}`);
+                    }
+                } else {
+                    console.warn(`[Paraline Extension Diagnostic] WARNING: Clutter actor input region modification skipped because actor or set_input_region is missing.`);
+                }
+            }
+
+            // Setup observer for asynchronous title updates if not already connected
+            if (typeof window.connect === 'function' && !window._paralineTitleConnected) {
                 window.connect('notify::title', () => {
                     try {
-                        handleTitle();
+                        console.warn(`[Paraline Extension Diagnostic] Signal 'notify::title' received for window.`);
+                        this._handleWindow(window, "notify::title signal");
                     } catch (err) {
-                        console.error(`[Paraline Extension] Error in title notification callback: ${err}`);
+                        console.warn(`[Paraline Extension Diagnostic] EXCEPTION in notify::title handler: ${err}\nStack: ${err.stack}`);
                     }
                 });
+                window._paralineTitleConnected = true;
             }
         } catch (err) {
-            console.error(`[Paraline Extension] Error in _handleWindow: ${err}`);
+            console.warn(`[Paraline Extension Diagnostic] EXCEPTION in _handleWindow: ${err}\nStack: ${err.stack}`);
         }
     }
 }
