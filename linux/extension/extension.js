@@ -188,6 +188,17 @@ export default class ParalineCompanionExtension extends Extension {
                 } catch (skipErr) {
                     console.warn(`[Paraline Extension Diagnostic] EXCEPTION setting skip_taskbar: ${skipErr}`);
                 }
+
+                // Polyfill/override the JS wrapper methods to ensure GNOME Shell JS components (Alt-Tab, Dash, WindowTracker) filter this window out
+                try {
+                    window.is_skip_taskbar = () => true;
+                    window.get_skip_taskbar = () => true;
+                    window.skip_taskbar = true;
+                    console.warn(`[Paraline Extension Diagnostic] Overrode/patched JavaScript getters for skip_taskbar on window wrapper.`);
+                } catch (patchErr) {
+                    console.warn(`[Paraline Extension Diagnostic] EXCEPTION overriding skip_taskbar wrapper properties: ${patchErr}`);
+                }
+
                 const nextSkip = getSkipTaskbar(window);
                 console.warn(`[Paraline Extension Diagnostic] Resulting skip_taskbar: ${nextSkip}`);
                 if (nextSkip === prevSkip && !nextSkip) {
