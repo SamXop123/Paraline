@@ -13,7 +13,8 @@ const {
   globalShortcut
 } = require("electron");
 
-app.commandLine.appendSwitch("enable-transparent-visuals");
+const backend = require("./backends");
+backend.setupCommandLine(app);
 
 const path = require("path");
 const fs = require("fs");
@@ -255,11 +256,7 @@ function applyOverlayWindowDisplayState(overlayWindow, display) {
   if (!overlayWindow || overlayWindow.isDestroyed()) {
     return;
   }
-  const { bounds } = display;
-  overlayWindow.setBounds(bounds);
-  overlayWindow.setAlwaysOnTop(true, "screen-saver");
-  overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-  overlayWindow.setIgnoreMouseEvents(true);
+  backend.applyOverlayWindowDisplayState(overlayWindow, display);
 }
 
 function createOverlayWindow(display) {
@@ -270,7 +267,7 @@ function createOverlayWindow(display) {
   }
 
   const { bounds } = display;
-  const overlayWindow = new BrowserWindow({
+  const overlayWindow = new BrowserWindow(Object.assign({
     title: "Paraline Visualizer",
     x: bounds.x,
     y: bounds.y,
@@ -293,7 +290,7 @@ function createOverlayWindow(display) {
       nodeIntegration: false,
       preload: path.join(__dirname, "preload.js")
     }
-  });
+  }, backend.getOverlayWindowOptions(display)));
 
   overlayWindows.set(display.id, overlayWindow);
   applyOverlayWindowDisplayState(overlayWindow, display);
@@ -663,12 +660,10 @@ function setupIpcHandlers() {
       (win) => win.webContents.id === event.sender.id
     );
     if (!overlayWindow) return;
+    backend.handleSetIgnoreMouseEvents(overlayWindow, ignore);
     if (ignore) {
-      overlayWindow.setIgnoreMouseEvents(true);
       overlayWindow.setTitle("Paraline Visualizer");
-      overlayWindow.blur();
     } else {
-      overlayWindow.setIgnoreMouseEvents(false);
       overlayWindow.setTitle("Paraline Visualizer (Active)");
     }
   });
@@ -876,6 +871,7 @@ function dismissOnboarding(dontShowAgain) {
 }
 
 app.whenReady().then(() => {
+  backend.printDiagnosticsReport(app);
   Menu.setApplicationMenu(null);
   settingsStore = createSettingsStore(app.getPath("userData"));
   visualizerSettings = settingsStore.save(settingsStore.load());
