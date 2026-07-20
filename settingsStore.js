@@ -231,6 +231,17 @@ const VALID_AURORA_DENSITY = new Set(["light", "balanced", "rich"]);
 const VALID_COLOR_MODULATION_MODES = new Set(["amplitude", "beat"]);
 const VALID_THEME_AUTOMATION_MODES = new Set(["dayNight"]);
 
+// Reserved / dangerous keys that must never be used as profile names, since
+// they can shadow or pollute Object.prototype when profiles are later spread
+// or assigned onto plain objects.
+const RESERVED_PROFILE_NAMES = new Set(["__proto__", "constructor", "prototype"]);
+
+// Profile names are restricted to a conservative safe character set
+// (letters, numbers, spaces, underscores, hyphens) with a sane length cap.
+// This matches the validation already applied to imported backup profiles.
+const VALID_PROFILE_NAME_PATTERN = /^[A-Za-z0-9 _-]+$/;
+const MAX_PROFILE_NAME_LENGTH = 100;
+
 function createDefaultSettings() {
   return {
     onboardingSeen: DEFAULT_SETTINGS.onboardingSeen,
@@ -730,6 +741,43 @@ function sanitizeSettings(input = {}) {
   };
 }
 
+// Validates a theme profile name. Rejects non-strings, empty/overlong names,
+// reserved keys that could shadow Object.prototype (__proto__, constructor,
+// prototype), and any characters outside the safe allow-list.
+function isValidProfileName(name) {
+  return typeof name === "string" &&
+    name.length > 0 &&
+    name.length <= MAX_PROFILE_NAME_LENGTH &&
+    !RESERVED_PROFILE_NAMES.has(name) &&
+    VALID_PROFILE_NAME_PATTERN.test(name);
+}
+
+// Sanitizes a saved/imported theme-profiles map: drops entries with invalid
+// or unsafe names, drops entries whose value isn't a plain object, and runs
+// each remaining profile's settings through sanitizeSettings so corrupted or
+// hand-edited data can never reach the renderer.
+function sanitizeProfiles(profiles) {
+  if (profiles === null || typeof profiles !== "object" || Array.isArray(profiles)) {
+    return {};
+  }
+
+  const safeProfiles = {};
+  for (const name of Object.keys(profiles)) {
+    if (!isValidProfileName(name)) {
+      continue;
+    }
+
+    const profile = profiles[name];
+    if (profile === null || typeof profile !== "object" || Array.isArray(profile)) {
+      continue;
+    }
+
+    safeProfiles[name] = sanitizeSettings(profile);
+  }
+
+  return safeProfiles;
+}
+
 function createSettingsStore(userDataPath) {
   const settingsPath = path.join(userDataPath, "settings.json");
   const profilesPath = path.join(userDataPath, "themeProfiles.json");
@@ -813,7 +861,12 @@ function createSettingsStore(userDataPath) {
       if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
         return {};
       }
-      return parsed;
+
+      // The file can be hand-edited outside the app, so treat its contents
+      // as untrusted input: drop unsafe/invalid profile names (e.g.
+      // "__proto__", names with disallowed characters) and sanitize every
+      // remaining profile's settings before they reach the renderer.
+      return sanitizeProfiles(parsed);
     } catch (_error) {
       return {};
     }
@@ -845,5 +898,7 @@ module.exports = {
   createDefaultSettings,
   createThemeDefaults,
   createSettingsStore,
-  sanitizeSettings
+  sanitizeSettings,
+  sanitizeProfiles,
+  isValidProfileName
 };
