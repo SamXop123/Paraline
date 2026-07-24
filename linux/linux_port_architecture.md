@@ -1,6 +1,6 @@
 # Paraline Linux Port Architecture (Fedora GNOME)
 
-This document outlines the architectural plan for porting the Paraline desktop audio visualizer to Linux Fedora (GNOME Shell, Wayland/XWayland). 
+This document outlines the architectural for porting the Paraline desktop audio visualizer to Linux Fedora (GNOME Shell, Wayland/XWayland). 
 
 ---
 
