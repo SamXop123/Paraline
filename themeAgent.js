@@ -16,7 +16,7 @@ class ThemeAgent {
 
     // Guard: Prevent invalid, negative, or tight-loop intervals (minimum 1 minute)
     let minutes = parseInt(config.checkIntervalMinutes, 10);
-    if (isNaN(minutes) || minutes < 1) {
+    if (Number.isNaN(minutes) || minutes < 1) {
       minutes = 30; // Safe default fallback
     }
     const intervalMs = minutes * 60 * 1000;
