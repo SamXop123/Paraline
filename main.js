@@ -919,7 +919,7 @@ const MAX_PROFILE_NAME_LENGTH = 64;
 const SAFE_PROFILE_NAME_RE = /^[A-Za-z0-9 _\-()À-ɏ]{1,64}$/;
 
 function isValidProfileName(name) {
-  if (typeof name !== "string" || name.trim() === "") return false;
+  if (typeof name !== "string" || name.trim().length === 0) return false;
   if (RESERVED_PROFILE_NAMES.has(name)) return false;
   return SAFE_PROFILE_NAME_RE.test(name);
 }
@@ -1065,7 +1065,7 @@ function getThemeProfiles() {
 const ALLOWED_EXTERNAL_SCHEMES = new Set(["https:", "http:"]);
 
 function openExternalUrl(url) {
-  if (typeof url !== "string" || url.trim() === "") {
+  if (typeof url !== "string" || url.trim().length === 0) {
     console.warn("[Paraline] openExternalUrl(): invalid url payload:", url);
     return;
   }
