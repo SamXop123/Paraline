@@ -1163,7 +1163,7 @@ function buildMainThemeMenuItems() {
     { value: "crimsonDusk", label: "Crimson Dusk" }
   ];
 
-  return themeOptions.map((themeOption) => ({
+  return (themeOptions ?? []).map((themeOption) => ({
     label: themeOption.label,
     type: "radio",
     checked: visualizerSettings.selectedTheme === themeOption.value,
