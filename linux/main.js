@@ -483,7 +483,7 @@ function refreshTrayMenu() {
     { value: "crimsonDusk", label: "Crimson Dusk" }
   ];
 
-  const themeSubmenu = themeOptions.map((themeOption) => ({
+  const themeSubmenu = (themeOptions ?? []).map((themeOption) => ({
     label: themeOption.label,
     type: "radio",
     checked: visualizerSettings ? visualizerSettings.selectedTheme === themeOption.value : false,
