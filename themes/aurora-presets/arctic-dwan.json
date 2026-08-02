@@ -1,0 +1,21 @@
+{
+  "name": "Arctic Dawn",
+  "author": "Paraline Community",
+  "version": "1.0",
+  "theme": "Aurora Drift",
+  "description": "Cool arctic blues and pale whites — a crisp, ethereal northern morning.",
+  "settings": {
+    "gradientStops": [
+      { "position": 0.0, "color": "#E0F4FF", "opacity": 0.9 },
+      { "position": 0.25, "color": "#7DD8F8", "opacity": 0.8 },
+      { "position": 0.55, "color": "#3A9FD8", "opacity": 0.75 },
+      { "position": 0.8, "color": "#1A5FA8", "opacity": 0.7 },
+      { "position": 1.0, "color": "#0A2A6E", "opacity": 0.85 }
+    ],
+    "glowRadius": 18,
+    "primaryFrequency": 0.6,
+    "secondaryFrequency": 0.35,
+    "responseSmoothing": 0.82,
+    "activeCurtains": 3
+  }
+}

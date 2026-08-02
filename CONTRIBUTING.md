@@ -7,6 +7,62 @@ Whether you're fixing bugs, improving performance, polishing UI behavior, improv
 
 ---
 
+## Contributing Aurora Drift Presets
+
+Community presets live in `themes/aurora-presets/`. Anyone can submit a new preset via PR.
+
+### Preset File Format
+
+Create a `.json` file following this structure:
+
+```json
+{
+  "name": "Your Preset Name",
+  "author": "YourGitHubUsername",
+  "version": "1.0",
+  "theme": "Aurora Drift",
+  "description": "One sentence describing the mood or inspiration.",
+  "settings": {
+    "gradientStops": [
+      { "position": 0.0, "color": "#RRGGBB", "opacity": 0.9 },
+      { "position": 0.5, "color": "#RRGGBB", "opacity": 0.7 },
+      { "position": 1.0, "color": "#RRGGBB", "opacity": 0.8 }
+    ],
+    "glowRadius": 20,
+    "primaryFrequency": 1.0,
+    "secondaryFrequency": 0.6,
+    "responseSmoothing": 0.7,
+    "activeCurtains": 3
+  }
+}
+```
+
+### Field Constraints
+
+| Field | Type | Range | Notes |
+|---|---|---|---|
+| `gradientStops` | array | 2–6 items | Sorted by `position` (0.0 → 1.0) |
+| `position` | number | 0.0 – 1.0 | Gradient stop position |
+| `color` | string | `#RRGGBB` | Hex color, 6 digits |
+| `opacity` | number | 0.0 – 1.0 | Per-stop opacity |
+| `glowRadius` | number | 0 – 60 | Higher = softer, wider bloom |
+| `primaryFrequency` | number | 0.1 – 3.0 | Main curtain wave speed |
+| `secondaryFrequency` | number | 0.1 – 3.0 | Secondary wave speed |
+| `responseSmoothing` | number | 0.1 – 1.0 | Higher = smoother, slower response |
+| `activeCurtains` | integer | 1 – 6 | Number of layered curtain bands |
+
+### Submission Steps
+
+1. Design your preset using the in-app Export button (Aurora Drift settings → Presets → Export)
+2. Place the `.json` file in `themes/aurora-presets/your-preset-name.json`
+3. Add your preset name to the `BUNDLED_PRESET_NAMES` array in `presetManager.js`
+4. Open a PR with title: `preset: add [Preset Name] community preset`
+5. Include a short description of the mood/inspiration in the PR body
+
+The schema reference is at `themes/aurora-presets/preset.schema.json`.
+
+---
+
 # Before You Start
 
 Please make sure to:

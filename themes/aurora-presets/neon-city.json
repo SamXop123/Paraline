@@ -1,0 +1,21 @@
+{
+  "name": "Neon City",
+  "author": "Paraline Community",
+  "version": "1.0",
+  "theme": "Aurora Drift",
+  "description": "Vivid pinks and purples — a cyberpunk cityscape at midnight.",
+  "settings": {
+    "gradientStops": [
+      { "position": 0.0,  "color": "#FF0080", "opacity": 0.9 },
+      { "position": 0.3,  "color": "#8000FF", "opacity": 0.75 },
+      { "position": 0.6,  "color": "#0040FF", "opacity": 0.8 },
+      { "position": 0.85, "color": "#00CFFF", "opacity": 0.7 },
+      { "position": 1.0,  "color": "#FF00FF", "opacity": 0.85 }
+    ],
+    "glowRadius": 28,
+    "primaryFrequency": 1.4,
+    "secondaryFrequency": 0.9,
+    "responseSmoothing": 0.6,
+    "activeCurtains": 4
+  }
+}

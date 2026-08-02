@@ -1,5 +1,5 @@
 const { contextBridge, ipcRenderer, webFrame } = require("electron");
-
+const { contextBridge, ipcRenderer } = require('electron');
 // Reset zoom factor and disable zoom completely to prevent layout distortion in the visualizer and settings windows
 try {
   webFrame.setZoomFactor(1.0);
@@ -125,4 +125,27 @@ contextBridge.exposeInMainWorld("paralineApp", {
 
   importAllSettings: () =>
     ipcRenderer.invoke("settings:import-all")
+});
+
+contextBridge.exposeInMainWorld('presetAPI', {
+  /**
+   * Asks main process to open a save dialog and write the JSON.
+   * @returns {Promise<{success:boolean, path?:string, cancelled?:boolean, error?:string}>}
+   */
+  savePresetFile: (defaultFileName, json) =>
+    ipcRenderer.invoke('preset:save-file', { defaultFileName, json }),
+
+  /**
+   * Asks main process to open an open-file dialog and return the file contents.
+   * @returns {Promise<string|null>} raw JSON string, or null if cancelled
+   */
+  openPresetFile: () =>
+    ipcRenderer.invoke('preset:open-file'),
+
+  /**
+   * Loads a bundled community preset by slug (e.g. "neon-city").
+   * @returns {Promise<object|null>}
+   */
+  loadBundledPreset: (name) =>
+    ipcRenderer.invoke('preset:load-bundled', name),
 });

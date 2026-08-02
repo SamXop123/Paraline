@@ -2333,6 +2333,56 @@ app.whenReady().then(() => {
     openExternalUrl(url);
   });
 
+  // ─── Preset IPC Handlers ────────────────────────────────────────────────────
+  // Called from the renderer via window.presetAPI (exposed in preload.js)
+
+  // Save dialog — lets user choose where to save an exported preset
+  ipcMain.handle('preset:save-file', async (event, { defaultFileName, json }) => {
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title:       'Export Aurora Drift Preset',
+      defaultPath: defaultFileName,
+      filters:     [{ name: 'Paraline Preset', extensions: ['json'] }],
+    });
+
+    if (canceled || !filePath) return { success: false, cancelled: true };
+
+    try {
+      fs.writeFileSync(filePath, json, 'utf-8');
+      return { success: true, path: filePath };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Open dialog — lets user pick a preset .json to import
+  ipcMain.handle('preset:open-file', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      title:      'Import Aurora Drift Preset',
+      filters:    [{ name: 'Paraline Preset', extensions: ['json'] }],
+      properties: ['openFile'],
+    });
+
+    if (canceled || !filePaths || !filePaths[0]) return null;
+
+    try {
+      return fs.readFileSync(filePaths[0], 'utf-8');
+    } catch (err) {
+      throw new Error(`Could not read preset file: ${err.message}`);
+    }
+  });
+
+  // Load a bundled community preset by slug name (e.g. "neon-city")
+  ipcMain.handle('preset:load-bundled', async (event, name) => {
+    const presetPath = path.join(__dirname, 'themes', 'aurora-presets', `${name}.json`);
+    try {
+      const raw = fs.readFileSync(presetPath, 'utf-8');
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  });
+  // ─── End Preset IPC Handlers ───────────────────────────────────────────────
+
   reconcileOverlayWindows();
   
   ipcMain.handle("onboarding:dismiss", (_event, payload = {}) => {

@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Paraline Aurora Drift Preset",
+  "type": "object",
+  "required": ["name", "author", "version", "theme", "settings"],
+  "properties": {
+    "name":        { "type": "string", "maxLength": 60 },
+    "author":      { "type": "string", "maxLength": 60 },
+    "version":     { "type": "string" },
+    "theme":       { "type": "string", "const": "Aurora Drift" },
+    "description": { "type": "string", "maxLength": 200 },
+    "settings": {
+      "type": "object",
+      "required": ["gradientStops", "glowRadius", "primaryFrequency", "secondaryFrequency", "responseSmoothing", "activeCurtains"],
+      "properties": {
+        "gradientStops": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "required": ["position", "color", "opacity"],
+            "properties": {
+              "position": { "type": "number", "minimum": 0, "maximum": 1 },
+              "color":    { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+              "opacity":  { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "glowRadius":        { "type": "number", "minimum": 0,   "maximum": 60  },
+        "primaryFrequency":  { "type": "number", "minimum": 0.1, "maximum": 3.0 },
+        "secondaryFrequency":{ "type": "number", "minimum": 0.1, "maximum": 3.0 },
+        "responseSmoothing": { "type": "number", "minimum": 0.1, "maximum": 1.0 },
+        "activeCurtains":    { "type": "integer","minimum": 1,   "maximum": 6   }
+      }
+    }
+  }
+}

@@ -14,6 +14,54 @@
     
     <div id="menu-shield" class="menu-shield hidden"></div>
     <div id="context-menu" class="context-menu hidden"></div>
+    <!-- Aurora Drift — Preset Management -->
+    <div class="preset-section" id="aurora-preset-section">
+      <div class="preset-section-header">
+        <span class="preset-section-label">Presets</span>
+      </div>
+
+      <!-- Bundled community preset picker -->
+      <div class="preset-row">
+        <label for="aurora-preset-select">Community Presets</label>
+        <div class="preset-picker-group">
+          <select id="aurora-preset-select" class="preset-select">
+            <option value="">— Select a preset —</option>
+            <!-- Populated dynamically by presetManager.js -->
+          </select>
+          <button id="aurora-load-preset-btn" class="preset-btn preset-btn-load" title="Apply the selected community preset">
+            Apply
+          </button>
+        </div>
+      </div>
+
+      <!-- Export current settings -->
+      <div class="preset-row">
+        <label for="aurora-preset-name-input">Export Current Settings</label>
+        <div class="preset-export-group">
+          <input
+            type="text"
+            id="aurora-preset-name-input"
+            class="preset-name-input"
+            placeholder="My Preset Name"
+            maxlength="60"
+          />
+          <button id="aurora-export-btn" class="preset-btn preset-btn-export" title="Save current settings as a .json preset file">
+            Export
+          </button>
+        </div>
+      </div>
+
+      <!-- Import from file -->
+      <div class="preset-row">
+        <label>Import Preset</label>
+        <button id="aurora-import-btn" class="preset-btn preset-btn-import" title="Load a .json preset file from your computer">
+          Import from File
+        </button>
+      </div>
+
+      <!-- Status message -->
+      <p id="aurora-preset-status" class="preset-status" aria-live="polite"></p>
+    </div>
 
     <script src="themes/shared.js" defer></script>
     <script src="themes/ambientWave.js" defer></script>
