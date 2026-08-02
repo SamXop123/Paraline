@@ -358,7 +358,7 @@ function extractColorsFromImageNode(wallpaperPath) {
     }
     
     const hexColor = c => '#' + [c.r, c.g, c.b].map(x => x.toString(16).padStart(2, '0')).join('');
-    return distinctColors.map(hexColor);
+    return (distinctColors ?? []).map(hexColor);
   } catch (error) {
     console.error("Error extracting colors in main process:", error);
     return null;
