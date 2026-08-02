@@ -660,6 +660,10 @@ function reloadVisualizer() {
 
   stopSimulatedAudioFallback();
 
+  if (lastBridgeMode !== "helper" && !isQuitting) {
+    startSimulatedAudioFallback();
+  }
+
   for (const overlayWindow of activeOverlayWindows) {
     overlayWindow.webContents.reloadIgnoringCache();
   }
