@@ -66,7 +66,8 @@ export default function ContactPage() {
         body: JSON.stringify(form),
       });
 
-      const data = await response.json();
+      if (!response.ok) throw new Error("Request failed");
+const data = await response.json();
 
       if (data.success) {
         setStatus("✅ Message submitted successfully!");
