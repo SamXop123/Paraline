@@ -334,14 +334,14 @@ function sanitizeThemeAutomation(input = {}) {
   let dayStart = typeof input.dayStartHour === "number"
     ? input.dayStartHour
     : (input.dayStartHour !== undefined ? parseInt(input.dayStartHour, 10) : DEFAULT_SETTINGS.themeAutomation.dayStartHour);
-  if (isNaN(dayStart) || dayStart < 0 || dayStart > 23) {
+  if (Number.isNaN(dayStart) || dayStart < 0 || dayStart > 23) {
     dayStart = DEFAULT_SETTINGS.themeAutomation.dayStartHour;
   }
 
   let nightStart = typeof input.nightStartHour === "number"
     ? input.nightStartHour
     : (input.nightStartHour !== undefined ? parseInt(input.nightStartHour, 10) : DEFAULT_SETTINGS.themeAutomation.nightStartHour);
-  if (isNaN(nightStart) || nightStart < 0 || nightStart > 23) {
+  if (Number.isNaN(nightStart) || nightStart < 0 || nightStart > 23) {
     nightStart = DEFAULT_SETTINGS.themeAutomation.nightStartHour;
   }
 

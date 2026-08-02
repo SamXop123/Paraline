@@ -82,7 +82,7 @@ function renderThemeGrid() {
     return;
   }
 
-  grid.innerHTML = THEMES.map((theme) => `
+  grid.textContent = THEMES.map((theme) => `
     <article class="theme-card">
       <img class="theme-preview" src="${theme.preview}" alt="${theme.name} preview" loading="lazy" />
       <div class="theme-info">
