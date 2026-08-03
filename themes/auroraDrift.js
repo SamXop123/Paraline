@@ -205,7 +205,7 @@
       h /= 6;
     }
     return [
-      Math.round(h * 360),
+      Math.round(h * 360 + Number.EPSILON),
       Math.round(s * 100),
       Math.round(l * 100)
     ];
