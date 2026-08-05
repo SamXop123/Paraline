@@ -817,8 +817,10 @@ function createSettingsStore(userDataPath) {
       try {
         const { app, dialog, Notification } = require("electron");
         if (app && app.isReady()) {
-          // Show dialog warning to user
-          dialog.showMessageBoxSync({
+          // Show dialog warning to user. Use the async dialog.showMessageBox()
+          // so startup is never blocked by a synchronous modal on headless
+          // systems or automated environments.
+          dialog.showMessageBox({
             type: "warning",
             title: "Settings Reset to Defaults",
             message: "Paraline detected a corrupted settings file. Your settings have been reset to defaults.",
