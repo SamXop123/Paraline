@@ -18,11 +18,11 @@ export async function POST(request: Request) {
     const { name, email, subject, message } = body;
 
     // Validate presence of required fields first
-    if (!name || !email || !message) {
+    if (!name || !email || !subject || !message) {
       return NextResponse.json(
         {
           success: false,
-          error: "Name, email, and message are required and cannot be empty.",
+          error: "Name, email, subject, and message are required and cannot be empty.",
         },
         { status: 400 }
       );
@@ -47,14 +47,14 @@ export async function POST(request: Request) {
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
     const trimmedMessage = message.trim();
-    const trimmedSubject = subject ? subject.trim() : "";
+    const trimmedSubject = subject.trim();
 
     // Validate trimmed fields are not empty
-    if (!trimmedName || !trimmedEmail || !trimmedMessage) {
+    if (!trimmedName || !trimmedEmail || !trimmedSubject || !trimmedMessage) {
       return NextResponse.json(
         {
           success: false,
-          error: "Name, email, and message are required and cannot be empty.",
+          error: "Name, email, subject, and message are required and cannot be empty.",
         },
         { status: 400 }
       );
@@ -67,6 +67,18 @@ export async function POST(request: Request) {
         {
           success: false,
           error: "Invalid email format.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const nameRegex = /^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/;
+    if (!nameRegex.test(trimmedName)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Name can only contain letters, spaces, apostrophes, and hyphens.",
         },
         { status: 400 }
       );
