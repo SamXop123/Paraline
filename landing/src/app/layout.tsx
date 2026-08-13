@@ -1,3 +1,4 @@
+import { BackToTop } from "@/components/BackToTop";
 import type { Metadata } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import { Sidebar } from "@/components/Sidebar";
@@ -97,6 +98,8 @@ export default function RootLayout({
           {children}
           <Footer />
         </MainWrapper>
+
+        <BackToTop />
 
         <GlobalThemeOverlay />
 
