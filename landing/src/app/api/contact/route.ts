@@ -72,13 +72,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const nameRegex = /^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/;
+    const nameRegex = /^[\p{L}\p{M}]+(?:[ '\-][\p{L}\p{M}]+)*$/u;
     if (!nameRegex.test(trimmedName)) {
       return NextResponse.json(
         {
           success: false,
           error:
-            "Name can only contain letters, spaces, apostrophes, and hyphens.",
+            "Name can only contain letters from any language, spaces, apostrophes, and hyphens.",
         },
         { status: 400 }
       );
