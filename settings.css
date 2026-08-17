@@ -169,6 +169,21 @@ body {
     border-bottom: 1px solid var(--border-subtle);
 }
 
+.sidebar-brand-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.sidebar-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.3));
+}
+
 .sidebar-header h2 {
     font-size: 1.1rem;
     font-weight: 600;
@@ -792,8 +807,19 @@ input[type="range"]:active::-webkit-slider-thumb {
 .about-brand {
     text-align: center;
     padding: 0;
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 10px;
+}
+
+.about-logo-img {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.4));
+    margin-bottom: 2px;
 }
 
 .about-logo-text {

@@ -98,12 +98,26 @@ body {
   margin-bottom: 20px;
 }
 
+.brand-mark-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.onboarding-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.3));
+}
+
 .brand-mark {
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.28em;
   color: var(--accent);
-  margin-bottom: 10px;
 }
 
 .onboarding-header h1 {

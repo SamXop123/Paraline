@@ -41,7 +41,7 @@ jobs:
 
           payload = {
               "username": "Paraline",
-              "avatar_url": "https://raw.githubusercontent.com/SamXop123/Paraline/main/assets/appicon.png",
+              "avatar_url": "https://raw.githubusercontent.com/SamXop123/Paraline/main/assets/appicon1.png",
               "content": "📢 @everyone **A new update is here!**",
               "embeds": [{
                   "title": f"🚀 Release: {name}",
@@ -49,7 +49,7 @@ jobs:
                   "description": body if body else "*No release notes provided.*",
                   "color": 54527,  # Paraline Accent Blue (#00d4ff)
                   "thumbnail": {
-                      "url": "https://raw.githubusercontent.com/SamXop123/Paraline/main/assets/appicon.png"
+                      "url": "https://raw.githubusercontent.com/SamXop123/Paraline/main/assets/appicon1.png"
                   },
                   "fields": [
                       {"name": "Version", "value": f"`{tag}`", "inline": True},
@@ -57,7 +57,7 @@ jobs:
                   ],
                   "footer": {
                       "text": "Paraline Auto-Announce",
-                      "icon_url": "https://raw.githubusercontent.com/SamXop123/Paraline/main/assets/appicon.png"
+                      "icon_url": "https://raw.githubusercontent.com/SamXop123/Paraline/main/assets/appicon1.png"
                   }
               }]
           }

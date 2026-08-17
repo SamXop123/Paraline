@@ -1095,9 +1095,11 @@ function openExternalUrl(url) {
 
 function getWindowIconPath() {
   const iconCandidates = [
+    path.join(process.resourcesPath, "assets", "appicon1.png"),
     path.join(process.resourcesPath, "assets", "appicon.ico"),
     path.join(process.resourcesPath, "assets", "appicon.png"),
     path.join(process.resourcesPath, "assets", "paraline.png"),
+    path.join(__dirname, "assets", "appicon1.png"),
     path.join(__dirname, "assets", "appicon.ico"),
     path.join(__dirname, "assets", "appicon.png"),
     path.join(__dirname, "assets", "paraline.png")
@@ -1111,13 +1113,15 @@ function getWindowIconPath() {
     }
   });
 
-  return iconPath || path.join(__dirname, "assets", "appicon.png");
+  return iconPath || path.join(__dirname, "assets", "appicon1.png");
 }
 
 function createTrayIcon() {
   const iconCandidates = [
+    path.join(process.resourcesPath, "assets", "appicon1.png"),
     path.join(process.resourcesPath, "assets", "appicon.png"),
     path.join(process.resourcesPath, "assets", "paraline.png"),
+    path.join(__dirname, "assets", "appicon1.png"),
     path.join(__dirname, "assets", "appicon.png"),
     path.join(__dirname, "assets", "paraline.png")
   ];
