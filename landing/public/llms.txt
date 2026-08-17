@@ -1,0 +1,34 @@
+# Paraline — Desktop Audio Visualizer for Windows
+
+> Paraline is an open-source, audio-reactive desktop edge light visualizer built for Windows 10 and Windows 11. It transforms system audio into ambient light motion along display borders.
+
+## Overview
+Paraline is a transparent desktop overlay application designed to render real-time, audio-reactive visualizers along the edges of user screens. It captures system audio playback using a high-performance native Win32 WASAPI loopback bridge, converting audio frequency amplitudes into dynamic light waves.
+
+## Key Features
+- **11 Audio-Reactive Themes:** Ambient Wave, Aurora Drift, Side Braids, Crimson Dusk, Dot Particles, Flow Border, Reactive Border, Side Bars, Edge Crystals, Ripple Flow, and Snow Bubble Particles.
+- **Theme Automation:** Automated Sunrise and Sunset scheduling modes to switch visualizer presets dynamically based on daily hours or wallpaper colors.
+- **Focus Mode:** Auto-dims the visualizer during active user input (mouse/keyboard activity) with smooth customizable fade transitions, restoring full brightness when idle.
+- **Wallpaper Color Matching:** Extracts accent colors from the active desktop wallpaper to sync visualizer palettes automatically.
+- **Audio-Reactive Color Modulation:** Dynamic hue shifting mapped to system audio beats and amplitude levels.
+- **Global System Hotkeys:** Custom hotkey configuration for theme toggles, performance modes, and opacity.
+- **Multi-Monitor Support:** Screen coordination across multi-display desktop setups.
+- **Zero Audio Storage:** Captures real-time output PCM streams only for visual rendering. No audio is recorded, saved, or transmitted.
+
+## System Requirements
+- **OS:** Windows 10 or Windows 11 (64-bit)
+- **Architecture:** x64
+- **Dependencies:** .NET 8 Runtime (bundled with self-contained installer)
+- **Privileges:** Standard user privileges (no administrator rights required)
+
+## Download & Resources
+- **Website:** https://paraline.vercel.app/
+- **GitHub Repository:** https://github.com/SamXop123/Paraline
+- **Latest Release Download:** https://github.com/SamXop123/Paraline/releases/latest
+- **Documentation:** https://github.com/SamXop123/Paraline/blob/main/README.md
+
+## Technology Stack
+- **Desktop Runtime:** Electron, Node.js
+- **Audio Capturing Engine:** C# / .NET 8 Win32 WASAPI Loopback Capture
+- **Graphics Engine:** HTML5 Canvas, WebGL, CSS3 Hardware Acceleration
+- **Landing Website:** Next.js, React, Tailwind CSS, TypeScript
