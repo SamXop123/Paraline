@@ -79,7 +79,7 @@
           ]
         }
       ],
-      "icon": "assets/appicon.ico",
+      "icon": "assets/appicon1.png",
       "extraResources": [
         {
           "from": "build/audio-helper",
