@@ -50,6 +50,9 @@ export const metadata: Metadata = {
     description: "A desktop audio visualizer that turns your Windows edges into reactive light.",
     images: ["https://paraline.vercel.app/logo.png"],
   },
+  verification: {
+    google: "google2b4b3deddceb3809",
+  },
 };
 
 const jsonLd = {
