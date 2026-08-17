@@ -54,6 +54,24 @@ export default function ContactPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate name: reject numeric-only input
+    if (/^\d+$/.test(form.name.trim())) {
+      setStatus("❌ Name cannot be numeric-only.");
+      return;
+    }
+
+    // Validate name: must contain at least one letter
+    if (!/[a-zA-Z]/.test(form.name.trim())) {
+      setStatus("❌ Name must contain at least one letter.");
+      return;
+    }
+
+    // Subject is required
+    if (!form.subject.trim()) {
+      setStatus("❌ Subject is required.");
+      return;
+    }
+
     setLoading(true);
     setStatus("");
 
