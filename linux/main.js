@@ -28,7 +28,7 @@ const {
 } = require("../settingsStore");
 const ThemeAgent = require("../themeAgent");
 
-let APP_VERSION = "2.3.0";
+let APP_VERSION = "2.4.0";
 try {
   const pkg = require("../package.json");
   if (pkg && pkg.version) {

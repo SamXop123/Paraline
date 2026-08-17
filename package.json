@@ -1,6 +1,6 @@
 {
   "name": "paraline",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "homepage": "https://paraline.vercel.app/",
   "desktopName": "com.paraline.app.desktop",
   "description": "Desktop audio visualizer with transparent edge-light overlays and real-time system audio capture.",
