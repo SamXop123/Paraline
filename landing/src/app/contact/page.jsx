@@ -157,6 +157,7 @@ export default function ContactPage() {
                     value={form.name}
                     onChange={handleChange}
                     required
+                    title="Name can only contain letters from any language, spaces, apostrophes, and hyphens."
                     maxLength={100}
                     className="w-full p-4 rounded-2xl bg-[#010206]/40 border border-white/5 text-white outline-none focus:border-cyan-500/40 focus:bg-[#010206]/60 transition-all placeholder:text-white/25 text-sm"
                   />
@@ -191,6 +192,7 @@ export default function ContactPage() {
                   placeholder="How can we help?"
                   value={form.subject}
                   onChange={handleChange}
+                  required
                   maxLength={200}
                   className="w-full p-4 rounded-2xl bg-[#010206]/40 border border-white/5 text-white outline-none focus:border-cyan-500/40 focus:bg-[#010206]/60 transition-all placeholder:text-white/25 text-sm"
                 />
