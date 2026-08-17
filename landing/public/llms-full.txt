@@ -1,0 +1,40 @@
+# Paraline Technical Reference & AI Knowledge Base
+
+## Product Summary
+Paraline is a specialized desktop customization utility for Windows that creates ambient, audio-reactive edge visualizer overlays on desktop screens.
+
+## Architecture & Data Flow
+1. **Audio Helper Process (`Paraline.AudioBridge.exe`):**
+   - Written in C# utilizing NAudio / Win32 WASAPI Loopback API.
+   - Captures real-time output audio buffers directly from default Windows playback devices.
+   - Calculates RMS (Root Mean Square) energy levels and frequency bands.
+   - Streams JSON-formatted metrics over standard output (`stdout`) to the Electron parent process.
+   - Automatically reconnects when output audio hardware devices switch.
+
+2. **Electron Main Process (`main.js`):**
+   - Manages frameless, transparent, click-through overlay windows across display monitors (`win.setIgnoreMouseEvents(true, { forward: true })`).
+   - Implements multi-monitor screen bounds coordination.
+   - Parses IPC configuration payloads and handles global system hotkeys using `globalShortcut`.
+   - Manages self-healing configuration backups and settings sanitization.
+
+3. **Renderer & Theme Engine (`rendererLoop.js`, `themes/`):**
+   - Renders 11 customizable visualizers on HTML5 Canvas.
+   - Uses time-delta normalized animation frames for high refresh-rate displays (60Hz to 240Hz).
+   - Pauses rendering calculations when overlay windows are hidden or minimized to minimize GPU/CPU power usage.
+
+## Frequently Asked Questions (FAQ)
+
+### What is Paraline?
+Paraline is a lightweight, open-source Windows desktop app that renders edge-lighting audio visualizers that react in real-time to music and system sounds.
+
+### Is Paraline free and open-source?
+Yes, Paraline is 100% free and open-source under the MIT license.
+
+### Does Paraline record or transmit audio?
+No. Paraline processes audio locally in memory to compute visual amplitude. No audio data is written to disk or sent over network connections.
+
+### Does Paraline support Windows 10 and Windows 11?
+Yes, Paraline is fully supported on Windows 10 and 11 (64-bit).
+
+### Where can I download Paraline?
+Paraline can be downloaded from the official website (https://paraline.vercel.app/) or directly from GitHub releases (https://github.com/SamXop123/Paraline/releases).
