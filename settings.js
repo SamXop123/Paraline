@@ -23,7 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
             tone: { label: "Tone", options: ["blue", "purple", "warm", "custom"] },
             sensitivity: { label: "Sensitivity", options: ["low", "medium", "high", "custom"] },
             edgeMode: { label: "Edge Mode", options: ["top", "bottom", "both"] },
-            glowStrength: { label: "Glow Strength", options: ["soft", "medium", "strong", "custom"] }
+            glowStrength: { label: "Glow Strength", options: ["soft", "medium", "strong", "custom"] },
+            blendMode: { label: "Blend Mode", options: ["source-over", "screen", "overlay", "lighter"], advanced: true },
+            physicsSmoothing: { label: "Physics Smoothness", options: ["0.01", "0.018", "0.03", "0.05"], advanced: true },
+            breathingAmplitude: { label: "Breathing Amp.", options: ["0.01", "0.028", "0.05", "0.08"], advanced: true }
         },
         reactiveBorder: {
             colorStyle: { label: "Color Style", options: ["rainbow", "neonBlue", "neonPurple", "warmGlow", "custom"] },
@@ -109,10 +112,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderThemeSettings(themeId) {
         const container = document.getElementById('dynamic-theme-settings');
+        const advancedContainer = document.getElementById('dynamic-advanced-theme-settings');
         container.innerHTML = '';
+        if (advancedContainer) advancedContainer.innerHTML = '<h3>Theme Advanced Tweaks</h3><p class="setting-desc">Tweak the physics and compositing values directly.</p>';
         const schema = THEMES_SCHEMA[themeId];
-        if (!schema) return;
+        if (!schema) {
+            if (advancedContainer) advancedContainer.style.display = 'none';
+            return;
+        }
         
+        let hasAdvanced = false;
         const currentThemeObj = cachedSettings[themeId] || {};
 
         for (const [key, prop] of Object.entries(schema)) {
@@ -145,7 +154,16 @@ document.addEventListener('DOMContentLoaded', () => {
             select.addEventListener('change', dispatchThemeUpdate);
             
             div.appendChild(select);
-            container.appendChild(div);
+            if (prop.advanced && advancedContainer) {
+                hasAdvanced = true;
+                advancedContainer.appendChild(div);
+            } else {
+                container.appendChild(div);
+            }
+        }
+        
+        if (advancedContainer) {
+            advancedContainer.style.display = hasAdvanced ? 'block' : 'none';
         }
         
         updateAdvancedSliders(themeId);
@@ -1179,7 +1197,7 @@ refreshThemeProfiles();
         if (!window.visualizerSettings) return;
         if (!themeSelector) return;
         const selectedTheme = themeSelector.value;
-        const dropdowns = document.querySelectorAll('#dynamic-theme-settings .theme-trigger');
+        const dropdowns = document.querySelectorAll('#dynamic-theme-settings .theme-trigger, #dynamic-advanced-theme-settings .theme-trigger');
         
         const themePatch = {};
         dropdowns.forEach(dd => {
