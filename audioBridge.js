@@ -33,6 +33,7 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
   let successStartTime = null;
   let wallpaperPollingEnabled = false;
   let lastSentWallpaperPollingEnabled = null;
+  let lastValidStdoutTime = 0;
 
   function syncWallpaperPollingState() {
     if (lastSentWallpaperPollingEnabled === wallpaperPollingEnabled) {
@@ -188,8 +189,9 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
 
         try {
           const message = JSON.parse(line);
+          lastValidStdoutTime = Date.now();
 
-          if (!helperReady) {
+          if (!helperReady || helperStatus.mode !== "helper") {
             helperReady = true;
             retryCount = 0;
             successStartTime = Date.now();
@@ -218,6 +220,11 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
     helperProcess.stderr.on("data", (chunk) => {
       const errorMessage = chunk.toString().trim();
       console.error(errorMessage);
+
+      // If valid audio frames are actively streaming, do not degrade capture status for background stderr logs
+      if (Date.now() - lastValidStdoutTime < 1000) {
+        return;
+      }
 
       const now = Date.now();
 
@@ -320,6 +327,7 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
 
     helperReady = false;
     successStartTime = null;
+    lastValidStdoutTime = 0;
 
     updateStatus({
       mode: "simulated",
