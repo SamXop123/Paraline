@@ -1219,7 +1219,8 @@ const THEME_INFOS = {
         choices: [
           { value: "thin", label: "Thin" },
           { value: "medium", label: "Medium" },
-          { value: "thick", label: "Thick" }
+          { value: "thick", label: "Thick" },
+          { value: "custom", label: "Custom" }
         ]
       },
       {
@@ -1303,7 +1304,8 @@ const THEME_INFOS = {
         choices: [
           { value: "thin", label: "Thin" },
           { value: "medium", label: "Medium" },
-          { value: "thick", label: "Thick" }
+          { value: "thick", label: "Thick" },
+          { value: "custom", label: "Custom" }
         ]
       },
       {
@@ -1635,7 +1637,8 @@ const THEME_INFOS = {
         choices: [
           { value: "thin", label: "Thin" },
           { value: "medium", label: "Medium" },
-          { value: "thick", label: "Thick" }
+          { value: "thick", label: "Thick" },
+          { value: "custom", label: "Custom" }
         ]
       },
       {
