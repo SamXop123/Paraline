@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { setupOptimizedCanvas } from "@/lib/useCanvasOptimizer";
 
 export function CrimsonDuskPreview({ active, transparent, className }: { active: boolean; transparent?: boolean; className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -7,11 +8,7 @@ export function CrimsonDuskPreview({ active, transparent, className }: { active:
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
 
-    let animationFrameId: number;
-    let lastTime = performance.now();
     let time = 0;
 
     // Physics
@@ -50,25 +47,14 @@ export function CrimsonDuskPreview({ active, transparent, className }: { active:
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const render = (now: number) => {
-      const deltaTime = Math.min(0.1, (now - lastTime) / 1000);
-      lastTime = now;
-      const reducedMotion = prefersReducedMotion();
-
-      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-      const rect = canvas.getBoundingClientRect();
-      const targetWidth = Math.floor(rect.width * dpr);
-      const targetHeight = Math.floor(rect.height * dpr);
-      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        ctx.scale(dpr, dpr);
-      }
-      const width = rect.width;
-      const height = rect.height;
-
-      const motionScale = reducedMotion ? 0.15 : 1;
-      time += deltaTime * (active ? 0.9 : 0.3) * motionScale;
+    return setupOptimizedCanvas({
+      canvas,
+      active,
+      idleFps: 30,
+      onRender: (ctx, width, height, deltaTime) => {
+        const reducedMotion = prefersReducedMotion();
+        const motionScale = reducedMotion ? 0.15 : 1;
+        time += deltaTime * (active ? 0.9 : 0.3) * motionScale;
 
       if (active && !reducedMotion) {
         beatTimer += deltaTime;
@@ -158,13 +144,9 @@ export function CrimsonDuskPreview({ active, transparent, className }: { active:
         ctx.arc(px, py, size, 0, Math.PI * 2);
         ctx.fill();
       }
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    animationFrameId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [active, transparent]);
+    }
+  });
+}, [active, transparent]);
 
   return (
     <canvas

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { setupOptimizedCanvas } from "@/lib/useCanvasOptimizer";
 
 interface AuroraLayer {
   baseAmplitude: number;
@@ -26,12 +27,7 @@ export function AuroraDriftPreview({ active, transparent, className }: { active:
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
 
-    let animationFrameId: number;
-    let lastTime = performance.now();
-    
     // Theme states (closure parameters matching desktop auroraDrift.js)
     let time = 0;
     let localAudioLevel = 0.20;
@@ -160,24 +156,11 @@ export function AuroraDriftPreview({ active, transparent, className }: { active:
       return `hsla(${hsl[0].toFixed(1)}, ${hsl[1].toFixed(1)}%, ${hsl[2].toFixed(1)}%, ${alpha})`;
     };
 
-    const render = (now: number) => {
-      const deltaTime = Math.min(0.1, (now - lastTime) / 1000);
-      lastTime = now;
-
-      // Handle DPI scaling
-      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-      const rect = canvas.getBoundingClientRect();
-      const targetWidth = Math.floor(rect.width * dpr);
-      const targetHeight = Math.floor(rect.height * dpr);
-
-      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        ctx.scale(dpr, dpr);
-      }
-
-      const width = rect.width;
-      const height = rect.height;
+    return setupOptimizedCanvas({
+      canvas,
+      active,
+      idleFps: 30,
+      onRender: (ctx, width, height, deltaTime) => {
 
       // Increment elapsed time (slightly accelerated for web preview engagement)
       time += deltaTime * 1.5;
@@ -515,11 +498,8 @@ export function AuroraDriftPreview({ active, transparent, className }: { active:
         ctx.restore();
       }
 
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    animationFrameId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animationFrameId);
+      }
+    });
   }, [active]);
 
   return (

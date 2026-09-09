@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { setupOptimizedCanvas } from "@/lib/useCanvasOptimizer";
 
 export function AmbientWavePreview({ active, transparent, className }: { active: boolean; transparent?: boolean; className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -8,11 +9,7 @@ export function AmbientWavePreview({ active, transparent, className }: { active:
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
 
-    let animationFrameId: number;
-    let lastTime = performance.now();
     let time = 0;
     
     // Physics variables for smooth, framerate-independent behavior
@@ -23,24 +20,11 @@ export function AmbientWavePreview({ active, transparent, className }: { active:
     let nextBeatTime = 1.0;
     let beatSpike = 0;
 
-    const render = (now: number) => {
-      const deltaTime = Math.min(0.1, (now - lastTime) / 1000);
-      lastTime = now;
-
-      // Handle resize / DPI scaling dynamically
-      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-      const rect = canvas.getBoundingClientRect();
-      const targetWidth = Math.floor(rect.width * dpr);
-      const targetHeight = Math.floor(rect.height * dpr);
-
-      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        ctx.scale(dpr, dpr);
-      }
-
-      const width = rect.width;
-      const height = rect.height;
+    return setupOptimizedCanvas({
+      canvas,
+      active,
+      idleFps: 30,
+      onRender: (ctx, width, height, deltaTime) => {
 
       // Increment time relative to deltaTime
       time += deltaTime * (active ? 0.8 : 0.4);
@@ -185,12 +169,8 @@ export function AmbientWavePreview({ active, transparent, className }: { active:
         lineWidth: 0.9,
         opacity: 0.42
       });
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    animationFrameId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animationFrameId);
+      }
+    });
   }, [active]);
 
   return (

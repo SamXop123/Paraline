@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { setupOptimizedCanvas } from "@/lib/useCanvasOptimizer";
 
 interface Flake {
   x: number;
@@ -27,11 +28,7 @@ export function SnowParticlesPreview({ active, transparent, className }: { activ
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
 
-    let animationFrameId: number;
-    let lastTime = performance.now();
     let time = 0;
     
     // Physics
@@ -89,24 +86,11 @@ export function SnowParticlesPreview({ active, transparent, className }: { activ
       };
     };
 
-    const render = (now: number) => {
-      const deltaTime = Math.min(0.1, (now - lastTime) / 1000);
-      lastTime = now;
-
-      // Handle DPI scaling
-      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-      const rect = canvas.getBoundingClientRect();
-      const targetWidth = Math.floor(rect.width * dpr);
-      const targetHeight = Math.floor(rect.height * dpr);
-
-      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        ctx.scale(dpr, dpr);
-      }
-
-      const width = rect.width;
-      const height = rect.height;
+    return setupOptimizedCanvas({
+      canvas,
+      active,
+      idleFps: 30,
+      onRender: (ctx, width, height, deltaTime) => {
 
       // Pre-populate particles on mount so the card isn't empty at first
       if (!isInitializedRef.current && width > 0 && height > 0) {
@@ -225,13 +209,9 @@ export function SnowParticlesPreview({ active, transparent, className }: { activ
         ctx.fill();
         ctx.restore();
       }
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    animationFrameId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [active]);
+    }
+  });
+}, [active]);
 
   return (
     <canvas 

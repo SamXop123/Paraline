@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { setupOptimizedCanvas } from "@/lib/useCanvasOptimizer";
 
 interface Particle {
   distance: number;
@@ -20,11 +21,7 @@ export function DotParticlesPreview({ active, transparent, className }: { active
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
 
-    let animationFrameId: number;
-    let lastTime = performance.now();
     let time = 0;
     
     // Physics
@@ -56,6 +53,7 @@ export function DotParticlesPreview({ active, transparent, className }: { active
       };
     };
 
+    const particleCount = 42;
     const ensureParticles = (width: number, height: number, count: number) => {
       const key = `${width}:${height}:${count}`;
       if (currentKeyRef.current === key) return;
@@ -67,28 +65,13 @@ export function DotParticlesPreview({ active, transparent, className }: { active
       );
     };
 
-    const render = (now: number) => {
-      const deltaTime = Math.min(0.1, (now - lastTime) / 1000);
-      lastTime = now;
-
-      // Handle DPI scaling
-      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-      const rect = canvas.getBoundingClientRect();
-      const targetWidth = Math.floor(rect.width * dpr);
-      const targetHeight = Math.floor(rect.height * dpr);
-
-      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        ctx.scale(dpr, dpr);
-      }
-
-      const width = rect.width;
-      const height = rect.height;
-
-      // Spawning densities matching desktop balanced presets
-      const particleCount = 42;
-      ensureParticles(width, height, particleCount);
+    return setupOptimizedCanvas({
+      canvas,
+      active,
+      idleFps: 30,
+      onResize: (w, h) => ensureParticles(w, h, particleCount),
+      onRender: (ctx, width, height, deltaTime) => {
+        ensureParticles(width, height, particleCount);
 
       // Increment time relative to deltaTime
       time += deltaTime * (active ? 0.9 : 0.3);
@@ -188,13 +171,9 @@ export function DotParticlesPreview({ active, transparent, className }: { active
         ctx.fill();
         ctx.restore();
       }
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    animationFrameId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [active]);
+    }
+  });
+}, [active]);
 
   return (
     <canvas 

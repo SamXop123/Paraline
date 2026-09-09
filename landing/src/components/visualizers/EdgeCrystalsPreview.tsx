@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { setupOptimizedCanvas } from "@/lib/useCanvasOptimizer";
 
 interface Stroke {
   side: "left" | "right";
@@ -22,11 +23,7 @@ export function EdgeCrystalsPreview({ active, transparent, className }: { active
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
 
-    let animationFrameId: number;
-    let lastTime = performance.now();
     let time = 0;
 
     // Physics
@@ -65,6 +62,7 @@ export function EdgeCrystalsPreview({ active, transparent, className }: { active
       };
     };
 
+    const countPerSide = 18;
     const ensureThemeState = (height: number, countPerSide: number) => {
       const key = `${height}:${countPerSide}`;
       if (currentKeyRef.current === key) return;
@@ -80,28 +78,13 @@ export function EdgeCrystalsPreview({ active, transparent, className }: { active
       strokesRef.current = newStrokes;
     };
 
-    const render = (now: number) => {
-      const deltaTime = Math.min(0.1, (now - lastTime) / 1000);
-      lastTime = now;
-
-      // Handle DPI scaling
-      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-      const rect = canvas.getBoundingClientRect();
-      const targetWidth = Math.floor(rect.width * dpr);
-      const targetHeight = Math.floor(rect.height * dpr);
-
-      if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        ctx.scale(dpr, dpr);
-      }
-
-      const width = rect.width;
-      const height = rect.height;
-
-      // Density and flutter profiles based on desktop "balanced" theme settings
-      const countPerSide = 18;
-      ensureThemeState(height, countPerSide);
+    return setupOptimizedCanvas({
+      canvas,
+      active,
+      idleFps: 30,
+      onResize: (_, h) => ensureThemeState(h, countPerSide),
+      onRender: (ctx, width, height, deltaTime) => {
+        ensureThemeState(height, countPerSide);
 
       // Increment time relative to deltaTime
       time += deltaTime * (active ? 0.95 : 0.3);
@@ -170,13 +153,9 @@ export function EdgeCrystalsPreview({ active, transparent, className }: { active
           glowMultiplier
         });
       }
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    animationFrameId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [active]);
+    }
+  });
+}, [active]);
 
   return (
     <canvas 
