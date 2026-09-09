@@ -411,3 +411,53 @@ test("createAudioBridge - restart kills old helper and spawns a new one", () => 
   }
 });
 
+test("createAudioBridge - ignores stderr logs when valid stdout is actively streaming", () => {
+  fakeHelperExists = true;
+  const proc = createFakeHelperProcess();
+  fakeSpawn = () => proc;
+
+  try {
+    const bridge = createAudioBridge(() => {});
+    bridge.start();
+
+    // Stream a valid level
+    proc.stdout.emit("data", Buffer.from('{"type":"level","value":0.44}\n'));
+    assert.strictEqual(bridge.getStatus().mode, "helper");
+
+    // Emit diagnostic/background stderr log while streaming is active
+    proc.stderr.emit("data", Buffer.from("[WallpaperColorExtractor] Harmless diagnostic\n"));
+    // Status should remain helper, not degraded to helper-error
+    assert.strictEqual(bridge.getStatus().mode, "helper");
+
+    bridge.stop();
+  } finally {
+    fakeHelperExists = false;
+    fakeSpawn = null;
+  }
+});
+
+test("createAudioBridge - recovers mode to helper upon receiving valid stdout message", () => {
+  fakeHelperExists = true;
+  const proc = createFakeHelperProcess();
+  fakeSpawn = () => proc;
+
+  try {
+    const bridge = createAudioBridge(() => {});
+    bridge.start();
+
+    // Stderr when no stdout has arrived yet will set helper-error
+    proc.stderr.emit("data", Buffer.from("Capture error before stream start\n"));
+    assert.strictEqual(bridge.getStatus().mode, "helper-error");
+
+    // As soon as valid stdout arrives, it should auto-heal to helper
+    proc.stdout.emit("data", Buffer.from('{"type":"level","value":0.5}\n'));
+    assert.strictEqual(bridge.getStatus().mode, "helper");
+
+    bridge.stop();
+  } finally {
+    fakeHelperExists = false;
+    fakeSpawn = null;
+  }
+});
+
+
