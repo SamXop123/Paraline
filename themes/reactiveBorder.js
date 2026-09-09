@@ -126,11 +126,15 @@
     const reactiveStyle = getReactiveColorStyle(settings, colorModulation, dynamicHue);
     const intensityMultiplier = getReactiveIntensityMultiplier(settings);
     const glowMultiplier = getGlowMultiplier(settings.glowStrength);
-    const thicknessBase = settings.borderThickness === "thick"
-      ? 4.25
-      : settings.borderThickness === "medium"
-        ? 3
-        : 2.15;
+    const thicknessBase = (settings.borderThickness === "custom" && typeof settings.customThickness === "number")
+      ? settings.customThickness
+      : (typeof settings.customThickness === "number" && !["thin", "medium", "thick"].includes(settings.borderThickness))
+        ? settings.customThickness
+        : settings.borderThickness === "thick"
+          ? 4.25
+          : settings.borderThickness === "medium"
+            ? 3
+            : (settings.borderThickness === "thin" ? 2.15 : (typeof settings.customThickness === "number" ? settings.customThickness : 2.15));
     const thickness = thicknessBase + smoothedLevel * 1.15 * intensityMultiplier;
     const edgeOffset = Math.max(1, thickness * 0.5) + 1;
 
