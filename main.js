@@ -658,6 +658,10 @@ function toggleHidden() {
 }
 
 function reloadVisualizer() {
+  if (audioBridge) {
+    audioBridge.restart();
+  }
+
   const activeOverlayWindows = getActiveOverlayWindows();
 
   if (activeOverlayWindows.length === 0) {
