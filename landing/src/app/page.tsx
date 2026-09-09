@@ -7,7 +7,7 @@ import { getDownloadUrl, GITHUB_URL } from "@/lib/paraline-api";
 
 import { ThemeShowcase } from "@/components/ThemeShowcase";
 import { FeaturesBento } from "@/components/FeaturesBento";
-import { AmbientWavePreview } from "@/components/visualizers/AmbientWavePreview";
+import { LatencyVisualizer } from "@/components/visualizers/LatencyVisualizer";
 import { SideBarsPreview } from "@/components/visualizers/SideBarsPreview";
 import { AuroraDriftPreview } from "@/components/visualizers/AuroraDriftPreview";
 import { EdgeCrystalsPreview } from "@/components/visualizers/EdgeCrystalsPreview";
@@ -210,10 +210,10 @@ export default function Home() {
                   style={{ backgroundSize: "200% 200%" }}
                 />
                 
-                {/* Image Indicator */}
+                {/* Visualizer Indicator */}
                 <div className="h-16 w-16 md:h-[76px] md:w-[76px] shrink-0 rounded-[20px] bg-white/[0.02] border border-cyan-400/30 flex items-center justify-center overflow-hidden relative shadow-[inset_0_1px_2px_rgba(255,255,255,0.1),_0_0_25px_rgba(34,211,238,0.15)] group-hover:border-cyan-400/60 group-hover:shadow-[0_0_35px_rgba(34,211,238,0.3)] transition-all duration-300">
-                  <div className="absolute inset-0 scale-150 mix-blend-screen opacity-90 group-hover:scale-125 transition-transform duration-700">
-                    <AmbientWavePreview active={true} />
+                  <div className="absolute inset-0 flex items-center justify-center mix-blend-screen opacity-95 group-hover:scale-110 transition-transform duration-500">
+                    <LatencyVisualizer active={true} />
                   </div>
                 </div>
                 
@@ -299,7 +299,7 @@ export default function Home() {
       <ThemeShowcase />
 
       {/* The Idea Section (Cinematic Typography) */}
-      <section className="relative w-full py-40 overflow-hidden bg-[#010206]">
+      <section className="relative w-full py-40 overflow-hidden bg-[#010206] content-auto">
         {/* Deep immersive background radial glow */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-900/10 via-[#010206] to-[#010206] opacity-80" />
         
