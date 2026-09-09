@@ -2348,4 +2348,131 @@ refreshThemeProfiles();
             }
         });
     }
+
+    // ============================================
+    // REAL-TIME AUDIO DIAGNOSTICS & VU METER
+    // ============================================
+    let lastLevelReceivedAt = 0;
+    let targetAudioLevel = 0;
+    let displayedAudioLevel = 0;
+    let peakAudioLevel = 0;
+    let peakHoldTimer = 0;
+    let bridgeStatus = { mode: 'helper', reason: 'Connecting to hardware...' };
+    let isAppPaused = false;
+
+    // DOM references for Sidebar Live Audio Dock
+    const sidebarAudioDot = document.getElementById('sidebar-audio-dot');
+    const sidebarAudioTitle = document.getElementById('sidebar-audio-title');
+    const sidebarAudioPct = document.getElementById('sidebar-audio-pct');
+    const sidebarAudioBarFill = document.getElementById('sidebar-audio-bar-fill');
+    const sidebarAudioBarPeak = document.getElementById('sidebar-audio-bar-peak');
+
+    function updateAudioStatusUI(status) {
+        if (!status) return;
+        const mode = status.mode || 'simulated';
+
+        if (isAppPaused) {
+            if (sidebarAudioDot) {
+                sidebarAudioDot.className = 'status-indicator-dot paused';
+            }
+            if (sidebarAudioTitle) {
+                sidebarAudioTitle.textContent = 'Paused';
+            }
+        } else if (mode === 'helper') {
+            if (sidebarAudioDot) {
+                sidebarAudioDot.className = 'status-indicator-dot live';
+            }
+            if (sidebarAudioTitle) {
+                sidebarAudioTitle.textContent = 'Capture: Live';
+            }
+        } else if (mode === 'simulated') {
+            if (sidebarAudioDot) {
+                sidebarAudioDot.className = 'status-indicator-dot simulated';
+            }
+            if (sidebarAudioTitle) {
+                sidebarAudioTitle.textContent = 'Fallback';
+            }
+        } else {
+            if (sidebarAudioDot) {
+                sidebarAudioDot.className = 'status-indicator-dot error';
+            }
+            if (sidebarAudioTitle) {
+                sidebarAudioTitle.textContent = 'Capture Error';
+            }
+        }
+    }
+
+    function handleIncomingAudioLevel(payload) {
+        if (!payload || typeof payload !== 'object') return;
+        lastLevelReceivedAt = Date.now();
+
+        if (typeof payload.isPaused === 'boolean' && payload.isPaused !== isAppPaused) {
+            isAppPaused = payload.isPaused;
+            updateAudioStatusUI(bridgeStatus);
+        }
+
+        const rawVal = Number(payload.value);
+        if (!isNaN(rawVal)) {
+            // Apply perceptual scaling so normal music levels are clearly visible on the meter
+            targetAudioLevel = Math.max(0, Math.min(1, Math.pow(Math.max(0, rawVal), 0.72) * 1.25));
+        }
+    }
+
+    function audioMeterLoop() {
+        const now = Date.now();
+        // If stream went silent or stopped sending for > 1000ms, pull target to 0
+        if (now - lastLevelReceivedAt > 1000) {
+            targetAudioLevel = 0;
+        }
+
+        // Smooth physics response
+        displayedAudioLevel += (targetAudioLevel - displayedAudioLevel) * 0.38;
+        if (displayedAudioLevel < 0.002) displayedAudioLevel = 0;
+
+        // Peak Hold logic with decay
+        if (displayedAudioLevel >= peakAudioLevel) {
+            peakAudioLevel = displayedAudioLevel;
+            peakHoldTimer = now + 500; // Hold peak for 500ms
+        } else if (now > peakHoldTimer) {
+            peakAudioLevel = Math.max(displayedAudioLevel, peakAudioLevel - 0.018);
+        }
+
+        const pct = Math.min(100, Math.round(displayedAudioLevel * 100));
+        const peakPct = Math.min(100, Math.round(peakAudioLevel * 100));
+
+        // Update Sidebar Mini Meter
+        if (sidebarAudioPct) sidebarAudioPct.textContent = `${pct}%`;
+        if (sidebarAudioBarFill) sidebarAudioBarFill.style.width = `${pct}%`;
+        if (sidebarAudioBarPeak) sidebarAudioBarPeak.style.left = `${peakPct}%`;
+
+        requestAnimationFrame(audioMeterLoop);
+    }
+
+    // Connect AudioBridge handlers
+    if (window.audioBridge) {
+        if (typeof window.audioBridge.getStatus === 'function') {
+            window.audioBridge.getStatus().then(status => {
+                if (status) {
+                    bridgeStatus = status;
+                    updateAudioStatusUI(bridgeStatus);
+                }
+            }).catch(() => {});
+        }
+
+        if (typeof window.audioBridge.onStatus === 'function') {
+            window.audioBridge.onStatus(status => {
+                if (status) {
+                    bridgeStatus = status;
+                    updateAudioStatusUI(bridgeStatus);
+                }
+            });
+        }
+
+        if (typeof window.audioBridge.onLevel === 'function') {
+            window.audioBridge.onLevel(handleIncomingAudioLevel);
+        }
+    }
+
+    // Start Realtime Meter Loop
+    requestAnimationFrame(audioMeterLoop);
 });
