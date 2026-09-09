@@ -258,7 +258,7 @@ export function ThemeShowcase() {
   };
 
   return (
-    <section id="themes" className="relative w-full py-24">
+    <section id="themes" className="relative w-full py-24 content-auto">
       <div className="mx-auto w-full max-w-7xl px-6 lg:px-8">
         <div className="mb-20 flex flex-col items-center justify-between gap-6 md:flex-row">
           <div>
