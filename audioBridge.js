@@ -372,9 +372,16 @@ function createAudioBridge(sendLevel, onStatusChange = () => {}, sendColors = ()
     }
   }
 
+  function restart() {
+    stop();
+    isStopping = false;
+    start();
+  }
+
   return {
     start,
     stop,
+    restart,
     getStatus,
     setColorMode
   };
