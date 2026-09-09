@@ -25,6 +25,12 @@ internal static class Program
                 {
                     capture = new WasapiLoopbackCapture();
                 }
+                else if (capture.HasDefaultDeviceChanged())
+                {
+                    Console.Error.WriteLine("[AudioBridge] Default audio endpoint changed. Rebinding capture stream...");
+                    capture.Dispose();
+                    capture = new WasapiLoopbackCapture();
+                }
 
                 var value = capture.ReadLevel();
 
@@ -145,6 +151,8 @@ internal sealed class WasapiLoopbackCapture : IDisposable
 
     private readonly IMMDeviceEnumerator _deviceEnumerator;
     private readonly IMMDevice _device;
+    private readonly string _deviceId;
+    private DateTime _lastDeviceCheck = DateTime.MinValue;
     private readonly IAudioClient _audioClient;
     private readonly IAudioCaptureClient _captureClient;
     private readonly IntPtr _mixFormatPointer;
@@ -166,6 +174,9 @@ internal sealed class WasapiLoopbackCapture : IDisposable
 
         Marshal.ThrowExceptionForHR(
             _deviceEnumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out _device));
+
+        Marshal.ThrowExceptionForHR(_device.GetId(out var deviceId));
+        _deviceId = deviceId;
 
         var audioClientGuid = IidIAudioClient;
         Marshal.ThrowExceptionForHR(
@@ -257,6 +268,46 @@ internal sealed class WasapiLoopbackCapture : IDisposable
         }
 
         return Math.Clamp(_lastLevel, 0, 1);
+    }
+
+    public bool HasDefaultDeviceChanged()
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastDeviceCheck).TotalMilliseconds < 500)
+        {
+            return false;
+        }
+
+        _lastDeviceCheck = now;
+
+        IMMDevice? currentDefaultDevice = null;
+        try
+        {
+            int hr = _deviceEnumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out currentDefaultDevice);
+            if (hr != 0 || currentDefaultDevice == null)
+            {
+                return false;
+            }
+
+            hr = currentDefaultDevice.GetId(out var currentId);
+            if (hr != 0 || string.IsNullOrEmpty(currentId))
+            {
+                return false;
+            }
+
+            return !string.Equals(currentId, _deviceId, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+        finally
+        {
+            if (currentDefaultDevice != null)
+            {
+                Marshal.ReleaseComObject(currentDefaultDevice);
+            }
+        }
     }
 
     private void AccumulateSamples(IntPtr dataPointer, int sampleCount, ref double sumSquares, ref int totalSamples)

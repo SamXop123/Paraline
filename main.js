@@ -556,14 +556,20 @@ function reconcileOverlayWindows() {
 }
 
 function sendAudioLevel(value, source) {
-  if (isPaused) {
-    return;
+  if (!isPaused) {
+    for (const overlayWindow of getActiveOverlayWindows()) {
+      overlayWindow.webContents.send("audio-level", {
+        value,
+        source
+      });
+    }
   }
 
-  for (const overlayWindow of getActiveOverlayWindows()) {
-    overlayWindow.webContents.send("audio-level", {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.webContents.send("audio-level", {
       value,
-      source
+      source,
+      isPaused
     });
   }
 }
@@ -883,6 +889,9 @@ function handleAudioBridgeStatusChange(status) {
     startSimulatedAudioFallback();
   } else {
     stopSimulatedAudioFallback();
+  }
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.webContents.send("audio-bridge-status", status);
   }
   refreshTrayMenu();
   reconcileWallpaperColorSource();
