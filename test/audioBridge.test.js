@@ -383,3 +383,31 @@ test("createAudioBridge - level and colors stdout messages remain unchanged", ()
     fakeSpawn = null;
   }
 });
+
+test("createAudioBridge - restart kills old helper and spawns a new one", () => {
+  fakeHelperExists = true;
+  const proc1 = createFakeHelperProcess();
+  const proc2 = createFakeHelperProcess();
+  let spawnCount = 0;
+  fakeSpawn = () => {
+    spawnCount++;
+    return spawnCount === 1 ? proc1 : proc2;
+  };
+
+  try {
+    const bridge = createAudioBridge(() => {});
+    bridge.start();
+    assert.strictEqual(spawnCount, 1);
+    assert.strictEqual(proc1.killed, undefined);
+
+    bridge.restart();
+    assert.strictEqual(proc1.killed, true);
+    assert.strictEqual(spawnCount, 2);
+    bridge.stop();
+    assert.strictEqual(proc2.killed, true);
+  } finally {
+    fakeHelperExists = false;
+    fakeSpawn = null;
+  }
+});
+
