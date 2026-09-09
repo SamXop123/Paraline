@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export function FeaturesBento() {
   return (
-    <section className="relative w-full pt-32 pb-16 text-white overflow-hidden bg-[#010206]">
+    <section className="relative w-full pt-32 pb-16 text-white overflow-hidden bg-[#010206] content-auto">
       {/* Background Ambience */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-cyan-900/10 via-transparent to-transparent pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-purple-900/10 via-transparent to-transparent pointer-events-none" />

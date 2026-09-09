@@ -90,6 +90,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <div className="pointer-events-none fixed inset-0 z-[-2] bg-fixed-radial" />
         <div className="pointer-events-none fixed inset-0 z-[-1] bg-noise" />
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-foreground">
           Skip to main content

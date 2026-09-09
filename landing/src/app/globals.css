@@ -35,9 +35,17 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   overflow-x: hidden;
-  /* Luxurious radial lighting from top center exactly matching screenshots */
+}
+
+/* Hardware-composited fixed background (replaces laggy background-attachment: fixed) */
+.bg-fixed-radial {
   background-image: radial-gradient(100% 100% at 50% 0%, rgba(30, 58, 138, 0.15) 0%, rgba(2, 6, 23, 1) 100%);
-  background-attachment: fixed;
+}
+
+/* Skip layout calculation and rendering for offscreen sections until scrolled near */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 800px;
 }
 
 /* Remove the old messy mesh */
