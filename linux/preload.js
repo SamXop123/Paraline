@@ -37,6 +37,14 @@ contextBridge.exposeInMainWorld("audioBridge", {
       ipcRenderer.removeListener("audio-level", wrapped);
     };
   },
+  onStatus(listener) {
+    const wrapped = (_event, payload) => listener(payload);
+    ipcRenderer.on("audio-bridge-status", wrapped);
+
+    return () => {
+      ipcRenderer.removeListener("audio-bridge-status", wrapped);
+    };
+  },
   getStatus() {
     return ipcRenderer.invoke("audio-bridge-status");
   }
