@@ -27,7 +27,6 @@ internal static class Program
                 }
                 else if (capture.HasDefaultDeviceChanged())
                 {
-                    Console.Error.WriteLine("[AudioBridge] Default audio endpoint changed. Rebinding capture stream...");
                     capture.Dispose();
                     capture = new WasapiLoopbackCapture();
                 }

@@ -2392,6 +2392,13 @@ refreshThemeProfiles();
             if (sidebarAudioTitle) {
                 sidebarAudioTitle.textContent = 'Fallback';
             }
+        } else if (mode === 'reconnecting') {
+            if (sidebarAudioDot) {
+                sidebarAudioDot.className = 'status-indicator-dot simulated';
+            }
+            if (sidebarAudioTitle) {
+                sidebarAudioTitle.textContent = 'Reconnecting...';
+            }
         } else {
             if (sidebarAudioDot) {
                 sidebarAudioDot.className = 'status-indicator-dot error';
@@ -2405,6 +2412,12 @@ refreshThemeProfiles();
     function handleIncomingAudioLevel(payload) {
         if (!payload || typeof payload !== 'object') return;
         lastLevelReceivedAt = Date.now();
+
+        // If actively receiving audio frames from the native helper, self-heal live status
+        if (payload.source === 'helper' && bridgeStatus.mode !== 'helper') {
+            bridgeStatus = { mode: 'helper', reason: 'C# helper process connected.' };
+            updateAudioStatusUI(bridgeStatus);
+        }
 
         if (typeof payload.isPaused === 'boolean' && payload.isPaused !== isAppPaused) {
             isAppPaused = payload.isPaused;
