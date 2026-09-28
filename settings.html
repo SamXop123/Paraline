@@ -187,6 +187,71 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="settings-group" id="dual-theme-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div>
+                            <h3 style="margin-bottom: 2px;">Dual Theme Layering <span class="badge-experimental">Beta</span></h3>
+                            <p class="setting-desc" style="margin-bottom: 0;">Blend and render a secondary visualizer simultaneously beneath the primary theme.</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-dual-theme">
+                            <span class="slider-round"></span>
+                        </label>
+                    </div>
+
+                    <!-- Resource Warning Notice -->
+                    <div class="dual-theme-warning" id="dual-theme-warning" style="display: none;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        <span><strong>Heavy Resource Usage:</strong> Rendering two visualizers simultaneously increases GPU & CPU workload. Recommended with <em>Balanced</em> or <em>Performance</em> mode on battery.</span>
+                    </div>
+
+                    <div id="dual-theme-controls" style="display: none; margin-top: 14px;">
+                        <div class="input-group">
+                            <label for="secondary-theme-selector" style="display: block; font-size: 13px; font-weight: 600; color: #a0aec0; margin-bottom: 6px;">Secondary Theme (Background Layer)</label>
+                            <select class="styled-select" id="secondary-theme-selector">
+                                <option value="none">None</option>
+                                <option value="ambientWave">Ambient Wave</option>
+                                <option value="auroraDrift">Aurora Drift</option>
+                                <option value="reactiveBorder">Reactive Border</option>
+                                <option value="flowBorder">Flow Border</option>
+                                <option value="sideBars">Side Bars</option>
+                                <option value="flatRipples">Pulse Lines</option>
+                                <option value="dotParticles">Dot Particles</option>
+                                <option value="rippleFlow">Ripple Flow</option>
+                                <option value="snowBubbleParticles">Snow Particles</option>
+                                <option value="edgeCrystals">Edge Crystals</option>
+                                <option value="sideBraids">Side Braids</option>
+                                <option value="crimsonDusk">Crimson Dusk</option>
+                            </select>
+                        </div>
+
+                        <div class="slider-control" style="margin-top: 16px;">
+                            <div class="slider-header">
+                                <label for="secondary-theme-opacity">Secondary Layer Opacity</label>
+                                <span class="slider-value" id="val-secondary-theme-opacity">70%</span>
+                            </div>
+                            <input type="range" id="secondary-theme-opacity" min="0.1" max="1.0" step="0.05" value="0.7">
+                        </div>
+
+                        <!-- Accordion for Secondary Theme Properties -->
+                        <div class="accordion-section" id="secondary-theme-accordion" style="margin-top: 16px;">
+                            <button type="button" class="accordion-header" id="btn-toggle-secondary-props">
+                                <span>Customize Secondary Theme Properties</span>
+                                <svg class="accordion-arrow" id="secondary-accordion-arrow" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="accordion-body" id="secondary-theme-props-body" style="display: none; padding-top: 14px;">
+                                <div id="dynamic-secondary-theme-settings">
+                                    <!-- Populated dynamically by settings.js for secondary theme -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Advanced Settings Tab (Custom Options) -->
