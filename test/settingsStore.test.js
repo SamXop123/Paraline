@@ -246,6 +246,34 @@ test("settingsStore - Focus Mode sanitization and clamping", () => {
   assert.strictEqual(sanitizedMin.focusMode.transitionDuration, 0.1);
 });
 
+test("settingsStore - Dual Theme sanitization and clamping", () => {
+  const input = {
+    selectedTheme: "ambientWave",
+    dualTheme: {
+      enabled: true,
+      secondaryTheme: "dotParticles",
+      opacity: 1.5 // should clamp to 1.0
+    }
+  };
+  const sanitized = sanitizeSettings(input);
+  assert.strictEqual(sanitized.dualTheme.enabled, true);
+  assert.strictEqual(sanitized.dualTheme.secondaryTheme, "dotParticles");
+  assert.strictEqual(sanitized.dualTheme.opacity, 1.0);
+
+  const inputInvalid = {
+    selectedTheme: "ambientWave",
+    dualTheme: {
+      enabled: false,
+      secondaryTheme: "nonExistentTheme", // should fallback to "none"
+      opacity: -0.2 // should clamp to 0.1
+    }
+  };
+  const sanitizedInvalid = sanitizeSettings(inputInvalid);
+  assert.strictEqual(sanitizedInvalid.dualTheme.enabled, false);
+  assert.strictEqual(sanitizedInvalid.dualTheme.secondaryTheme, "none");
+  assert.strictEqual(sanitizedInvalid.dualTheme.opacity, 0.1);
+});
+
 test("settingsStore - Color Modulation sanitization and clamping", () => {
   const input = {
     selectedTheme: "ambientWave",
