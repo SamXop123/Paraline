@@ -129,6 +129,11 @@ const DEFAULT_SETTINGS = Object.freeze({
     idleTimeout: 5,
     transitionDuration: 1.5
   }),
+  dualTheme: Object.freeze({
+    enabled: false,
+    secondaryTheme: "none",
+    opacity: 0.7
+  }),
   colorModulation: Object.freeze({
     enabled: false,
     mode: "amplitude",
@@ -186,6 +191,7 @@ const DEFAULT_SETTINGS = Object.freeze({
 });
 
 const VALID_MAIN_THEMES = new Set(["ambientWave", "reactiveBorder", "flowBorder", "sideBars", "crimsonDusk", "flatRipples", "dotParticles", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "auroraDrift"]);
+const VALID_SECONDARY_THEMES = new Set(["none", "ambientWave", "reactiveBorder", "flowBorder", "sideBars", "crimsonDusk", "flatRipples", "dotParticles", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "auroraDrift"]);
 const VALID_COLOR_MODES = new Set(["manual", "adaptive", "wallpaper"]);
 const VALID_PERFORMANCE_MODES = new Set(["performance", "balanced", "quality"]);
 const VALID_FPS_LIMITS = new Set(["default", "battery", "unlocked"]);
@@ -252,6 +258,7 @@ function createDefaultSettings() {
     shortcuts: { ...DEFAULT_SETTINGS.shortcuts },
     performanceMode: DEFAULT_SETTINGS.performanceMode,
     focusMode: { ...DEFAULT_SETTINGS.focusMode },
+    dualTheme: { ...DEFAULT_SETTINGS.dualTheme },
     colorModulation: { ...DEFAULT_SETTINGS.colorModulation },
     fpsLimit: DEFAULT_SETTINGS.fpsLimit,
     ambientWave: { ...DEFAULT_SETTINGS.ambientWave },
@@ -671,6 +678,18 @@ function sanitizeColorModulation(input = {}) {
   return { enabled, mode, sensitivity, transitionSpeed };
 }
 
+function sanitizeDualTheme(input = {}) {
+  const safeInput = (input && typeof input === "object") ? input : {};
+  const enabled = typeof safeInput.enabled === "boolean" ? safeInput.enabled : DEFAULT_SETTINGS.dualTheme.enabled;
+  const secondaryTheme = pick(safeInput.secondaryTheme, VALID_SECONDARY_THEMES, DEFAULT_SETTINGS.dualTheme.secondaryTheme);
+  const opacityNum = toFiniteNumber(safeInput.opacity);
+  const opacity = opacityNum !== null
+    ? Math.max(0.1, Math.min(1.0, opacityNum))
+    : DEFAULT_SETTINGS.dualTheme.opacity;
+
+  return { enabled, secondaryTheme, opacity };
+}
+
 function sanitizeShortcuts(input) {
   const safeInput = (input && typeof input === "object") ? input : {};
   const keys = ["togglePause", "toggleHide", "cycleTheme"];
@@ -725,6 +744,7 @@ function sanitizeSettings(input = {}) {
     performanceMode: pick(source.performanceMode, VALID_PERFORMANCE_MODES, DEFAULT_SETTINGS.performanceMode),
     fpsLimit: pick(source.fpsLimit, VALID_FPS_LIMITS, DEFAULT_SETTINGS.fpsLimit),
     focusMode: sanitizeFocusMode(source.focusMode),
+    dualTheme: sanitizeDualTheme(source.dualTheme),
     colorModulation: sanitizeColorModulation(source.colorModulation),
     ambientWave: sanitizeAmbientWave(source.ambientWave),
     reactiveBorder: sanitizeReactiveBorder(source.reactiveBorder),
