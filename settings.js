@@ -452,11 +452,164 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ----------------------------------------
+    // DUAL THEME LAYERING BINDINGS
+    // ----------------------------------------
+    const toggleDualTheme = document.getElementById('toggle-dual-theme');
+    const dualThemeWarning = document.getElementById('dual-theme-warning');
+    const dualThemeControls = document.getElementById('dual-theme-controls');
+    const secondaryThemeSelector = document.getElementById('secondary-theme-selector');
+    const secondaryThemeOpacity = document.getElementById('secondary-theme-opacity');
+    const btnToggleSecondaryProps = document.getElementById('btn-toggle-secondary-props');
+    const secondaryAccordionArrow = document.getElementById('secondary-accordion-arrow');
+    const secondaryThemePropsBody = document.getElementById('secondary-theme-props-body');
+
+    function toggleDualThemeUI(enabled) {
+        if (dualThemeWarning) dualThemeWarning.style.display = enabled ? 'flex' : 'none';
+        if (dualThemeControls) dualThemeControls.style.display = enabled ? 'block' : 'none';
+    }
+
+    function updateSecondaryThemeOptions(currentPrimary) {
+        if (!secondaryThemeSelector) return;
+        const options = secondaryThemeSelector.options;
+        for (let i = 0; i < options.length; i++) {
+            const opt = options[i];
+            if (opt.value === 'none') continue;
+            if (opt.value === currentPrimary) {
+                opt.disabled = true;
+                if (!opt.text.includes('(Primary Active)')) {
+                    opt.text = opt.text + ' (Primary Active)';
+                }
+            } else {
+                opt.disabled = false;
+                opt.text = opt.text.replace(' (Primary Active)', '');
+            }
+        }
+    }
+
+    function renderSecondaryThemeSettings(themeId) {
+        const container = document.getElementById('dynamic-secondary-theme-settings');
+        if (!container) return;
+        container.innerHTML = '';
+        if (!themeId || themeId === 'none') {
+            container.innerHTML = '<p class="setting-desc" style="margin-top: 8px;">Select a secondary theme above to customize its properties.</p>';
+            return;
+        }
+        const schema = THEMES_SCHEMA[themeId];
+        if (!schema) return;
+        
+        const currentThemeObj = cachedSettings[themeId] || {};
+
+        for (const [key, prop] of Object.entries(schema)) {
+            const div = document.createElement('div');
+            div.className = 'input-group';
+            div.style.marginBottom = '14px';
+            
+            const label = document.createElement('label');
+            label.textContent = prop.label;
+            div.appendChild(label);
+            
+            const select = document.createElement('select');
+            select.className = 'styled-select secondary-theme-trigger';
+            select.dataset.key = key;
+            
+            for (const opt of prop.options) {
+                const option = document.createElement('option');
+                option.value = opt;
+                let humanStr = opt.replace(/([A-Z])/g, ' $1');
+                humanStr = humanStr.charAt(0).toUpperCase() + humanStr.slice(1);
+                option.textContent = humanStr;
+                select.appendChild(option);
+            }
+            
+            if (currentThemeObj[key]) {
+                select.value = currentThemeObj[key];
+            }
+            
+            select.addEventListener('change', () => {
+                dispatchSecondaryThemePropertiesUpdate(themeId);
+            });
+            
+            div.appendChild(select);
+            container.appendChild(div);
+        }
+    }
+
+    function dispatchSecondaryThemePropertiesUpdate(themeId) {
+        if (!window.visualizerSettings || !themeId || themeId === 'none') return;
+        const dropdowns = document.querySelectorAll('#dynamic-secondary-theme-settings .secondary-theme-trigger');
+        const themePatch = {};
+        dropdowns.forEach(dd => {
+            themePatch[dd.dataset.key] = dd.value;
+        });
+
+        if (!cachedSettings[themeId]) cachedSettings[themeId] = {};
+        Object.assign(cachedSettings[themeId], themePatch);
+
+        window.visualizerSettings.update({
+            [themeId]: themePatch
+        });
+    }
+
+    function updateDualThemeSetting(patch) {
+        if (window.visualizerSettings) {
+            const currentDual = cachedSettings.dualTheme || {};
+            const nextDual = { ...currentDual, ...patch };
+            cachedSettings.dualTheme = nextDual;
+            window.visualizerSettings.update({
+                dualTheme: nextDual
+            });
+        }
+    }
+
+    if (toggleDualTheme) {
+        toggleDualTheme.addEventListener('change', (e) => {
+            const enabled = e.target.checked;
+            toggleDualThemeUI(enabled);
+            updateDualThemeSetting({ enabled });
+        });
+    }
+
+    if (secondaryThemeSelector) {
+        secondaryThemeSelector.addEventListener('change', (e) => {
+            const secTheme = e.target.value;
+            renderSecondaryThemeSettings(secTheme);
+            updateDualThemeSetting({ secondaryTheme: secTheme });
+        });
+    }
+
+    if (secondaryThemeOpacity) {
+        secondaryThemeOpacity.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value) || 0.7;
+            const valEl = document.getElementById('val-secondary-theme-opacity');
+            if (valEl) valEl.textContent = `${Math.round(val * 100)}%`;
+            updateDualThemeSetting({ opacity: val });
+        });
+    }
+
+    if (btnToggleSecondaryProps) {
+        btnToggleSecondaryProps.addEventListener('click', () => {
+            if (!secondaryThemePropsBody) return;
+            const isCurrentlyOpen = secondaryThemePropsBody.style.display === 'block';
+            secondaryThemePropsBody.style.display = isCurrentlyOpen ? 'none' : 'block';
+            if (secondaryAccordionArrow) {
+                secondaryAccordionArrow.classList.toggle('open', !isCurrentlyOpen);
+            }
+        });
+    }
+
     const themeSelector = document.getElementById('theme-selector');
     if (themeSelector) {
         themeSelector.addEventListener('change', (e) => {
             const themeId = e.target.value;
             syncThemeUI(themeId);
+            updateSecondaryThemeOptions(themeId);
+
+            if (secondaryThemeSelector && secondaryThemeSelector.value === themeId) {
+                secondaryThemeSelector.value = 'none';
+                renderSecondaryThemeSettings('none');
+                updateDualThemeSetting({ secondaryTheme: 'none' });
+            }
 
             // Also trigger an update to actually switch the active visualizer theme
             if (window.visualizerSettings) {
@@ -1602,6 +1755,30 @@ refreshThemeProfiles();
                     if (valEl) valEl.textContent = speed.toFixed(2);
                 }
             }
+
+            // Load Dual Theme settings
+            if (settings.dualTheme) {
+                const dual = settings.dualTheme;
+                const enabled = !!dual.enabled;
+                if (toggleDualTheme) {
+                    toggleDualTheme.checked = enabled;
+                }
+                toggleDualThemeUI(enabled);
+
+                const currentPrimary = settings.selectedTheme || 'ambientWave';
+                updateSecondaryThemeOptions(currentPrimary);
+
+                if (secondaryThemeSelector && dual.secondaryTheme) {
+                    secondaryThemeSelector.value = dual.secondaryTheme;
+                    renderSecondaryThemeSettings(dual.secondaryTheme);
+                }
+
+                if (secondaryThemeOpacity && dual.opacity !== undefined) {
+                    secondaryThemeOpacity.value = dual.opacity;
+                    const valEl = document.getElementById('val-secondary-theme-opacity');
+                    if (valEl) valEl.textContent = `${Math.round(dual.opacity * 100)}%`;
+                }
+            }
             
             // set custom variables into UI if they exist globally or on the active theme
             const activeThemeData = settings[settings.selectedTheme] || {};
@@ -1739,6 +1916,28 @@ refreshThemeProfiles();
                     colorModulationSpeed.value = mod.transitionSpeed;
                     const valEl = document.getElementById('val-color-modulation-speed');
                     if (valEl) valEl.textContent = mod.transitionSpeed.toFixed(2);
+                }
+            }
+
+            // Sync Dual Theme settings
+            if (nextSettings.selectedTheme !== undefined) {
+                updateSecondaryThemeOptions(nextSettings.selectedTheme);
+            }
+
+            if (nextSettings.dualTheme) {
+                const dual = nextSettings.dualTheme;
+                if (dual.enabled !== undefined && toggleDualTheme) {
+                    toggleDualTheme.checked = !!dual.enabled;
+                    toggleDualThemeUI(!!dual.enabled);
+                }
+                if (dual.secondaryTheme !== undefined && secondaryThemeSelector) {
+                    secondaryThemeSelector.value = dual.secondaryTheme;
+                    renderSecondaryThemeSettings(dual.secondaryTheme);
+                }
+                if (dual.opacity !== undefined && secondaryThemeOpacity) {
+                    secondaryThemeOpacity.value = dual.opacity;
+                    const valEl = document.getElementById('val-secondary-theme-opacity');
+                    if (valEl) valEl.textContent = `${Math.round(dual.opacity * 100)}%`;
                 }
             }
 
