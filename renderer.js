@@ -1,6 +1,32 @@
 const canvas = document.getElementById("visualizer");
 const context = canvas.getContext("2d");
 
+let currentLayerOpacity = 1.0;
+const methodCache = new Map();
+
+const layerContext = new Proxy(context, {
+  get(target, prop) {
+    const val = target[prop];
+    if (typeof val === "function") {
+      let bound = methodCache.get(prop);
+      if (!bound) {
+        bound = val.bind(target);
+        methodCache.set(prop, bound);
+      }
+      return bound;
+    }
+    return val;
+  },
+  set(target, prop, value) {
+    if (prop === "globalAlpha") {
+      target.globalAlpha = Math.max(0, Math.min(1, value * currentLayerOpacity));
+      return true;
+    }
+    target[prop] = value;
+    return true;
+  }
+});
+
 const {
   TRANSPARENT_HAZE,
   clamp01
@@ -519,55 +545,57 @@ function getAuroraDriftSettings() {
   return getResolvedThemeSettings("auroraDrift", visualizerState.auroraDrift || {});
 }
 
-function getActiveAudioMultiplier() {
-  if (visualizerState.selectedTheme === "reactiveBorder") {
+function getThemeAudioMultiplier(themeId) {
+  if (themeId === "reactiveBorder") {
     return getReactiveInputMultiplier(getReactiveBorderSettings());
   }
-
-  if (visualizerState.selectedTheme === "flowBorder") {
+  if (themeId === "flowBorder") {
     return getFlowAudioMultiplier(getFlowBorderSettings());
   }
-
-  if (visualizerState.selectedTheme === "sideBars") {
+  if (themeId === "sideBars") {
     return getSideBarsAudioMultiplier(getSideBarsSettings());
   }
-
-  if (visualizerState.selectedTheme === "crimsonDusk") {
+  if (themeId === "crimsonDusk") {
     return getCrimsonInputMultiplier(getCrimsonDuskSettings());
   }
-  if (visualizerState.selectedTheme === "flatRipples") {
+  if (themeId === "flatRipples") {
     return getFlatRipplesAudioMultiplier(getFlatRipplesSettings());
   }
-
-  if (visualizerState.selectedTheme === "dotParticles") {
+  if (themeId === "dotParticles") {
     return getDotParticlesAudioMultiplier(getDotParticlesSettings());
   }
-
-  if (visualizerState.selectedTheme === "rippleFlow") {
+  if (themeId === "rippleFlow") {
     return getRippleFlowAudioMultiplier(getRippleFlowSettings());
   }
-
-  if (visualizerState.selectedTheme === "snowBubbleParticles") {
+  if (themeId === "snowBubbleParticles") {
     return getSnowBubbleAudioMultiplier(getSnowBubbleParticlesSettings());
   }
-
-  if (visualizerState.selectedTheme === "edgeCrystals") {
+  if (themeId === "edgeCrystals") {
     return getEdgeCrystalsAudioMultiplier(getEdgeCrystalsSettings());
   }
-
-  if (visualizerState.selectedTheme === "sideBraids") {
+  if (themeId === "sideBraids") {
     return getSideBraidsAudioMultiplier(getSideBraidsSettings());
   }
-
-  if (visualizerState.selectedTheme === "auroraDrift") {
+  if (themeId === "auroraDrift") {
     return getAuroraDriftAudioMultiplier(getAuroraDriftSettings());
   }
-
   return getAmbientSensitivityMultiplier(getAmbientWaveSettings());
 }
 
+function getActiveAudioMultiplier() {
+  const primaryMult = getThemeAudioMultiplier(visualizerState.selectedTheme);
+  const dual = visualizerState.dualTheme;
+  if (dual && dual.enabled && dual.secondaryTheme && dual.secondaryTheme !== "none" && dual.secondaryTheme !== visualizerState.selectedTheme) {
+    const secondaryMult = getThemeAudioMultiplier(dual.secondaryTheme);
+    return Math.max(primaryMult, secondaryMult);
+  }
+  return primaryMult;
+}
+
 function rebuildCachedPaint() {
-  const theme = visualizerState.selectedTheme === "ambientWave"
+  const isAmbient = visualizerState.selectedTheme === "ambientWave" ||
+    (visualizerState.dualTheme?.enabled && visualizerState.dualTheme?.secondaryTheme === "ambientWave");
+  const theme = isAmbient
     ? getAmbientTonePalette(getAmbientWaveSettings())
     : TRANSPARENT_HAZE;
 
@@ -708,6 +736,149 @@ function updateColorModulation(now, deltaMs) {
   }
 }
 
+function getThemeFrameInterval(themeId) {
+  if (themeId === "flowBorder") {
+    return FLOW_FRAME_INTERVAL;
+  }
+  if (themeId === "dotParticles" || themeId === "snowBubbleParticles" || themeId === "edgeCrystals" || themeId === "auroraDrift") {
+    return PARTICLE_FRAME_INTERVAL;
+  }
+  if (themeId === "rippleFlow" || themeId === "sideBraids") {
+    return RIPPLE_FLOW_FRAME_INTERVAL;
+  }
+  return FRAME_INTERVAL;
+}
+
+function drawThemeLayer(themeId, activeContext = context) {
+  if (themeId === "reactiveBorder") {
+    drawReactiveBorder({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel,
+      settings: getReactiveBorderSettings(),
+      performanceMode: visualizerState.performanceMode,
+      colorModulation: visualizerState.colorModulation,
+      dynamicHue
+    });
+  } else if (themeId === "flowBorder") {
+    drawFlowBorder({
+      context: activeContext,
+      width,
+      height,
+      smoothedLevel,
+      flowTravelDistance,
+      settings: getFlowBorderSettings(),
+      performanceMode: visualizerState.performanceMode,
+      colorModulation: visualizerState.colorModulation,
+      dynamicHue
+    });
+  } else if (themeId === "sideBars") {
+    drawSideBars({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel,
+      settings: getSideBarsSettings(),
+      performanceMode: visualizerState.performanceMode
+    });
+  } else if (themeId === "crimsonDusk") {
+    drawCrimsonDusk({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel,
+      settings: getCrimsonDuskSettings(),
+      performanceMode: visualizerState.performanceMode
+    });
+  } else if (themeId === "flatRipples") {
+    drawFlatRipples({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel,
+      settings: getFlatRipplesSettings(),
+      performanceMode: visualizerState.performanceMode
+    });
+  } else if (themeId === "dotParticles") {
+    drawDotParticles({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel,
+      settings: getDotParticlesSettings(),
+      performanceMode: visualizerState.performanceMode
+    });
+  } else if (themeId === "rippleFlow") {
+    drawRippleFlow({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel,
+      settings: getRippleFlowSettings(),
+      performanceMode: visualizerState.performanceMode
+    });
+  } else if (themeId === "snowBubbleParticles") {
+    drawSnowBubbleParticles({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel,
+      settings: getSnowBubbleParticlesSettings(),
+      performanceMode: visualizerState.performanceMode
+    });
+  } else if (themeId === "edgeCrystals") {
+    drawEdgeCrystals({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel,
+      settings: getEdgeCrystalsSettings(),
+      performanceMode: visualizerState.performanceMode
+    });
+  } else if (themeId === "sideBraids") {
+    drawSideBraids({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel,
+      settings: getSideBraidsSettings(),
+      performanceMode: visualizerState.performanceMode
+    });
+  } else if (themeId === "auroraDrift") {
+    drawAuroraDrift({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel,
+      settings: getAuroraDriftSettings(),
+      performanceMode: visualizerState.performanceMode
+    });
+  } else {
+    drawAmbientWave({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel,
+      latestSource,
+      edgeGradient,
+      settings: getAmbientWaveSettings(),
+      performanceMode: visualizerState.performanceMode
+    });
+  }
+}
+
 function renderFrame(now) {
   if (visualizerState.hidden) {
     return;
@@ -721,22 +892,10 @@ function renderFrame(now) {
   } else if (currentLimit === "unlocked") {
     activeFrameInterval = 0; // Unlocked / Native Monitor Refresh Rate
   } else {
-    // default dynamic capped limits
-    activeFrameInterval = FRAME_INTERVAL;
-    if (visualizerState.selectedTheme === "flowBorder") {
-      activeFrameInterval = FLOW_FRAME_INTERVAL;
-    } else if (visualizerState.selectedTheme === "dotParticles") {
-      activeFrameInterval = PARTICLE_FRAME_INTERVAL;
-    } else if (visualizerState.selectedTheme === "rippleFlow") {
-      activeFrameInterval = RIPPLE_FLOW_FRAME_INTERVAL;
-    } else if (visualizerState.selectedTheme === "snowBubbleParticles") {
-      activeFrameInterval = PARTICLE_FRAME_INTERVAL;
-    } else if (visualizerState.selectedTheme === "edgeCrystals") {
-      activeFrameInterval = PARTICLE_FRAME_INTERVAL;
-    } else if (visualizerState.selectedTheme === "sideBraids") {
-      activeFrameInterval = RIPPLE_FLOW_FRAME_INTERVAL;
-    } else if (visualizerState.selectedTheme === "auroraDrift") {
-      activeFrameInterval = PARTICLE_FRAME_INTERVAL;
+    activeFrameInterval = getThemeFrameInterval(visualizerState.selectedTheme);
+    const dual = visualizerState.dualTheme;
+    if (dual && dual.enabled && dual.secondaryTheme && dual.secondaryTheme !== "none" && dual.secondaryTheme !== visualizerState.selectedTheme) {
+      activeFrameInterval = Math.min(activeFrameInterval, getThemeFrameInterval(dual.secondaryTheme));
     }
   }
 
@@ -760,139 +919,38 @@ function renderFrame(now) {
 
   const adaptivePaletteChanged = stepAdaptivePalette();
 
-  if (adaptivePaletteChanged && visualizerState.selectedTheme === "ambientWave") {
+  const isAmbientActive = visualizerState.selectedTheme === "ambientWave" ||
+    (visualizerState.dualTheme?.enabled && visualizerState.dualTheme?.secondaryTheme === "ambientWave");
+
+  if (adaptivePaletteChanged && isAmbientActive) {
     rebuildCachedPaint();
   }
 
   context.clearRect(0, 0, width, height);
 
-  if (visualizerState.selectedTheme === "reactiveBorder") {
-    drawReactiveBorder({
-      context,
-      width,
-      height,
-      time,
-      smoothedLevel,
-      settings: getReactiveBorderSettings(),
-      performanceMode: visualizerState.performanceMode,
-      colorModulation: visualizerState.colorModulation,
-      dynamicHue
-    });
-  } else if (visualizerState.selectedTheme === "flowBorder") {
-    drawFlowBorder({
-      context,
-      width,
-      height,
-      smoothedLevel,
-      flowTravelDistance,
-      settings: getFlowBorderSettings(),
-      performanceMode: visualizerState.performanceMode,
-      colorModulation: visualizerState.colorModulation,
-      dynamicHue
-    });
-  } else if (visualizerState.selectedTheme === "sideBars") {
-    drawSideBars({
-      context,
-      width,
-      height,
-      time,
-      smoothedLevel,
-      settings: getSideBarsSettings(),
-      performanceMode: visualizerState.performanceMode
-    });
-  } else if (visualizerState.selectedTheme === "crimsonDusk") {
-    drawCrimsonDusk({
-      context,
-      width,
-      height,
-      time,
-      smoothedLevel,
-      settings: getCrimsonDuskSettings(),
-      performanceMode: visualizerState.performanceMode
-    });
-  } else if (visualizerState.selectedTheme === "flatRipples") {
-    drawFlatRipples({
-      context,
-      width,
-      height,
-      time,
-      smoothedLevel,
-      settings: getFlatRipplesSettings(),
-      performanceMode: visualizerState.performanceMode
-    });
-  } else if (visualizerState.selectedTheme === "dotParticles") {
-    drawDotParticles({
-      context,
-      width,
-      height,
-      time,
-      smoothedLevel,
-      settings: getDotParticlesSettings(),
-      performanceMode: visualizerState.performanceMode
-    });
-  } else if (visualizerState.selectedTheme === "rippleFlow") {
-    drawRippleFlow({
-      context,
-      width,
-      height,
-      time,
-      smoothedLevel,
-      settings: getRippleFlowSettings(),
-      performanceMode: visualizerState.performanceMode
-    });
-  } else if (visualizerState.selectedTheme === "snowBubbleParticles") {
-    drawSnowBubbleParticles({
-      context,
-      width,
-      height,
-      time,
-      smoothedLevel,
-      settings: getSnowBubbleParticlesSettings(),
-      performanceMode: visualizerState.performanceMode
-    });
-  } else if (visualizerState.selectedTheme === "edgeCrystals") {
-    drawEdgeCrystals({
-      context,
-      width,
-      height,
-      time,
-      smoothedLevel,
-      settings: getEdgeCrystalsSettings(),
-      performanceMode: visualizerState.performanceMode
-    });
-  } else if (visualizerState.selectedTheme === "sideBraids") {
-    drawSideBraids({
-      context,
-      width,
-      height,
-      time,
-      smoothedLevel,
-      settings: getSideBraidsSettings(),
-      performanceMode: visualizerState.performanceMode
-    });
-  } else if (visualizerState.selectedTheme === "auroraDrift") {
-    drawAuroraDrift({
-      context,
-      width,
-      height,
-      time,
-      smoothedLevel,
-      settings: getAuroraDriftSettings(),
-      performanceMode: visualizerState.performanceMode
-    });
-  } else {
-    drawAmbientWave({
-      context,
-      width,
-      height,
-      time,
-      smoothedLevel,
-      latestSource,
-      edgeGradient,
-      settings: getAmbientWaveSettings(),
-      performanceMode: visualizerState.performanceMode
-    });
+  const dual = visualizerState.dualTheme;
+  const isDualThemeActive = dual &&
+    dual.enabled &&
+    dual.secondaryTheme &&
+    dual.secondaryTheme !== "none" &&
+    dual.secondaryTheme !== visualizerState.selectedTheme;
+
+  // 1. Render Secondary Theme (Background Layer) if enabled
+  if (isDualThemeActive) {
+    context.save();
+    const secOpacity = typeof dual.opacity === "number" ? dual.opacity : 0.7;
+    currentLayerOpacity = Math.max(0.05, Math.min(1.0, secOpacity));
+    context.globalAlpha = currentLayerOpacity;
+    drawThemeLayer(dual.secondaryTheme, layerContext);
+    context.restore();
   }
+
+  // 2. Render Primary Theme (Foreground Layer)
+  context.save();
+  currentLayerOpacity = 1.0;
+  context.globalAlpha = 1;
+  drawThemeLayer(visualizerState.selectedTheme, context);
+  context.restore();
 
   context.globalAlpha = 1;
   context.shadowBlur = 0;
@@ -956,6 +1014,10 @@ function applySettings(nextSettings) {
     colorModulation: {
       ...visualizerState.colorModulation,
       ...(nextSettings?.colorModulation || {})
+    },
+    dualTheme: {
+      ...visualizerState.dualTheme,
+      ...(nextSettings?.dualTheme || {})
     }
   };
 
