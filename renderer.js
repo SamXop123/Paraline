@@ -229,6 +229,11 @@ let visualizerState = {
     sensitivity: 1.3,
     transitionSpeed: 0.1
   },
+  dualTheme: {
+    enabled: false,
+    secondaryTheme: "none",
+    opacity: 0.7
+  },
   paused: false
 };
 
