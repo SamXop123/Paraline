@@ -305,6 +305,54 @@ test("settingsStore - Color Modulation sanitization and clamping", () => {
   assert.strictEqual(sanitizedMin.colorModulation.sensitivity, 1.0);
   assert.strictEqual(sanitizedMin.colorModulation.transitionSpeed, 0.01);
 });
+
+test("settingsStore - Synthwave Horizon sanitization and clamping", () => {
+  const input = {
+    selectedTheme: "synthwaveHorizon",
+    synthwaveHorizon: {
+      colorStyle: "sunset",
+      speed: "energetic",
+      horizonHeight: "tall",
+      sunPulse: "off",
+      glowStrength: "strong",
+      customThickness: 100,
+      customGlowStrength: 100,
+      customSpeed: 100,
+      customColors: ["#ff007f", "#00f2fe", "#ffe600"]
+    }
+  };
+  const sanitized = sanitizeSettings(input);
+  assert.strictEqual(sanitized.selectedTheme, "synthwaveHorizon");
+  assert.strictEqual(sanitized.synthwaveHorizon.colorStyle, "sunset");
+  assert.strictEqual(sanitized.synthwaveHorizon.speed, "energetic");
+  assert.strictEqual(sanitized.synthwaveHorizon.horizonHeight, "tall");
+  assert.strictEqual(sanitized.synthwaveHorizon.sunPulse, "off");
+  assert.strictEqual(sanitized.synthwaveHorizon.glowStrength, "strong");
+  assert.strictEqual(sanitized.synthwaveHorizon.customThickness, 20); // clamped to max 20
+  assert.strictEqual(sanitized.synthwaveHorizon.customGlowStrength, 100);
+  assert.strictEqual(sanitized.synthwaveHorizon.customSpeed, 100);
+  assert.deepStrictEqual(sanitized.synthwaveHorizon.customColors, ["#ff007f", "#00f2fe", "#ffe600"]);
+
+  // Test invalid fallbacks
+  const inputInvalid = {
+    selectedTheme: "synthwaveHorizon",
+    synthwaveHorizon: {
+      colorStyle: "bogus",
+      speed: "ultra",
+      horizonHeight: "giant",
+      sunPulse: "maybe",
+      glowStrength: "extreme",
+      customGlowStrength: -10
+    }
+  };
+  const sanitizedInvalid = sanitizeSettings(inputInvalid);
+  assert.strictEqual(sanitizedInvalid.synthwaveHorizon.colorStyle, "outrun");
+  assert.strictEqual(sanitizedInvalid.synthwaveHorizon.speed, "balanced");
+  assert.strictEqual(sanitizedInvalid.synthwaveHorizon.horizonHeight, "medium");
+  assert.strictEqual(sanitizedInvalid.synthwaveHorizon.sunPulse, "on");
+  assert.strictEqual(sanitizedInvalid.synthwaveHorizon.glowStrength, "medium");
+  assert.strictEqual(sanitizedInvalid.synthwaveHorizon.customGlowStrength, 1); // clamped to min 1
+});
 test("settingsStore - wallpaperColors sanitization", () => {
   // Test invalid length
   const inputInvalidLen = {
