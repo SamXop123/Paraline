@@ -28,7 +28,7 @@ const {
 } = require("../settingsStore");
 const ThemeAgent = require("../themeAgent");
 
-let APP_VERSION = "2.5.0";
+let APP_VERSION = "2.6.0";
 try {
   const pkg = require("../package.json");
   if (pkg && pkg.version) {
@@ -44,9 +44,18 @@ const LANDING_URL = "https://paraline.app";
 
 const THEME_LABELS = {
   ambientWave: "Ambient Wave",
+  reactiveBorder: "Reactive Border",
+  flowBorder: "Flow Border",
+  sideBars: "Side Bars",
+  flatRipples: "Pulse Lines",
+  dotParticles: "Dot Particles",
+  rippleFlow: "Ripple Flow",
+  snowBubbleParticles: "Snow Particles",
+  edgeCrystals: "Edge Crystals",
   sideBraids: "Side Braids",
   auroraDrift: "Aurora Drift",
-  crimsonDusk: "Crimson Dusk"
+  crimsonDusk: "Crimson Dusk",
+  synthwaveHorizon: "Synthwave Horizon"
 };
 
 const overlayWindows = new Map();
