@@ -239,7 +239,7 @@ export default function Home() {
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <p className="text-xs font-extrabold tracking-[0.2em] text-white/60 group-hover:text-white transition-colors uppercase w-full relative z-10 drop-shadow-sm">
-                    12+ Studio Themes Ready
+                    13+ Studio Themes Ready
                   </p>
                 </motion.div>
 
