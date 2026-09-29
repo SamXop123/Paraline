@@ -1823,7 +1823,7 @@ function getContextMenuStructure() {
   const currentTheme = visualizerState.selectedTheme;
   const isPaused = visualizerState.paused;
   const isHidden = visualizerState.hidden;
-  const version = visualizerState.version || '1.1.0';
+  const version = visualizerState.version || '2.6.0';
   const helperConnected = visualizerState.helperConnected || (latestSource === 'helper');
 
   const structure = [

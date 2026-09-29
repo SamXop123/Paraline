@@ -81,8 +81,8 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       url: "https://github.com/SamXop123/Paraline/releases/latest",
-      version: "latest",
-      filename: "Paraline-Setup.exe",
+      version: "v2.6.0",
+      filename: "Paraline-Setup-2.6.0.exe",
       message: "Redirecting to releases..."
     });
   }
