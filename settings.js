@@ -102,6 +102,13 @@ document.addEventListener('DOMContentLoaded', () => {
             audioReactivity: { label: "Audio Reactivity", options: ["subtle", "balanced", "responsive"] },
             softness: { label: "Softness", options: ["misty", "smooth", "defined"] },
             layerDensity: { label: "Layer Density", options: ["light", "balanced", "rich"] }
+        },
+        synthwaveHorizon: {
+            colorStyle: { label: "Color Style", options: ["outrun", "sunset", "neonPink", "electricCyan", "custom"] },
+            speed: { label: "Speed", options: ["calm", "balanced", "energetic", "custom"] },
+            horizonHeight: { label: "Horizon Height", options: ["low", "medium", "tall"] },
+            sunPulse: { label: "Sun Pulse", options: ["on", "off"] },
+            glowStrength: { label: "Glow Strength", options: ["soft", "medium", "strong", "custom"] }
         }
     };
 
@@ -159,18 +166,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const customGap = document.getElementById('container-customGap');
         const customSensitivity = document.getElementById('container-customSensitivity');
         const customSpeed = document.getElementById('container-customSpeed');
+        const customGlow = document.getElementById('container-customGlow');
         
         const schema = THEMES_SCHEMA[theme];
-        let showThick = false, showGap = false, showSens = false, showSpeed = false;
+        let showThick = false, showGap = false, showSens = false, showSpeed = false, showGlow = false;
         
         if (schema) {
-            if ('barThickness' in schema || 'borderThickness' in schema || 'segmentLength' in schema || 'particleSize' in schema || 'braidWidth' in schema) {
+            if ('barThickness' in schema || 'borderThickness' in schema || 'segmentLength' in schema || 'particleSize' in schema || 'braidWidth' in schema || theme === 'synthwaveHorizon') {
                 showThick = true;
                 document.getElementById('label-customThickness').textContent = 
                     'barThickness' in schema ? "Bar Thickness" :
                     'borderThickness' in schema ? "Border Thickness" :
                     'segmentLength' in schema ? "Segment Length" :
-                    'braidWidth' in schema ? "Braid Thickness" : "Particle Size";
+                    'braidWidth' in schema ? "Braid Thickness" :
+                    theme === 'synthwaveHorizon' ? "Line Thickness" : "Particle Size";
             }
             
             if ('barDensity' in schema || 'density' in schema || 'braidDensity' in schema) {
@@ -180,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'braidDensity' in schema ? "Braid Density" : "Density Gap";
             }
             
-            if ('sensitivity' in schema || 'intensity' in schema || 'speed' in schema || 'speedMode' in schema || 'motionStyle' in schema || 'flutterStyle' in schema) {
+            if (theme !== 'synthwaveHorizon' && ('sensitivity' in schema || 'intensity' in schema || 'speed' in schema || 'speedMode' in schema || 'motionStyle' in schema || 'flutterStyle' in schema)) {
                 showSens = true;
                 document.getElementById('label-customSensitivity').textContent = 
                     'sensitivity' in schema ? "Sensitivity" :
@@ -193,12 +202,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('label-customSpeed').textContent = 
                     'flutterStyle' in schema ? "Flutter Speed" : "Movement Speed";
             }
+
+            if ('glowStrength' in schema && (theme === 'synthwaveHorizon' || (Array.isArray(schema.glowStrength?.options) && schema.glowStrength.options.includes('custom')))) {
+                showGlow = true;
+                const labelGlow = document.getElementById('label-customGlow');
+                if (labelGlow) labelGlow.textContent = "Glow Strength";
+            }
         }
         
         customThickness.style.display = showThick ? 'block' : 'none';
         customGap.style.display = showGap ? 'block' : 'none';
         customSensitivity.style.display = showSens ? 'block' : 'none';
         customSpeed.style.display = showSpeed ? 'block' : 'none';
+        if (customGlow) customGlow.style.display = showGlow ? 'block' : 'none';
     }
 
     // ----------------------------------------
@@ -1268,6 +1284,7 @@ refreshThemeProfiles();
     const gapSlider = document.getElementById('customGap');
     const sensitivitySlider = document.getElementById('customSensitivity');
     const speedSlider = document.getElementById('customSpeed');
+    const glowSlider = document.getElementById('customGlow');
     
     thicknessSlider.addEventListener('input', (e) => {
         document.getElementById('val-customThickness').textContent = `${e.target.value}`;
@@ -1285,6 +1302,13 @@ refreshThemeProfiles();
         document.getElementById('val-customSpeed').textContent = `${(e.target.value / 10).toFixed(1)}`;
         dispatchCustomUpdate();
     });
+    if (glowSlider) {
+        glowSlider.addEventListener('input', (e) => {
+            const valGlow = document.getElementById('val-customGlow');
+            if (valGlow) valGlow.textContent = `${(e.target.value / 10).toFixed(1)}`;
+            dispatchCustomUpdate();
+        });
+    }
 
     function syncThemeUI(themeId) {
         renderThemeSettings(themeId);
@@ -1317,11 +1341,14 @@ refreshThemeProfiles();
         gapSlider.value = themeData.customGap || 7;
         sensitivitySlider.value = themeData.customSensitivity || 30;
         speedSlider.value = themeData.customSpeed || 30;
+        if (glowSlider) glowSlider.value = themeData.customGlowStrength || themeData.customGlow || 30;
         
         document.getElementById('val-customThickness').textContent = thicknessSlider.value;
         document.getElementById('val-customGap').textContent = gapSlider.value;
         document.getElementById('val-customSensitivity').textContent = (sensitivitySlider.value / 10).toFixed(1);
         document.getElementById('val-customSpeed').textContent = (speedSlider.value / 10).toFixed(1);
+        const valGlow = document.getElementById('val-customGlow');
+        if (valGlow && glowSlider) valGlow.textContent = (glowSlider.value / 10).toFixed(1);
     }
 
     // ----------------------------------------
@@ -1360,18 +1387,40 @@ refreshThemeProfiles();
         const colorKeys = ['tone', 'colorStyle'];
         const thickKeys = ['barThickness', 'borderThickness', 'segmentLength', 'particleSize', 'braidWidth'];
         const gapKeys = ['barDensity', 'density', 'braidDensity'];
-        const sensKeys = ['sensitivity', 'intensity', 'speed', 'speedMode', 'motionStyle', 'flutterStyle'];
+        const sensKeys = ['sensitivity', 'intensity', 'speedMode', 'motionStyle', 'flutterStyle'];
+        if (activeTheme !== 'synthwaveHorizon') {
+            sensKeys.push('speed');
+        }
+        const speedKeys = ['speed'];
+        const glowKeys = ['glowStrength'];
 
         colorKeys.forEach(k => { if (schema[k]) themePatch[k] = "custom"; });
         thickKeys.forEach(k => { if (schema[k]) themePatch[k] = "custom"; });
         gapKeys.forEach(k => { if (schema[k]) themePatch[k] = "custom"; });
         sensKeys.forEach(k => { if (schema[k]) themePatch[k] = "custom"; });
+        glowKeys.forEach(k => {
+            if (schema[k] && Array.isArray(schema[k].options) && schema[k].options.includes('custom')) {
+                themePatch[k] = "custom";
+            }
+        });
+        speedKeys.forEach(k => {
+            if (schema[k] && Array.isArray(schema[k].options) && schema[k].options.includes('custom')) {
+                themePatch[k] = "custom";
+            }
+        });
 
         themePatch.customColors = [ color1.value, color2.value, color3.value ];
         themePatch.customThickness = parseInt(thicknessSlider.value, 10);
         themePatch.customGap = parseInt(gapSlider.value, 10);
-        themePatch.customSensitivity = parseInt(sensitivitySlider.value, 10);
+        if (activeTheme !== 'synthwaveHorizon') {
+            themePatch.customSensitivity = parseInt(sensitivitySlider.value, 10);
+        }
         themePatch.customSpeed = parseInt(speedSlider.value, 10);
+        if (glowSlider) {
+            const glowVal = parseInt(glowSlider.value, 10);
+            themePatch.customGlow = glowVal;
+            themePatch.customGlowStrength = glowVal;
+        }
 
         if (!cachedSettings[activeTheme]) cachedSettings[activeTheme] = {};
         Object.assign(cachedSettings[activeTheme], themePatch);
@@ -1797,11 +1846,16 @@ refreshThemeProfiles();
             if (activeData.customGap) gapSlider.value = activeData.customGap;
             if (activeData.customSensitivity) sensitivitySlider.value = activeData.customSensitivity;
             if (activeData.customSpeed) speedSlider.value = activeData.customSpeed;
+            if (glowSlider && (activeData.customGlowStrength || activeData.customGlow)) {
+                glowSlider.value = activeData.customGlowStrength || activeData.customGlow;
+            }
             
             document.getElementById('val-customThickness').textContent = thicknessSlider.value;
             document.getElementById('val-customGap').textContent = gapSlider.value;
             document.getElementById('val-customSensitivity').textContent = (sensitivitySlider.value / 10).toFixed(1);
             document.getElementById('val-customSpeed').textContent = (speedSlider.value / 10).toFixed(1);
+            const valGlow = document.getElementById('val-customGlow');
+            if (valGlow && glowSlider) valGlow.textContent = (glowSlider.value / 10).toFixed(1);
         });
 
         // Realtime dynamic synchronization when toggled from the tray context menu

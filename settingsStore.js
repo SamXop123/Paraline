@@ -187,11 +187,22 @@ const DEFAULT_SETTINGS = Object.freeze({
     colorSaturation: 1.0,
     atmosphericFade: 1.0,
     edgeFeathering: 1.0
+  }),
+  synthwaveHorizon: Object.freeze({
+    colorStyle: "outrun",
+    speed: "balanced",
+    horizonHeight: "medium",
+    sunPulse: "on",
+    glowStrength: "medium",
+    customThickness: 4,
+    customGlowStrength: 30,
+    customSpeed: 30,
+    customColors: Object.freeze(["#ff007f", "#00f2fe", "#ffe600"])
   })
 });
 
-const VALID_MAIN_THEMES = new Set(["ambientWave", "reactiveBorder", "flowBorder", "sideBars", "crimsonDusk", "flatRipples", "dotParticles", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "auroraDrift"]);
-const VALID_SECONDARY_THEMES = new Set(["none", "ambientWave", "reactiveBorder", "flowBorder", "sideBars", "crimsonDusk", "flatRipples", "dotParticles", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "auroraDrift"]);
+const VALID_MAIN_THEMES = new Set(["ambientWave", "reactiveBorder", "flowBorder", "sideBars", "crimsonDusk", "flatRipples", "dotParticles", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "auroraDrift", "synthwaveHorizon"]);
+const VALID_SECONDARY_THEMES = new Set(["none", "ambientWave", "reactiveBorder", "flowBorder", "sideBars", "crimsonDusk", "flatRipples", "dotParticles", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "auroraDrift", "synthwaveHorizon"]);
 const VALID_COLOR_MODES = new Set(["manual", "adaptive", "wallpaper"]);
 const VALID_PERFORMANCE_MODES = new Set(["performance", "balanced", "quality"]);
 const VALID_FPS_LIMITS = new Set(["default", "battery", "unlocked"]);
@@ -236,6 +247,10 @@ const VALID_AURORA_SOFTNESS = new Set(["misty", "smooth", "defined"]);
 const VALID_AURORA_DENSITY = new Set(["light", "balanced", "rich"]);
 const VALID_COLOR_MODULATION_MODES = new Set(["amplitude", "beat"]);
 const VALID_THEME_AUTOMATION_MODES = new Set(["dayNight"]);
+const VALID_SYNTHWAVE_COLOR_STYLES = new Set(["outrun", "sunset", "neonPink", "electricCyan", "custom"]);
+const VALID_SYNTHWAVE_SPEEDS = new Set(["calm", "balanced", "energetic", "custom"]);
+const VALID_SYNTHWAVE_HORIZON_HEIGHTS = new Set(["low", "medium", "tall"]);
+const VALID_SYNTHWAVE_SUN_PULSE = new Set(["on", "off"]);
 
 // Reserved / dangerous keys that must never be used as profile names, since
 // they can shadow or pollute Object.prototype when profiles are later spread
@@ -272,7 +287,8 @@ function createDefaultSettings() {
     snowBubbleParticles: { ...DEFAULT_SETTINGS.snowBubbleParticles },
     edgeCrystals: { ...DEFAULT_SETTINGS.edgeCrystals },
     sideBraids: { ...DEFAULT_SETTINGS.sideBraids },
-    auroraDrift: { ...DEFAULT_SETTINGS.auroraDrift }
+    auroraDrift: { ...DEFAULT_SETTINGS.auroraDrift },
+    synthwaveHorizon: { ...DEFAULT_SETTINGS.synthwaveHorizon }
   };
 }
 
@@ -289,7 +305,8 @@ function createThemeDefaults() {
     snowBubbleParticles: { ...DEFAULT_SETTINGS.snowBubbleParticles },
     edgeCrystals: { ...DEFAULT_SETTINGS.edgeCrystals },
     sideBraids: { ...DEFAULT_SETTINGS.sideBraids },
-    auroraDrift: { ...DEFAULT_SETTINGS.auroraDrift }
+    auroraDrift: { ...DEFAULT_SETTINGS.auroraDrift },
+    synthwaveHorizon: { ...DEFAULT_SETTINGS.synthwaveHorizon }
   };
 }
 
@@ -333,6 +350,12 @@ function sanitizeSensitivity(val, fallback = 30) {
 
 // Validates and clamps a custom speed value (range: 1 to 100, default: 30).
 function sanitizeSpeed(val, fallback = 30) {
+  const num = typeof val === "number" ? val : parseInt(val, 10);
+  return Number.isFinite(num) ? Math.max(1, Math.min(100, num)) : fallback;
+}
+
+// Validates and clamps a custom glow strength value (range: 1 to 100, default: 30).
+function sanitizeCustomGlowStrength(val, fallback = 30) {
   const num = typeof val === "number" ? val : parseInt(val, 10);
   return Number.isFinite(num) ? Math.max(1, Math.min(100, num)) : fallback;
 }
@@ -583,6 +606,20 @@ function sanitizeAuroraDrift(input = {}) {
   };
 }
 
+function sanitizeSynthwaveHorizon(input = {}) {
+  return {
+    colorStyle: pick(input.colorStyle, VALID_SYNTHWAVE_COLOR_STYLES, DEFAULT_SETTINGS.synthwaveHorizon.colorStyle),
+    speed: pick(input.speed, VALID_SYNTHWAVE_SPEEDS, DEFAULT_SETTINGS.synthwaveHorizon.speed),
+    horizonHeight: pick(input.horizonHeight, VALID_SYNTHWAVE_HORIZON_HEIGHTS, DEFAULT_SETTINGS.synthwaveHorizon.horizonHeight),
+    sunPulse: pick(input.sunPulse, VALID_SYNTHWAVE_SUN_PULSE, DEFAULT_SETTINGS.synthwaveHorizon.sunPulse),
+    glowStrength: pick(input.glowStrength, VALID_GLOW_STRENGTHS, DEFAULT_SETTINGS.synthwaveHorizon.glowStrength),
+    customColors: sanitizeCustomColors(input.customColors, DEFAULT_SETTINGS.synthwaveHorizon.customColors),
+    customThickness: sanitizeThickness(input.customThickness, DEFAULT_SETTINGS.synthwaveHorizon.customThickness),
+    customGlowStrength: sanitizeCustomGlowStrength(input.customGlowStrength ?? input.customGlow, DEFAULT_SETTINGS.synthwaveHorizon.customGlowStrength),
+    customSpeed: sanitizeSpeed(input.customSpeed, DEFAULT_SETTINGS.synthwaveHorizon.customSpeed)
+  };
+}
+
 function migrateLegacySettings(input = {}) {
   if (VALID_MAIN_THEMES.has(input.selectedTheme) && !input.edgeFlutter) {
     return input;
@@ -757,7 +794,8 @@ function sanitizeSettings(input = {}) {
     snowBubbleParticles: sanitizeSnowBubbleParticles(source.snowBubbleParticles),
     edgeCrystals: sanitizeEdgeCrystals(source.edgeCrystals),
     sideBraids: sanitizeSideBraids(source.sideBraids),
-    auroraDrift: sanitizeAuroraDrift(source.auroraDrift)
+    auroraDrift: sanitizeAuroraDrift(source.auroraDrift),
+    synthwaveHorizon: sanitizeSynthwaveHorizon(source.synthwaveHorizon)
   };
 }
 
