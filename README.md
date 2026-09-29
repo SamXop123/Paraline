@@ -109,6 +109,17 @@ Star ⭐️ this repo to stay updated as we ship new features and improvements.
 
 </td>
 </tr>
+<tr>
+<td align="center" width="33%">
+<strong>Synthwave Horizon</strong><br/>
+<img src="./previews/synthwave-horizon-preview.svg" alt="Synthwave Horizon Preview" width="260"/>
+
+</td>
+<td align="center" width="33%">
+</td>
+<td align="center" width="33%">
+</td>
+</tr>
 </table>
 
 </div>
@@ -176,8 +187,11 @@ Paraline reacts to **actual Windows system audio** using WASAPI loopback capture
 ### 🖥️ Desktop-Native Overlay
 The app runs as a **transparent, always-on-top, click-through overlay**, so the effect feels embedded into the screen instead of floating above your workflow.
 
-### 🎨 Multiple Visual Styles
-Paraline includes multiple themes, each built with its own visual identity and its own settings, so the experience can shift from subtle to expressive without feeling messy.
+### 🎨 13 Bespoke Visual Themes
+Paraline includes 13 hand-crafted themes, each built with its own visual identity, mathematical animation profile, and deep custom controls.
+
+### 🔀 Dual Theme Layering
+Blend and combine any two visualizer themes simultaneously (Primary + Secondary) with isolated audio physics, customizable opacity, and layer blending for completely unique desktop aesthetics.
 
 ### ⚙️ Tray-Based Control
 The visualizer stays lightweight and out of the way, with controls available directly from the **system tray**.
@@ -257,6 +271,11 @@ Paraline is designed to stay running in the background without feeling heavy or 
 <td><strong>Aurora Drift</strong></td>
 <td>Cinematic aurora curtains rising from the bottom edge with layered folds and shimmer.</td>
 <td>Gradient stops sculptor (2-6 stops), Glow radius/bloom, primary/secondary frequency & internal complexity, response smoothing, active curtains layer count, ambient fine-tuners, saved presets</td>
+</tr>
+<tr>
+<td><strong>Synthwave Horizon</strong></td>
+<td>Retro-futuristic perspective grid and horizon neon glow, anchored to the bottom edge and fading to ambient transparency at idle.</td>
+<td>Color Style (Outrun, Neon Cyan, Cyber Violet, Sunset, Custom), Speed, Horizon Height, Sun Pulse, Glow Strength, Custom Grid & Color Fine-Tuners</td>
 </tr>
 </table>
 
