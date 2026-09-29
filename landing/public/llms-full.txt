@@ -18,7 +18,7 @@ Paraline is a specialized desktop customization utility for Windows that creates
    - Manages self-healing configuration backups and settings sanitization.
 
 3. **Renderer & Theme Engine (`rendererLoop.js`, `themes/`):**
-   - Renders 11 customizable visualizers on HTML5 Canvas.
+   - Renders 13 customizable visualizers on HTML5 Canvas.
    - Uses time-delta normalized animation frames for high refresh-rate displays (60Hz to 240Hz).
    - Pauses rendering calculations when overlay windows are hidden or minimized to minimize GPU/CPU power usage.
 

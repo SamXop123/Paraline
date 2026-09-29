@@ -6,7 +6,7 @@
 Paraline is a transparent desktop overlay application designed to render real-time, audio-reactive visualizers along the edges of user screens. It captures system audio playback using a high-performance native Win32 WASAPI loopback bridge, converting audio frequency amplitudes into dynamic light waves.
 
 ## Key Features
-- **11 Audio-Reactive Themes:** Ambient Wave, Aurora Drift, Side Braids, Crimson Dusk, Dot Particles, Flow Border, Reactive Border, Side Bars, Edge Crystals, Ripple Flow, and Snow Bubble Particles.
+- **13 Audio-Reactive Themes:** Ambient Wave, Aurora Drift, Synthwave Horizon, Side Braids, Crimson Dusk, Dot Particles, Flow Border, Reactive Border, Side Bars, Pulse Lines, Edge Crystals, Ripple Flow, and Snow Bubble Particles.
 - **Theme Automation:** Automated Sunrise and Sunset scheduling modes to switch visualizer presets dynamically based on daily hours or wallpaper colors.
 - **Focus Mode:** Auto-dims the visualizer during active user input (mouse/keyboard activity) with smooth customizable fade transitions, restoring full brightness when idle.
 - **Wallpaper Color Matching:** Extracts accent colors from the active desktop wallpaper to sync visualizer palettes automatically.
