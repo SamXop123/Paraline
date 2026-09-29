@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#080612"/>
+      <stop offset="100%" stop-color="#04020a"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="50%" cy="100%" r="100%">
+      <stop offset="0%" stop-color="#ffe600" stop-opacity="0.95"/>
+      <stop offset="45%" stop-color="#ff007f" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#ff007f" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="horizonGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f2fe" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#ff007f" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#00f2fe" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="beamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" stop-opacity="0.05"/>
+      <stop offset="60%" stop-color="#00f2fe" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#00f2fe" stop-opacity="0.85"/>
+    </linearGradient>
+    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Card Background -->
+  <rect width="640" height="360" rx="32" fill="url(#bg)"/>
+  <rect x="34" y="34" width="572" height="292" rx="26" fill="#06030e" stroke="rgba(255,0,128,0.15)"/>
+
+  <!-- Center Retro Sun Flare on Horizon -->
+  <g filter="url(#neonGlow)">
+    <circle cx="320" cy="275" r="24" fill="url(#sun)">
+      <animate attributeName="r" values="22;26;22" dur="3.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.75;0.95;0.75" dur="3.2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Perspective Beams radiating from Vanishing Point (320, 275) -->
+  <g stroke="url(#beamGrad)" stroke-width="1.2">
+    <line x1="320" y1="275" x2="60" y2="326"/>
+    <line x1="320" y1="275" x2="110" y2="326"/>
+    <line x1="320" y1="275" x2="160" y2="326"/>
+    <line x1="320" y1="275" x2="210" y2="326"/>
+    <line x1="320" y1="275" x2="260" y2="326"/>
+    <line x1="320" y1="275" x2="300" y2="326"/>
+    <line x1="320" y1="275" x2="340" y2="326"/>
+    <line x1="320" y1="275" x2="380" y2="326"/>
+    <line x1="320" y1="275" x2="430" y2="326"/>
+    <line x1="320" y1="275" x2="480" y2="326"/>
+    <line x1="320" y1="275" x2="530" y2="326"/>
+    <line x1="320" y1="275" x2="580" y2="326"/>
+  </g>
+
+  <!-- Transverse Horizontal Perspective Waves -->
+  <g fill="none" stroke="#00f2fe" filter="url(#neonGlow)">
+    <path d="M50 278 Q 200 277 320 278 T 590 278" stroke-width="0.8" opacity="0.25"/>
+    <path d="M48 283 Q 200 281 320 283 T 592 283" stroke-width="1.0" opacity="0.38"/>
+    <path d="M46 290 Q 200 287 320 290 T 594 290" stroke-width="1.2" opacity="0.52"/>
+    <path d="M44 299 Q 200 295 320 299 T 596 299" stroke-width="1.4" opacity="0.68">
+      <animate attributeName="d" values="M44 299 Q 200 295 320 299 T 596 299;M44 297 Q 200 301 320 297 T 596 297;M44 299 Q 200 295 320 299 T 596 299" dur="4s" repeatCount="indefinite"/>
+    </path>
+    <path d="M40 311 Q 200 306 320 311 T 600 311" stroke-width="1.7" opacity="0.82">
+      <animate attributeName="d" values="M40 311 Q 200 306 320 311 T 600 311;M40 309 Q 200 313 320 309 T 600 309;M40 311 Q 200 306 320 311 T 600 311" dur="3.5s" repeatCount="indefinite"/>
+    </path>
+    <path d="M36 324 Q 200 319 320 324 T 604 324" stroke-width="2.2" opacity="0.95">
+      <animate attributeName="d" values="M36 324 Q 200 319 320 324 T 604 324;M36 322 Q 200 326 320 322 T 604 322;M36 324 Q 200 319 320 324 T 604 324" dur="3s" repeatCount="indefinite"/>
+    </path>
+  </g>
+
+  <!-- Laser Horizon Dividing Line -->
+  <line x1="34" y1="275" x2="606" y2="275" stroke="url(#horizonGlow)" stroke-width="2.4" filter="url(#neonGlow)">
+    <animate attributeName="opacity" values="0.7;1.0;0.7" dur="2.4s" repeatCount="indefinite"/>
+  </line>
+</svg>
