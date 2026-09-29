@@ -421,7 +421,8 @@ const THEME_LABELS = {
   edgeCrystals: "Edge Crystals",
   sideBraids: "Side Braids",
   auroraDrift: "Aurora Drift",
-  crimsonDusk: "Crimson Dusk"
+  crimsonDusk: "Crimson Dusk",
+  synthwaveHorizon: "Synthwave Horizon"
 };
 
 function getActiveOverlayWindows() {
@@ -680,7 +681,7 @@ function reloadVisualizer() {
 }
 
 function cycleTheme() {
-  const themes = ["ambientWave", "auroraDrift", "reactiveBorder", "flowBorder", "sideBars", "flatRipples", "dotParticles", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "crimsonDusk"];
+  const themes = ["ambientWave", "auroraDrift", "reactiveBorder", "flowBorder", "sideBars", "flatRipples", "dotParticles", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "crimsonDusk", "synthwaveHorizon"];
   const currentTheme = visualizerSettings.selectedTheme;
   const currentIndex = themes.indexOf(currentTheme);
   const nextIndex = (currentIndex + 1) % themes.length;
@@ -1181,7 +1182,8 @@ function buildMainThemeMenuItems() {
     { value: "snowBubbleParticles", label: "Snow Particles" },
     { value: "edgeCrystals", label: "Edge Crystals" },
     { value: "sideBraids", label: "Side Braids" },
-    { value: "crimsonDusk", label: "Crimson Dusk" }
+    { value: "crimsonDusk", label: "Crimson Dusk" },
+    { value: "synthwaveHorizon", label: "Synthwave Horizon" }
   ];
 
   return themeOptions.map((themeOption) => ({
