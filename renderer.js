@@ -94,6 +94,11 @@ const {
   drawAuroraDrift
 } = window.ParalineAuroraDrift;
 
+const {
+  getSynthwaveHorizonAudioMultiplier,
+  drawSynthwaveHorizon
+} = window.ParalineSynthwaveHorizon || {};
+
 const TARGET_FPS = 36;
 const FRAME_INTERVAL = 1000 / TARGET_FPS;
 const FLOW_TARGET_FPS = 60;
@@ -252,6 +257,13 @@ let visualizerState = {
     colorSaturation: 1.0,
     atmosphericFade: 1.0,
     edgeFeathering: 1.0
+  },
+  synthwaveHorizon: {
+    colorStyle: "outrun",
+    speed: "balanced",
+    horizonHeight: "medium",
+    sunPulse: "on",
+    glowStrength: "medium"
   },
   colorModulation: {
     enabled: false,
@@ -473,7 +485,7 @@ function getResolvedThemeSettings(themeId, settings) {
     };
   }
 
-  if (["reactiveBorder", "flowBorder", "sideBars", "flatRipples", "rippleFlow", "edgeCrystals", "sideBraids"].includes(themeId)) {
+  if (["reactiveBorder", "flowBorder", "sideBars", "flatRipples", "rippleFlow", "edgeCrystals", "sideBraids", "synthwaveHorizon"].includes(themeId)) {
     return {
       ...settings,
       colorStyle: "custom",
@@ -549,6 +561,10 @@ function getAuroraDriftSettings() {
   return getResolvedThemeSettings("auroraDrift", visualizerState.auroraDrift || {});
 }
 
+function getSynthwaveHorizonSettings() {
+  return getResolvedThemeSettings("synthwaveHorizon", visualizerState.synthwaveHorizon || {});
+}
+
 function getThemeAudioMultiplier(themeId) {
   if (themeId === "reactiveBorder") {
     return getReactiveInputMultiplier(getReactiveBorderSettings());
@@ -582,6 +598,9 @@ function getThemeAudioMultiplier(themeId) {
   }
   if (themeId === "auroraDrift") {
     return getAuroraDriftAudioMultiplier(getAuroraDriftSettings());
+  }
+  if (themeId === "synthwaveHorizon") {
+    return getSynthwaveHorizonAudioMultiplier(getSynthwaveHorizonSettings());
   }
   return getAmbientSensitivityMultiplier(getAmbientWaveSettings());
 }
@@ -912,6 +931,16 @@ function drawThemeLayer(themeId, activeContext = context, level = smoothedLevel)
       settings: getAuroraDriftSettings(),
       performanceMode: visualizerState.performanceMode
     });
+  } else if (themeId === "synthwaveHorizon") {
+    drawSynthwaveHorizon({
+      context: activeContext,
+      width,
+      height,
+      time,
+      smoothedLevel: level,
+      settings: getSynthwaveHorizonSettings(),
+      performanceMode: visualizerState.performanceMode
+    });
   } else {
     drawAmbientWave({
       context: activeContext,
@@ -1061,6 +1090,10 @@ function applySettings(nextSettings) {
       ...visualizerState.auroraDrift,
       ...(nextSettings?.auroraDrift || {})
     },
+    synthwaveHorizon: {
+      ...visualizerState.synthwaveHorizon,
+      ...(nextSettings?.synthwaveHorizon || {})
+    },
     colorModulation: {
       ...visualizerState.colorModulation,
       ...(nextSettings?.colorModulation || {})
@@ -1071,7 +1104,7 @@ function applySettings(nextSettings) {
     }
   };
 
-  if (!["ambientWave", "reactiveBorder", "flowBorder", "sideBars", "flatRipples", "dotParticles", "crimsonDusk", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "auroraDrift"].includes(visualizerState.selectedTheme)) {
+  if (!["ambientWave", "reactiveBorder", "flowBorder", "sideBars", "flatRipples", "dotParticles", "crimsonDusk", "rippleFlow", "snowBubbleParticles", "edgeCrystals", "sideBraids", "auroraDrift", "synthwaveHorizon"].includes(visualizerState.selectedTheme)) {
     visualizerState.selectedTheme = "ambientWave";
   }
 
@@ -1302,6 +1335,57 @@ const THEME_INFOS = {
           { value: "light", label: "Light" },
           { value: "balanced", label: "Balanced" },
           { value: "rich", label: "Rich" }
+        ]
+      }
+    ]
+  },
+  synthwaveHorizon: {
+    label: "Synthwave Horizon",
+    settingsHeader: "Synthwave Horizon Settings",
+    options: [
+      {
+        key: "colorStyle",
+        label: "Color Style",
+        choices: [
+          { value: "outrun", label: "Outrun" },
+          { value: "sunset", label: "Sunset" },
+          { value: "neonPink", label: "Neon Pink" },
+          { value: "electricCyan", label: "Electric Cyan" }
+        ]
+      },
+      {
+        key: "speed",
+        label: "Speed",
+        choices: [
+          { value: "calm", label: "Calm" },
+          { value: "balanced", label: "Balanced" },
+          { value: "energetic", label: "Energetic" }
+        ]
+      },
+      {
+        key: "horizonHeight",
+        label: "Horizon Height",
+        choices: [
+          { value: "low", label: "Low" },
+          { value: "medium", label: "Medium" },
+          { value: "tall", label: "Tall" }
+        ]
+      },
+      {
+        key: "sunPulse",
+        label: "Sun Pulse",
+        choices: [
+          { value: "on", label: "On" },
+          { value: "off", label: "Off" }
+        ]
+      },
+      {
+        key: "glowStrength",
+        label: "Glow Strength",
+        choices: [
+          { value: "soft", label: "Soft" },
+          { value: "medium", label: "Medium" },
+          { value: "strong", label: "Strong" }
         ]
       }
     ]
