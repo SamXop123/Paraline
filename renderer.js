@@ -110,6 +110,10 @@ let deviceScale = 1;
 let time = 0;
 let smoothedLevel = 0.24;
 let incomingLevel = 0.24;
+let primarySmoothedLevel = 0.24;
+let secondarySmoothedLevel = 0.24;
+let primaryIncomingLevel = 0.24;
+let secondaryIncomingLevel = 0.24;
 let latestSource = "waiting";
 let bridgeMode = "unknown";
 let bridgeReason = "Waiting for bridge status...";
@@ -582,14 +586,33 @@ function getThemeAudioMultiplier(themeId) {
   return getAmbientSensitivityMultiplier(getAmbientWaveSettings());
 }
 
-function getActiveAudioMultiplier() {
+function recalculateIncomingLevels() {
   const primaryMult = getThemeAudioMultiplier(visualizerState.selectedTheme);
+  primaryIncomingLevel = latestSource === "helper"
+    ? clamp01(lastPayloadValue * primaryMult)
+    : clamp01(lastPayloadValue);
+
   const dual = visualizerState.dualTheme;
-  if (dual && dual.enabled && dual.secondaryTheme && dual.secondaryTheme !== "none" && dual.secondaryTheme !== visualizerState.selectedTheme) {
+  const isDualThemeActive = dual &&
+    dual.enabled &&
+    dual.secondaryTheme &&
+    dual.secondaryTheme !== "none" &&
+    dual.secondaryTheme !== visualizerState.selectedTheme;
+
+  if (isDualThemeActive) {
     const secondaryMult = getThemeAudioMultiplier(dual.secondaryTheme);
-    return Math.max(primaryMult, secondaryMult);
+    secondaryIncomingLevel = latestSource === "helper"
+      ? clamp01(lastPayloadValue * secondaryMult)
+      : clamp01(lastPayloadValue);
+  } else {
+    secondaryIncomingLevel = primaryIncomingLevel;
   }
-  return primaryMult;
+
+  incomingLevel = primaryIncomingLevel;
+}
+
+function getActiveAudioMultiplier() {
+  return getThemeAudioMultiplier(visualizerState.selectedTheme);
 }
 
 function rebuildCachedPaint() {
@@ -636,13 +659,21 @@ function paintDebugPanel(now) {
     return;
   }
 
+  const dual = visualizerState.dualTheme;
+  const isDualThemeActive = dual &&
+    dual.enabled &&
+    dual.secondaryTheme &&
+    dual.secondaryTheme !== "none" &&
+    dual.secondaryTheme !== visualizerState.selectedTheme;
+
   lastDebugPaintAt = now;
   debugPanel.textContent =
     "TEMP DEBUG\n" +
     `bridge: ${bridgeMode}\n` +
     `source: ${latestSource}\n` +
     `incoming: ${lastPayloadValue.toFixed(4)}\n` +
-    `smoothed: ${smoothedLevel.toFixed(4)}\n` +
+    `smoothed: ${primarySmoothedLevel.toFixed(4)}` +
+    (isDualThemeActive ? ` (sec: ${secondarySmoothedLevel.toFixed(4)})\n` : `\n`) +
     `reason: ${bridgeReason}`;
 }
 
@@ -692,7 +723,24 @@ function updateAudioLevel(now) {
   const helperDriven = latestSource === "helper";
   const breathing = helperDriven ? 0.003 : 0.028 * (Math.sin(now * 0.00023) + 1);
   const response = helperDriven ? 0.2 : 0.018;
-  smoothedLevel += ((incomingLevel + breathing) - smoothedLevel) * response;
+
+  primarySmoothedLevel += ((primaryIncomingLevel + breathing) - primarySmoothedLevel) * response;
+
+  const dual = visualizerState.dualTheme;
+  const isDualThemeActive = dual &&
+    dual.enabled &&
+    dual.secondaryTheme &&
+    dual.secondaryTheme !== "none" &&
+    dual.secondaryTheme !== visualizerState.selectedTheme;
+
+  if (isDualThemeActive) {
+    secondarySmoothedLevel += ((secondaryIncomingLevel + breathing) - secondarySmoothedLevel) * response;
+  } else {
+    secondarySmoothedLevel = primarySmoothedLevel;
+  }
+
+  smoothedLevel = primarySmoothedLevel;
+  incomingLevel = primaryIncomingLevel;
 }
 
 function updateColorModulation(now, deltaMs) {
@@ -749,14 +797,14 @@ function getThemeFrameInterval(themeId) {
   return FRAME_INTERVAL;
 }
 
-function drawThemeLayer(themeId, activeContext = context) {
+function drawThemeLayer(themeId, activeContext = context, level = smoothedLevel) {
   if (themeId === "reactiveBorder") {
     drawReactiveBorder({
       context: activeContext,
       width,
       height,
       time,
-      smoothedLevel,
+      smoothedLevel: level,
       settings: getReactiveBorderSettings(),
       performanceMode: visualizerState.performanceMode,
       colorModulation: visualizerState.colorModulation,
@@ -767,7 +815,7 @@ function drawThemeLayer(themeId, activeContext = context) {
       context: activeContext,
       width,
       height,
-      smoothedLevel,
+      smoothedLevel: level,
       flowTravelDistance,
       settings: getFlowBorderSettings(),
       performanceMode: visualizerState.performanceMode,
@@ -780,7 +828,7 @@ function drawThemeLayer(themeId, activeContext = context) {
       width,
       height,
       time,
-      smoothedLevel,
+      smoothedLevel: level,
       settings: getSideBarsSettings(),
       performanceMode: visualizerState.performanceMode
     });
@@ -790,7 +838,7 @@ function drawThemeLayer(themeId, activeContext = context) {
       width,
       height,
       time,
-      smoothedLevel,
+      smoothedLevel: level,
       settings: getCrimsonDuskSettings(),
       performanceMode: visualizerState.performanceMode
     });
@@ -800,7 +848,7 @@ function drawThemeLayer(themeId, activeContext = context) {
       width,
       height,
       time,
-      smoothedLevel,
+      smoothedLevel: level,
       settings: getFlatRipplesSettings(),
       performanceMode: visualizerState.performanceMode
     });
@@ -810,7 +858,7 @@ function drawThemeLayer(themeId, activeContext = context) {
       width,
       height,
       time,
-      smoothedLevel,
+      smoothedLevel: level,
       settings: getDotParticlesSettings(),
       performanceMode: visualizerState.performanceMode
     });
@@ -820,7 +868,7 @@ function drawThemeLayer(themeId, activeContext = context) {
       width,
       height,
       time,
-      smoothedLevel,
+      smoothedLevel: level,
       settings: getRippleFlowSettings(),
       performanceMode: visualizerState.performanceMode
     });
@@ -830,7 +878,7 @@ function drawThemeLayer(themeId, activeContext = context) {
       width,
       height,
       time,
-      smoothedLevel,
+      smoothedLevel: level,
       settings: getSnowBubbleParticlesSettings(),
       performanceMode: visualizerState.performanceMode
     });
@@ -840,7 +888,7 @@ function drawThemeLayer(themeId, activeContext = context) {
       width,
       height,
       time,
-      smoothedLevel,
+      smoothedLevel: level,
       settings: getEdgeCrystalsSettings(),
       performanceMode: visualizerState.performanceMode
     });
@@ -850,7 +898,7 @@ function drawThemeLayer(themeId, activeContext = context) {
       width,
       height,
       time,
-      smoothedLevel,
+      smoothedLevel: level,
       settings: getSideBraidsSettings(),
       performanceMode: visualizerState.performanceMode
     });
@@ -860,7 +908,7 @@ function drawThemeLayer(themeId, activeContext = context) {
       width,
       height,
       time,
-      smoothedLevel,
+      smoothedLevel: level,
       settings: getAuroraDriftSettings(),
       performanceMode: visualizerState.performanceMode
     });
@@ -870,7 +918,7 @@ function drawThemeLayer(themeId, activeContext = context) {
       width,
       height,
       time,
-      smoothedLevel,
+      smoothedLevel: level,
       latestSource,
       edgeGradient,
       settings: getAmbientWaveSettings(),
@@ -906,11 +954,20 @@ function renderFrame(now) {
   const deltaMs = lastFrameAt ? now - lastFrameAt : (activeFrameInterval || 16.6);
   lastFrameAt = now;
 
+  const dual = visualizerState.dualTheme;
+  const isDualThemeActive = dual &&
+    dual.enabled &&
+    dual.secondaryTheme &&
+    dual.secondaryTheme !== "none" &&
+    dual.secondaryTheme !== visualizerState.selectedTheme;
+
   if (!visualizerState.paused) {
     time += deltaMs * 0.001;
 
+    const isFlowBorderSecondary = isDualThemeActive && dual.secondaryTheme === "flowBorder";
+    const flowLevel = isFlowBorderSecondary ? secondarySmoothedLevel : primarySmoothedLevel;
     const flowSpeedProfile = getFlowSpeedProfile(getFlowBorderSettings());
-    const flowSpeed = flowSpeedProfile.base + smoothedLevel * flowSpeedProfile.boost;
+    const flowSpeed = flowSpeedProfile.base + flowLevel * flowSpeedProfile.boost;
     flowTravelDistance += deltaMs * 0.001 * flowSpeed * getFlowDirectionValue(getFlowBorderSettings());
   }
 
@@ -928,20 +985,13 @@ function renderFrame(now) {
 
   context.clearRect(0, 0, width, height);
 
-  const dual = visualizerState.dualTheme;
-  const isDualThemeActive = dual &&
-    dual.enabled &&
-    dual.secondaryTheme &&
-    dual.secondaryTheme !== "none" &&
-    dual.secondaryTheme !== visualizerState.selectedTheme;
-
   // 1. Render Secondary Theme (Background Layer) if enabled
   if (isDualThemeActive) {
     context.save();
     const secOpacity = typeof dual.opacity === "number" ? dual.opacity : 0.7;
     currentLayerOpacity = Math.max(0.05, Math.min(1.0, secOpacity));
     context.globalAlpha = currentLayerOpacity;
-    drawThemeLayer(dual.secondaryTheme, layerContext);
+    drawThemeLayer(dual.secondaryTheme, layerContext, secondarySmoothedLevel);
     context.restore();
   }
 
@@ -949,7 +999,7 @@ function renderFrame(now) {
   context.save();
   currentLayerOpacity = 1.0;
   context.globalAlpha = 1;
-  drawThemeLayer(visualizerState.selectedTheme, context);
+  drawThemeLayer(visualizerState.selectedTheme, context, primarySmoothedLevel);
   context.restore();
 
   context.globalAlpha = 1;
@@ -1031,6 +1081,7 @@ function applySettings(nextSettings) {
 
 
   rebuildCachedPaint();
+  recalculateIncomingLevels();
   rendererLoop.setHidden(visualizerState.hidden);
 }
 
@@ -1051,9 +1102,7 @@ if (window.audioBridge) {
     if (payload && typeof payload.value === "number") {
       latestSource = payload.source || "unknown";
       lastPayloadValue = payload.value;
-      incomingLevel = latestSource === "helper"
-        ? clamp01(payload.value * getActiveAudioMultiplier())
-        : clamp01(payload.value);
+      recalculateIncomingLevels();
     }
   });
 }
