@@ -17,6 +17,7 @@ import { SideBraidsPreview } from "./visualizers/SideBraidsPreview";
 import { AuroraDriftPreview } from "./visualizers/AuroraDriftPreview";
 import { CrimsonDuskPreview } from "./visualizers/CrimsonDuskPreview";
 import { SnowParticlesPreview } from "./visualizers/SnowParticlesPreview";
+import { SynthwaveHorizonPreview } from "./visualizers/SynthwaveHorizonPreview";
 import { ThemeComparisonModal } from "./ThemeComparisonModal";
 
 export type Theme = {
@@ -190,6 +191,19 @@ export const specificThemes: Theme[] = [
     visualIntensity: "Warm",
     performanceImpact: "Low",
     bestFor: "Ambient / Lo-fi"
+  },
+  {
+    id: "synthwave-horizon",
+    name: "Synthwave Horizon",
+    category: "80s RETRO PERSPECTIVE",
+    description: "An iconic outrun perspective wireframe grid that rolls continuously with an undulating neon sun and beat-reactive shockwaves.",
+    className: "lg:col-span-2",
+    Preview: SynthwaveHorizonPreview,
+    animationStyle: "Grid / Wave",
+    reactivity: "High",
+    visualIntensity: "Vivid",
+    performanceImpact: "Low",
+    bestFor: "Synthwave / Cyberpunk"
   }
 ];
 
