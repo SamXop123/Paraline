@@ -1941,6 +1941,28 @@ refreshThemeProfiles();
                 }
             }
 
+            const currentPrimaryTheme = themeSelector ? themeSelector.value : null;
+            if (currentPrimaryTheme && nextSettings[currentPrimaryTheme]) {
+                const primaryDropdowns = document.querySelectorAll('#dynamic-theme-settings .theme-trigger');
+                primaryDropdowns.forEach(dd => {
+                    const key = dd.dataset.key;
+                    if (nextSettings[currentPrimaryTheme][key] !== undefined && dd.value !== nextSettings[currentPrimaryTheme][key]) {
+                        dd.value = nextSettings[currentPrimaryTheme][key];
+                    }
+                });
+            }
+
+            const currentSecTheme = secondaryThemeSelector ? secondaryThemeSelector.value : null;
+            if (currentSecTheme && currentSecTheme !== 'none' && nextSettings[currentSecTheme]) {
+                const secDropdowns = document.querySelectorAll('#dynamic-secondary-theme-settings .secondary-theme-trigger');
+                secDropdowns.forEach(dd => {
+                    const key = dd.dataset.key;
+                    if (nextSettings[currentSecTheme][key] !== undefined && dd.value !== nextSettings[currentSecTheme][key]) {
+                        dd.value = nextSettings[currentSecTheme][key];
+                    }
+                });
+            }
+
             if (nextSettings.paused !== undefined) {
                 updatePauseButtonState(nextSettings.paused);
             }
