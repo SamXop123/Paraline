@@ -34,7 +34,7 @@
     "vite": "^8.3.1"
   },
   "dependencies": {
-    "electron-updater": "^6.8.9"
+    "electron-updater": "^6.8.11"
   },
   "build": {
     "appId": "com.paraline.app",
