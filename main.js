@@ -448,10 +448,49 @@ function applyOverlayWindowDisplayState(overlayWindow, display) {
 
   const { bounds } = display;
   overlayWindow.setBounds(bounds);
-  overlayWindow.setAlwaysOnTop(true, "screen-saver");
+
+  const isTopmost = visualizerSettings ? visualizerSettings.alwaysOnTop !== false : true;
+  if (isTopmost) {
+    overlayWindow.setAlwaysOnTop(true, "screen-saver");
+    overlayWindow.moveTop();
+  } else {
+    overlayWindow.setAlwaysOnTop(false);
+    if (typeof overlayWindow.moveBottom === "function") {
+      overlayWindow.moveBottom();
+    }
+  }
+
   overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   overlayWindow.setIgnoreMouseEvents(true, { forward: true });
-  overlayWindow.moveTop();
+}
+
+function refreshOverlayZOrder() {
+  if (isHidden) {
+    return;
+  }
+
+  const isTopmost = visualizerSettings ? visualizerSettings.alwaysOnTop !== false : true;
+
+  for (const overlayWindow of getActiveOverlayWindows()) {
+    if (!overlayWindow || overlayWindow.isDestroyed()) {
+      continue;
+    }
+
+    if (isTopmost) {
+      // Toggling setAlwaysOnTop forces Windows DWM to bypass Electron's internal
+      // equality cache and execute Win32 SetWindowPos(HWND_TOPMOST)
+      overlayWindow.setAlwaysOnTop(false);
+      overlayWindow.setAlwaysOnTop(true, "screen-saver");
+      overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+      overlayWindow.moveTop();
+    } else {
+      overlayWindow.setAlwaysOnTop(false);
+      overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+      if (typeof overlayWindow.moveBottom === "function") {
+        overlayWindow.moveBottom();
+      }
+    }
+  }
 }
 
 function destroyOverlayWindowForDisplay(displayId) {
@@ -486,7 +525,7 @@ function createOverlayWindow(display) {
     height: bounds.height,
     transparent: true,
     frame: false,
-    alwaysOnTop: true,
+    alwaysOnTop: visualizerSettings ? visualizerSettings.alwaysOnTop !== false : true,
     resizable: false,
     movable: false,
     fullscreenable: false,
@@ -640,6 +679,9 @@ function updateSettings(nextSettings) {
   if (nextSettings.shortcuts !== undefined) {
     registerGlobalShortcuts();
   }
+  if (nextSettings.alwaysOnTop !== undefined) {
+    refreshOverlayZOrder();
+  }
 
   sendVisualizerSettings();
   refreshTrayMenu();
@@ -656,6 +698,9 @@ function toggleHidden() {
   isHidden = !isHidden;
   sendVisualizerSettings();
   refreshTrayMenu();
+  if (!isHidden) {
+    refreshOverlayZOrder();
+  }
 }
 
 function reloadVisualizer() {
@@ -678,6 +723,8 @@ function reloadVisualizer() {
   for (const overlayWindow of activeOverlayWindows) {
     overlayWindow.webContents.reloadIgnoringCache();
   }
+
+  refreshOverlayZOrder();
 }
 
 function cycleTheme() {
@@ -852,12 +899,14 @@ function handleDisplayMetricsChanged(_event, display) {
   }
 
   reconcileOverlayWindows();
+  refreshOverlayZOrder();
 }
 
 function handleDisplayAdded(_event, display) {
   createOverlayWindow(display);
   reconcileOverlayWindows();
   sendVisualizerSettings();
+  refreshOverlayZOrder();
 }
 
 function handleDisplayRemoved(_event, display) {
@@ -871,6 +920,7 @@ function handleDisplayRemoved(_event, display) {
 
   reconcileOverlayWindows();
   sendVisualizerSettings();
+  refreshOverlayZOrder();
 }
 
 function handleAudioBridgeStatusChange(status) {
@@ -1918,6 +1968,12 @@ function refreshTrayMenu() {
       click: () => updateSettings({ launchOnStartup: !visualizerSettings.launchOnStartup })
     },
     {
+      label: "Always on Top",
+      type: "checkbox",
+      checked: visualizerSettings.alwaysOnTop !== false,
+      click: () => updateSettings({ alwaysOnTop: visualizerSettings.alwaysOnTop === false })
+    },
+    {
       label: "Focus Mode",
       type: "checkbox",
       checked: !!(visualizerSettings.focusMode && visualizerSettings.focusMode.enabled),
@@ -2042,6 +2098,15 @@ app.whenReady().then(() => {
     isPaused = wasPausedBeforeSleep;
     sendVisualizerSettings();
     refreshTrayMenu();
+    setTimeout(() => {
+      refreshOverlayZOrder();
+    }, 500);
+  });
+
+  powerMonitor.on("unlock-screen", () => {
+    setTimeout(() => {
+      refreshOverlayZOrder();
+    }, 300);
   });
 
   ipcMain.handle("audio-bridge-status", () => {
