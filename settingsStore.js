@@ -19,6 +19,7 @@ function sanitizeCustomColors(input, fallback) {
 const DEFAULT_SETTINGS = Object.freeze({
   onboardingSeen: false,
   launchOnStartup: false,
+  alwaysOnTop: true,
   selectedTheme: "ambientWave",
   colorMode: "manual",
   customColors: Object.freeze(["#00f2fe", "#4facfe", "#8ee2ff"]),
@@ -267,6 +268,7 @@ function createDefaultSettings() {
   return {
     onboardingSeen: DEFAULT_SETTINGS.onboardingSeen,
     launchOnStartup: DEFAULT_SETTINGS.launchOnStartup,
+    alwaysOnTop: DEFAULT_SETTINGS.alwaysOnTop,
     selectedTheme: DEFAULT_SETTINGS.selectedTheme,
     colorMode: DEFAULT_SETTINGS.colorMode,
     themeAutomation: { ...DEFAULT_SETTINGS.themeAutomation },
@@ -639,7 +641,10 @@ function migrateLegacySettings(input = {}) {
     return normalizedInput;
   }
 
-  const migrated = createDefaultSettings();
+  const migrated = {
+    ...createDefaultSettings(),
+    ...normalizedInput
+  };
   const legacyTheme = normalizedInput.theme;
   const legacyLevel = legacySensitivityToLevel(normalizedInput.sensitivity);
 
@@ -772,6 +777,7 @@ function sanitizeSettings(input = {}) {
   return {
     onboardingSeen: typeof source.onboardingSeen === "boolean" ? source.onboardingSeen : DEFAULT_SETTINGS.onboardingSeen,
     launchOnStartup: typeof source.launchOnStartup === "boolean" ? source.launchOnStartup : DEFAULT_SETTINGS.launchOnStartup,
+    alwaysOnTop: typeof source.alwaysOnTop === "boolean" ? source.alwaysOnTop : DEFAULT_SETTINGS.alwaysOnTop,
     selectedTheme: pick(source.selectedTheme, VALID_MAIN_THEMES, DEFAULT_SETTINGS.selectedTheme),
     colorMode: pick(source.colorMode, VALID_COLOR_MODES, DEFAULT_SETTINGS.colorMode),
     customColors: customColors,

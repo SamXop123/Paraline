@@ -648,6 +648,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const alwaysOnTopCheckbox = document.getElementById('always-on-top-checkbox');
+    if (alwaysOnTopCheckbox) {
+        alwaysOnTopCheckbox.addEventListener('change', (e) => {
+            if (window.visualizerSettings) {
+                window.visualizerSettings.update({
+                    alwaysOnTop: e.target.checked
+                });
+            }
+        });
+    }
+
     const launchCheckbox = document.getElementById('launch-on-startup-checkbox');
     if (launchCheckbox) {
         launchCheckbox.addEventListener('change', (e) => {
@@ -1705,6 +1716,11 @@ refreshThemeProfiles();
                 colorModeSelector.value = settings.colorMode;
             }
             
+            const alwaysOnTopCheckbox = document.getElementById('always-on-top-checkbox');
+            if (alwaysOnTopCheckbox) {
+                alwaysOnTopCheckbox.checked = settings.alwaysOnTop !== false;
+            }
+
             const launchCheckbox = document.getElementById('launch-on-startup-checkbox');
             if (launchCheckbox) {
                 launchCheckbox.checked = !!settings.launchOnStartup;
@@ -2022,6 +2038,12 @@ refreshThemeProfiles();
             }
             if (nextSettings.hidden !== undefined) {
                 updateHideButtonState(nextSettings.hidden);
+            }
+            if (nextSettings.alwaysOnTop !== undefined) {
+                const checkbox = document.getElementById('always-on-top-checkbox');
+                if (checkbox) {
+                    checkbox.checked = nextSettings.alwaysOnTop !== false;
+                }
             }
             if (nextSettings.launchOnStartup !== undefined) {
                 const checkbox = document.getElementById('launch-on-startup-checkbox');
