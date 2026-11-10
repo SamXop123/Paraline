@@ -197,13 +197,28 @@
     runningAverage += (smoothedLevel - runningAverage) * 0.02;
     runningAverage = Math.max(0.04, Math.min(0.6, runningAverage));
 
-    // Dynamic thresholds adapting to the running average volume
-    const dynamicThreshold = Math.max(0.06, runningAverage * 1.3);
-    const riseThreshold = Math.max(0.003, runningAverage * 0.08);
+    const isBeatReactive = settings.directionBehavior === "beatReactive";
+
+    // Custom beat sensitivity: default 50 (1x multiplier). Range 1..100 maps to 0.1x .. 2.5x
+    // Higher sensitivity means lower required threshold (triggers reversal on lighter beats).
+    const beatSens = (isBeatReactive && typeof settings.customBeatSensitivity === "number")
+      ? settings.customBeatSensitivity
+      : 50;
+    const sensFactor = Math.max(0.1, beatSens / 50);
+
+    // Dynamic thresholds adapting to running average and custom beat sensitivity
+    const dynamicThreshold = Math.max(0.02, (runningAverage * 1.3) / sensFactor);
+    const riseThreshold = Math.max(0.001, (runningAverage * 0.08) / sensFactor);
 
     const levelRise = smoothedLevel - lastLevel;
     const strongBeat = smoothedLevel > dynamicThreshold && levelRise > riseThreshold;
-    const canSwitch = time - lastSwitchAt > 1.6;
+
+    // Custom switch cooldown: default 50 (1.6s). Range 1..100 maps to 3.0s down to 0.2s
+    const cooldownSetting = (isBeatReactive && typeof settings.customSwitchCooldown === "number")
+      ? settings.customSwitchCooldown
+      : 50;
+    const minCooldown = Math.max(0.2, 3.0 - (cooldownSetting / 100) * 2.8);
+    const canSwitch = time - lastSwitchAt > minCooldown;
 
     if (strongBeat) {
       beatPulse = 1;
@@ -281,7 +296,12 @@
     const glowScale = getGlowMultiplier(settings.glowStrength);
     const perimeter = Math.max(1, 2 * (width + height));
     const energy = clamp01(smoothedLevel);
-    const speed = profile.baseSpeed + energy * profile.audioBoost + beatPulse * 36;
+    const isBeatReactive = settings.directionBehavior === "beatReactive";
+    const reverseStrength = (isBeatReactive && typeof settings.customReverseStrength === "number")
+      ? settings.customReverseStrength
+      : 50;
+    const reverseKickMultiplier = Math.max(0.05, reverseStrength / 50);
+    const speed = profile.baseSpeed + energy * profile.audioBoost + beatPulse * (36 * reverseKickMultiplier);
     const jitterAmount = profile.jitter * (0.46 + energy * 1.18 + beatPulse * 0.55);
     const baseOpacity = 0.42 + energy * 0.32 + beatPulse * 0.14;
     const glowBlur = (3.5 + energy * 6.5 + beatPulse * 3.5) * glowScale * getPerformanceMultiplier(performanceMode);
