@@ -53,6 +53,7 @@ test("settingsStore - Default Settings Creation", () => {
   const defaults = createDefaultSettings();
   assert.ok(defaults.onboardingSeen === false);
   assert.ok(defaults.selectedTheme === "ambientWave");
+  assert.strictEqual(defaults.alwaysOnTop, true);
   assert.deepStrictEqual(defaults.ambientWave.tone, "blue");
 });
 
@@ -60,8 +61,26 @@ test("settingsStore - sanitizeSettings with empty/invalid inputs", () => {
   const sanitized = sanitizeSettings({});
   assert.strictEqual(sanitized.onboardingSeen, false);
   assert.strictEqual(sanitized.selectedTheme, "ambientWave");
+  assert.strictEqual(sanitized.alwaysOnTop, true);
   assert.deepStrictEqual(sanitized.customColors, ["#00f2fe", "#4facfe", "#8ee2ff"]);
   assert.strictEqual(sanitized.themeAutomation.enabled, false);
+});
+
+test("settingsStore - alwaysOnTop setting validation and fallback", () => {
+  assert.strictEqual(DEFAULT_SETTINGS.alwaysOnTop, true);
+  assert.strictEqual(createDefaultSettings().alwaysOnTop, true);
+
+  const sanitizedTrue = sanitizeSettings({ alwaysOnTop: true });
+  assert.strictEqual(sanitizedTrue.alwaysOnTop, true);
+
+  const sanitizedFalse = sanitizeSettings({ alwaysOnTop: false });
+  assert.strictEqual(sanitizedFalse.alwaysOnTop, false);
+
+  const sanitizedInvalid = sanitizeSettings({ alwaysOnTop: "yes" });
+  assert.strictEqual(sanitizedInvalid.alwaysOnTop, true);
+
+  const sanitizedNull = sanitizeSettings({ alwaysOnTop: null });
+  assert.strictEqual(sanitizedNull.alwaysOnTop, true);
 });
 
 test("settingsStore - sanitizeSettings clamps custom thickness, gap, sensitivity, speed", () => {
