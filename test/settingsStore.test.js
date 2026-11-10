@@ -233,6 +233,37 @@ test("settingsStore - Legacy Theme conversion (sensitivity mapping)", () => {
   assert.strictEqual(sanitized.reactiveBorder.intensity, "high");
 });
 
+test("settingsStore - dotParticles beat reactiveness settings validation and fallback", () => {
+  const defaults = sanitizeSettings({ selectedTheme: "dotParticles" });
+  assert.strictEqual(defaults.dotParticles.customBeatSensitivity, 50);
+  assert.strictEqual(defaults.dotParticles.customReverseStrength, 50);
+  assert.strictEqual(defaults.dotParticles.customSwitchCooldown, 50);
+
+  const custom = sanitizeSettings({
+    selectedTheme: "dotParticles",
+    dotParticles: {
+      customBeatSensitivity: 80,
+      customReverseStrength: 95,
+      customSwitchCooldown: 20
+    }
+  });
+  assert.strictEqual(custom.dotParticles.customBeatSensitivity, 80);
+  assert.strictEqual(custom.dotParticles.customReverseStrength, 95);
+  assert.strictEqual(custom.dotParticles.customSwitchCooldown, 20);
+
+  const clamped = sanitizeSettings({
+    selectedTheme: "dotParticles",
+    dotParticles: {
+      customBeatSensitivity: -10,
+      customReverseStrength: 999,
+      customSwitchCooldown: "invalid"
+    }
+  });
+  assert.strictEqual(clamped.dotParticles.customBeatSensitivity, 1);
+  assert.strictEqual(clamped.dotParticles.customReverseStrength, 100);
+  assert.strictEqual(clamped.dotParticles.customSwitchCooldown, 50);
+});
+
 test("settingsStore - Focus Mode sanitization and clamping", () => {
   const input = {
     selectedTheme: "ambientWave",
