@@ -89,7 +89,10 @@ const DEFAULT_SETTINGS = Object.freeze({
     density: "medium",
     motionStyle: "balanced",
     directionBehavior: "beatReactive",
-    glowStrength: "medium"
+    glowStrength: "medium",
+    customBeatSensitivity: 50,
+    customReverseStrength: 50,
+    customSwitchCooldown: 50
   }),
   rippleFlow: Object.freeze({
     mode: "sideRipples",
@@ -486,7 +489,10 @@ function sanitizeDotParticles(input = {}) {
     directionBehavior: pick(input.directionBehavior, VALID_DOT_PARTICLES_DIRECTIONS, DEFAULT_SETTINGS.dotParticles.directionBehavior),
     glowStrength: pick(input.glowStrength, VALID_GLOW_STRENGTHS, DEFAULT_SETTINGS.dotParticles.glowStrength),
     customGap: sanitizeGap(input.customGap),
-    customSpeed: sanitizeSpeed(input.customSpeed)
+    customSpeed: sanitizeSpeed(input.customSpeed),
+    customBeatSensitivity: sanitizeSensitivity(input.customBeatSensitivity, DEFAULT_SETTINGS.dotParticles.customBeatSensitivity),
+    customReverseStrength: sanitizeSensitivity(input.customReverseStrength, DEFAULT_SETTINGS.dotParticles.customReverseStrength),
+    customSwitchCooldown: sanitizeSensitivity(input.customSwitchCooldown, DEFAULT_SETTINGS.dotParticles.customSwitchCooldown)
   };
 }
 

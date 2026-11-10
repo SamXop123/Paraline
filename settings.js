@@ -11,7 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
             tabContents.forEach(tab => tab.classList.remove('active'));
 
             button.classList.add('active');
-            document.getElementById(button.getAttribute('data-target')).classList.add('active');
+            const targetId = button.getAttribute('data-target');
+            document.getElementById(targetId).classList.add('active');
+            if (targetId === 'advanced' && typeof updateDotParticlesBeatControlsVisibility === 'function') {
+                updateDotParticlesBeatControlsVisibility();
+            }
         });
     });
 
@@ -215,6 +219,25 @@ document.addEventListener('DOMContentLoaded', () => {
         customSensitivity.style.display = showSens ? 'block' : 'none';
         customSpeed.style.display = showSpeed ? 'block' : 'none';
         if (customGlow) customGlow.style.display = showGlow ? 'block' : 'none';
+        updateDotParticlesBeatControlsVisibility();
+    }
+
+    function updateDotParticlesBeatControlsVisibility() {
+        const dotBeatControls = document.getElementById('dot-particles-beat-controls');
+        if (!dotBeatControls) return;
+
+        const currentTheme = themeSelector ? themeSelector.value : (cachedSettings?.selectedTheme || 'ambientWave');
+        let directionBehavior = 'mostlyClockwise';
+        if (cachedSettings?.dotParticles?.directionBehavior) {
+            directionBehavior = cachedSettings.dotParticles.directionBehavior;
+        }
+        const dirSelect = document.querySelector('#dynamic-theme-settings select[data-key="directionBehavior"]');
+        if (dirSelect) {
+            directionBehavior = dirSelect.value;
+        }
+
+        const shouldShow = (currentTheme === 'dotParticles' && directionBehavior === 'beatReactive');
+        dotBeatControls.style.display = shouldShow ? 'block' : 'none';
     }
 
     // ----------------------------------------
@@ -1321,6 +1344,48 @@ refreshThemeProfiles();
         });
     }
 
+    const beatSensitivitySlider = document.getElementById('customBeatSensitivity');
+    const reverseStrengthSlider = document.getElementById('customReverseStrength');
+    const switchCooldownSlider = document.getElementById('customSwitchCooldown');
+
+    function dispatchDotParticlesBeatUpdate() {
+        if (!window.visualizerSettings) return;
+        const sens = parseInt(beatSensitivitySlider.value, 10);
+        const reverse = parseInt(reverseStrengthSlider.value, 10);
+        const cooldown = parseInt(switchCooldownSlider.value, 10);
+
+        const valBeatSens = document.getElementById('val-customBeatSensitivity');
+        const valReverseStr = document.getElementById('val-customReverseStrength');
+        const valCooldown = document.getElementById('val-customSwitchCooldown');
+
+        if (valBeatSens) valBeatSens.textContent = (sens / 10).toFixed(1);
+        if (valReverseStr) valReverseStr.textContent = (reverse / 10).toFixed(1);
+        if (valCooldown) valCooldown.textContent = `${Math.max(0.2, 3.0 - (cooldown / 100) * 2.8).toFixed(1)}s`;
+
+        if (!cachedSettings.dotParticles) cachedSettings.dotParticles = {};
+        cachedSettings.dotParticles.customBeatSensitivity = sens;
+        cachedSettings.dotParticles.customReverseStrength = reverse;
+        cachedSettings.dotParticles.customSwitchCooldown = cooldown;
+
+        window.visualizerSettings.update({
+            dotParticles: {
+                customBeatSensitivity: sens,
+                customReverseStrength: reverse,
+                customSwitchCooldown: cooldown
+            }
+        });
+    }
+
+    if (beatSensitivitySlider) {
+        beatSensitivitySlider.addEventListener('input', dispatchDotParticlesBeatUpdate);
+    }
+    if (reverseStrengthSlider) {
+        reverseStrengthSlider.addEventListener('input', dispatchDotParticlesBeatUpdate);
+    }
+    if (switchCooldownSlider) {
+        switchCooldownSlider.addEventListener('input', dispatchDotParticlesBeatUpdate);
+    }
+
     function syncThemeUI(themeId) {
         renderThemeSettings(themeId);
         
@@ -1360,6 +1425,28 @@ refreshThemeProfiles();
         document.getElementById('val-customSpeed').textContent = (speedSlider.value / 10).toFixed(1);
         const valGlow = document.getElementById('val-customGlow');
         if (valGlow && glowSlider) valGlow.textContent = (glowSlider.value / 10).toFixed(1);
+
+        // Load dotParticles beat reactiveness controls
+        const dpData = cachedSettings.dotParticles || {};
+        const beatSens = typeof dpData.customBeatSensitivity === 'number' ? dpData.customBeatSensitivity : 50;
+        const revStr = typeof dpData.customReverseStrength === 'number' ? dpData.customReverseStrength : 50;
+        const cooldown = typeof dpData.customSwitchCooldown === 'number' ? dpData.customSwitchCooldown : 50;
+        if (beatSensitivitySlider) {
+            beatSensitivitySlider.value = beatSens;
+            const valBeatSens = document.getElementById('val-customBeatSensitivity');
+            if (valBeatSens) valBeatSens.textContent = (beatSens / 10).toFixed(1);
+        }
+        if (reverseStrengthSlider) {
+            reverseStrengthSlider.value = revStr;
+            const valReverseStr = document.getElementById('val-customReverseStrength');
+            if (valReverseStr) valReverseStr.textContent = (revStr / 10).toFixed(1);
+        }
+        if (switchCooldownSlider) {
+            switchCooldownSlider.value = cooldown;
+            const valCooldown = document.getElementById('val-customSwitchCooldown');
+            if (valCooldown) valCooldown.textContent = `${Math.max(0.2, 3.0 - (cooldown / 100) * 2.8).toFixed(1)}s`;
+        }
+        updateDotParticlesBeatControlsVisibility();
     }
 
     // ----------------------------------------
@@ -1384,6 +1471,8 @@ refreshThemeProfiles();
             selectedTheme: selectedTheme,
             [selectedTheme]: themePatch
         });
+
+        updateDotParticlesBeatControlsVisibility();
     }
 
     function dispatchCustomUpdate() {
@@ -1872,6 +1961,29 @@ refreshThemeProfiles();
             document.getElementById('val-customSpeed').textContent = (speedSlider.value / 10).toFixed(1);
             const valGlow = document.getElementById('val-customGlow');
             if (valGlow && glowSlider) valGlow.textContent = (glowSlider.value / 10).toFixed(1);
+
+            if (settings.dotParticles) {
+                const dp = settings.dotParticles;
+                const beatSens = typeof dp.customBeatSensitivity === 'number' ? dp.customBeatSensitivity : 50;
+                const revStr = typeof dp.customReverseStrength === 'number' ? dp.customReverseStrength : 50;
+                const cooldown = typeof dp.customSwitchCooldown === 'number' ? dp.customSwitchCooldown : 50;
+                if (beatSensitivitySlider) {
+                    beatSensitivitySlider.value = beatSens;
+                    const valEl = document.getElementById('val-customBeatSensitivity');
+                    if (valEl) valEl.textContent = (beatSens / 10).toFixed(1);
+                }
+                if (reverseStrengthSlider) {
+                    reverseStrengthSlider.value = revStr;
+                    const valEl = document.getElementById('val-customReverseStrength');
+                    if (valEl) valEl.textContent = (revStr / 10).toFixed(1);
+                }
+                if (switchCooldownSlider) {
+                    switchCooldownSlider.value = cooldown;
+                    const valEl = document.getElementById('val-customSwitchCooldown');
+                    if (valEl) valEl.textContent = `${Math.max(0.2, 3.0 - (cooldown / 100) * 2.8).toFixed(1)}s`;
+                }
+            }
+            updateDotParticlesBeatControlsVisibility();
         });
 
         // Realtime dynamic synchronization when toggled from the tray context menu
@@ -2020,6 +2132,27 @@ refreshThemeProfiles();
                         dd.value = nextSettings[currentPrimaryTheme][key];
                     }
                 });
+                updateDotParticlesBeatControlsVisibility();
+            }
+
+            if (nextSettings.dotParticles) {
+                const dp = nextSettings.dotParticles;
+                if (beatSensitivitySlider && typeof dp.customBeatSensitivity === 'number') {
+                    beatSensitivitySlider.value = dp.customBeatSensitivity;
+                    const valEl = document.getElementById('val-customBeatSensitivity');
+                    if (valEl) valEl.textContent = (dp.customBeatSensitivity / 10).toFixed(1);
+                }
+                if (reverseStrengthSlider && typeof dp.customReverseStrength === 'number') {
+                    reverseStrengthSlider.value = dp.customReverseStrength;
+                    const valEl = document.getElementById('val-customReverseStrength');
+                    if (valEl) valEl.textContent = (dp.customReverseStrength / 10).toFixed(1);
+                }
+                if (switchCooldownSlider && typeof dp.customSwitchCooldown === 'number') {
+                    switchCooldownSlider.value = dp.customSwitchCooldown;
+                    const valEl = document.getElementById('val-customSwitchCooldown');
+                    if (valEl) valEl.textContent = `${Math.max(0.2, 3.0 - (dp.customSwitchCooldown / 100) * 2.8).toFixed(1)}s`;
+                }
+                updateDotParticlesBeatControlsVisibility();
             }
 
             const currentSecTheme = secondaryThemeSelector ? secondaryThemeSelector.value : null;

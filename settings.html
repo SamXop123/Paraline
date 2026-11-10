@@ -341,6 +341,37 @@
                             <input type="range" class="custom-trigger" id="customGlow" min="1" max="100" value="30">
                         </div>
                     </div>
+
+                    <div class="settings-group" id="dot-particles-beat-controls" style="display: none; margin-top: 20px;">
+                        <div style="margin-bottom: 16px;">
+                            <h3>Dot Particles - Beat Reactiveness</h3>
+                            <p class="setting-desc" style="margin-bottom: 0;">Customize direction reversal intensity and beat trigger sensitivity when Direction Behavior is set to Beat Reactive.</p>
+                        </div>
+
+                        <div class="slider-control" id="container-customBeatSensitivity">
+                            <div class="slider-header">
+                                <label id="label-customBeatSensitivity" for="customBeatSensitivity">Beat Trigger Sensitivity</label>
+                                <span class="slider-value" id="val-customBeatSensitivity">5.0</span>
+                            </div>
+                            <input type="range" class="dot-beat-trigger" id="customBeatSensitivity" min="1" max="100" value="50">
+                        </div>
+
+                        <div class="slider-control" id="container-customReverseStrength" style="margin-top: 16px;">
+                            <div class="slider-header">
+                                <label id="label-customReverseStrength" for="customReverseStrength">Reverse Kick Strength</label>
+                                <span class="slider-value" id="val-customReverseStrength">5.0</span>
+                            </div>
+                            <input type="range" class="dot-beat-trigger" id="customReverseStrength" min="1" max="100" value="50">
+                        </div>
+
+                        <div class="slider-control" id="container-customSwitchCooldown" style="margin-top: 16px;">
+                            <div class="slider-header">
+                                <label id="label-customSwitchCooldown" for="customSwitchCooldown">Reversal Switch Cooldown</label>
+                                <span class="slider-value" id="val-customSwitchCooldown">1.6s</span>
+                            </div>
+                            <input type="range" class="dot-beat-trigger" id="customSwitchCooldown" min="1" max="100" value="50">
+                        </div>
+                    </div>
                 </div>
 
                 <div id="aurora-advanced-controls" style="display: none;">
