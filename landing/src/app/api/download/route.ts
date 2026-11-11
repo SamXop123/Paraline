@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface GitHubReleaseAsset {
   name: string;
   browser_download_url: string;
@@ -37,14 +40,18 @@ export async function GET() {
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const response = await fetch("https://api.github.com/repos/SamXop123/Paraline/releases/latest", {
-      next: { revalidate: 3600 }, // Cache for 1 hour to avoid rate limits
+      cache: "no-store",
+      headers: {
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "Paraline-Landing-Page"
+      },
       signal: controller.signal
     });
     
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error("Failed to fetch GitHub releases");
+      throw new Error(`Failed to fetch GitHub releases: ${response.status} ${response.statusText}`);
     }
 
     const data: unknown = await response.json();
@@ -66,6 +73,10 @@ export async function GET() {
       version: data.tag_name,
       filename: exeAsset.name,
       message: "Download ready!"
+    }, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate"
+      }
     });
   } catch (error: unknown) {
     console.error("Download API Error:", error);
@@ -77,13 +88,17 @@ export async function GET() {
       );
     }
 
-    // Fallback to the releases page if API fails
+    // Direct fallback to the actual release asset on GitHub
     return NextResponse.json({
       success: true,
-      url: "https://github.com/SamXop123/Paraline/releases/latest",
+      url: "https://github.com/SamXop123/Paraline/releases/download/v2.6.1/Paraline-Setup-2.6.1.exe",
       version: "v2.6.1",
       filename: "Paraline-Setup-2.6.1.exe",
-      message: "Redirecting to releases..."
+      message: "Download ready!"
+    }, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate"
+      }
     });
   }
 }
