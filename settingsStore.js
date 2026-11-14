@@ -138,6 +138,13 @@ const DEFAULT_SETTINGS = Object.freeze({
     secondaryTheme: "none",
     opacity: 0.7
   }),
+  multiMonitor: Object.freeze({
+    targetMode: "all",
+    customDisplayIds: Object.freeze([]),
+    mirrorMode: false,
+    seamSuppression: false,
+    splitTheme: false
+  }),
   colorModulation: Object.freeze({
     enabled: false,
     mode: "amplitude",
@@ -255,6 +262,7 @@ const VALID_SYNTHWAVE_COLOR_STYLES = new Set(["outrun", "sunset", "neonPink", "e
 const VALID_SYNTHWAVE_SPEEDS = new Set(["calm", "balanced", "energetic", "custom"]);
 const VALID_SYNTHWAVE_HORIZON_HEIGHTS = new Set(["low", "medium", "tall"]);
 const VALID_SYNTHWAVE_SUN_PULSE = new Set(["on", "off"]);
+const VALID_MULTI_MONITOR_TARGET_MODES = new Set(["all", "primary", "secondary", "custom"]);
 
 // Reserved / dangerous keys that must never be used as profile names, since
 // they can shadow or pollute Object.prototype when profiles are later spread
@@ -279,6 +287,10 @@ function createDefaultSettings() {
     performanceMode: DEFAULT_SETTINGS.performanceMode,
     focusMode: { ...DEFAULT_SETTINGS.focusMode },
     dualTheme: { ...DEFAULT_SETTINGS.dualTheme },
+    multiMonitor: {
+      ...DEFAULT_SETTINGS.multiMonitor,
+      customDisplayIds: [...DEFAULT_SETTINGS.multiMonitor.customDisplayIds]
+    },
     colorModulation: { ...DEFAULT_SETTINGS.colorModulation },
     fpsLimit: DEFAULT_SETTINGS.fpsLimit,
     ambientWave: { ...DEFAULT_SETTINGS.ambientWave },
@@ -738,6 +750,33 @@ function sanitizeDualTheme(input = {}) {
   return { enabled, secondaryTheme, opacity };
 }
 
+function sanitizeMultiMonitor(input = {}) {
+  const safeInput = (input && typeof input === "object") ? input : {};
+  const targetMode = pick(safeInput.targetMode, VALID_MULTI_MONITOR_TARGET_MODES, DEFAULT_SETTINGS.multiMonitor.targetMode);
+
+  let customDisplayIds = DEFAULT_SETTINGS.multiMonitor.customDisplayIds;
+  if (Array.isArray(safeInput.customDisplayIds)) {
+    customDisplayIds = Object.freeze(
+      safeInput.customDisplayIds
+        .filter(id => typeof id === "number" || typeof id === "string")
+        .map(id => String(id).trim())
+        .filter(id => id.length > 0)
+    );
+  }
+
+  const mirrorMode = typeof safeInput.mirrorMode === "boolean" ? safeInput.mirrorMode : DEFAULT_SETTINGS.multiMonitor.mirrorMode;
+  const seamSuppression = typeof safeInput.seamSuppression === "boolean" ? safeInput.seamSuppression : DEFAULT_SETTINGS.multiMonitor.seamSuppression;
+  const splitTheme = typeof safeInput.splitTheme === "boolean" ? safeInput.splitTheme : DEFAULT_SETTINGS.multiMonitor.splitTheme;
+
+  return {
+    targetMode,
+    customDisplayIds,
+    mirrorMode,
+    seamSuppression,
+    splitTheme
+  };
+}
+
 function sanitizeShortcuts(input) {
   const safeInput = (input && typeof input === "object") ? input : {};
   const keys = ["togglePause", "toggleHide", "cycleTheme"];
@@ -794,6 +833,7 @@ function sanitizeSettings(input = {}) {
     fpsLimit: pick(source.fpsLimit, VALID_FPS_LIMITS, DEFAULT_SETTINGS.fpsLimit),
     focusMode: sanitizeFocusMode(source.focusMode),
     dualTheme: sanitizeDualTheme(source.dualTheme),
+    multiMonitor: sanitizeMultiMonitor(source.multiMonitor),
     colorModulation: sanitizeColorModulation(source.colorModulation),
     ambientWave: sanitizeAmbientWave(source.ambientWave),
     reactiveBorder: sanitizeReactiveBorder(source.reactiveBorder),

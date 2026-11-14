@@ -324,6 +324,53 @@ test("settingsStore - Dual Theme sanitization and clamping", () => {
   assert.strictEqual(sanitizedInvalid.dualTheme.opacity, 0.1);
 });
 
+test("settingsStore - Multi-Monitor sanitization and defaults", () => {
+  // Test defaults
+  const def = createDefaultSettings();
+  assert.deepStrictEqual(def.multiMonitor, {
+    targetMode: "all",
+    customDisplayIds: [],
+    mirrorMode: false,
+    seamSuppression: false,
+    splitTheme: false
+  });
+
+  // Test valid custom settings
+  const inputValid = {
+    multiMonitor: {
+      targetMode: "custom",
+      customDisplayIds: [1, "254", "  ", null, 3],
+      mirrorMode: true,
+      seamSuppression: true,
+      splitTheme: true
+    }
+  };
+  const sanitizedValid = sanitizeSettings(inputValid);
+  assert.strictEqual(sanitizedValid.multiMonitor.targetMode, "custom");
+  assert.deepStrictEqual(sanitizedValid.multiMonitor.customDisplayIds, ["1", "254", "3"]);
+  assert.strictEqual(sanitizedValid.multiMonitor.mirrorMode, true);
+  assert.strictEqual(sanitizedValid.multiMonitor.seamSuppression, true);
+  assert.strictEqual(sanitizedValid.multiMonitor.splitTheme, true);
+
+  // Test invalid targetMode fallback and non-boolean sanitization
+  const inputInvalid = {
+    multiMonitor: {
+      targetMode: "superWideOnly", // invalid -> fallback to "all"
+      customDisplayIds: "not-an-array", // fallback to []
+      mirrorMode: "yes", // invalid -> fallback to false
+      seamSuppression: null, // invalid -> fallback to false
+      splitTheme: 123 // invalid -> fallback to false
+    }
+  };
+  const sanitizedInvalid = sanitizeSettings(inputInvalid);
+  assert.strictEqual(sanitizedInvalid.multiMonitor.targetMode, "all");
+  assert.deepStrictEqual(sanitizedValid.multiMonitor.customDisplayIds.length, 3);
+  assert.deepStrictEqual(sanitizedInvalid.multiMonitor.customDisplayIds, []);
+  assert.strictEqual(sanitizedInvalid.multiMonitor.mirrorMode, false);
+  assert.strictEqual(sanitizedInvalid.multiMonitor.seamSuppression, false);
+  assert.strictEqual(sanitizedInvalid.multiMonitor.splitTheme, false);
+});
+
 test("settingsStore - Color Modulation sanitization and clamping", () => {
   const input = {
     selectedTheme: "ambientWave",
