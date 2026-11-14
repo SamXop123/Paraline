@@ -4,14 +4,14 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Palette, Activity, Sliders, Layers, Sparkles } from "lucide-react";
 import { AuroraDriftPreview } from "@/components/visualizers/AuroraDriftPreview";
-import { PulseLinesPreview } from "@/components/visualizers/PulseLinesPreview";
+import { DotParticlesPreview } from "@/components/visualizers/DotParticlesPreview";
 
 interface SettingItem {
   id: string;
   name: string;
   description: string;
   options: string[];
-  isNew?: boolean;
+  badge?: string;
 }
 
 interface SettingGroup {
@@ -28,7 +28,6 @@ const initialGroups: SettingGroup[] = [
       { 
         id: "dual-theme-layering", 
         name: "Dual Theme Layering", 
-        isNew: true, 
         description: "Blend and render two visualizer themes simultaneously with independent secondary layer opacity and decoupled audio signal processing.", 
         options: ["Dual Visualizers", "Layer Opacity (10% - 100%)", "Isolated Audio", "Secondary Tuning"] 
       },
@@ -54,7 +53,7 @@ const initialGroups: SettingGroup[] = [
       { 
         id: "multi-monitor-tweaks", 
         name: "Multi-Monitor Tweaks (Beta)", 
-        isNew: true, 
+        badge: "New in v2.7.0", 
         description: "Configure multi-display overlays with desk symmetry mirroring, unbroken panoramic edge suppression, and display split themes across monitors.", 
         options: ["All Displays", "Desk Symmetry", "Panoramic Span", "Display Split Theme", "Custom Selection"] 
       },
@@ -127,9 +126,9 @@ export default function SettingsPage() {
                     <div className="pr-4 relative z-10 flex-1">
                       <div className="flex items-center gap-2.5 flex-wrap">
                         <h3 className="text-[15px] font-semibold text-white/90 group-hover:text-white transition-colors">{setting.name}</h3>
-                        {setting.isNew && (
+                        {setting.badge && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold tracking-widest uppercase bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 border border-cyan-400/40 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.25)] animate-pulse">
-                            New in v2.6.0
+                            {setting.badge}
                           </span>
                         )}
                       </div>
@@ -154,7 +153,7 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        {/* Dual Theme Interactive Spotlight Section (v2.6.0 Feature) */}
+        {/* Dual Theme Interactive Spotlight Section */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
@@ -170,7 +169,7 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 text-[10px] font-bold tracking-widest uppercase shadow-[0_0_15px_rgba(6,182,212,0.2)]">
                   <Sparkles className="w-3 h-3 text-cyan-400" />
-                  Featured in v2.6.0
+                  Core Engine Feature
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-[10px] font-bold uppercase tracking-wider">
                   Dual Layering Engine
@@ -182,7 +181,7 @@ export default function SettingsPage() {
                   Dual Theme Blending Engine
                 </h2>
                 <p className="mt-2 text-sm font-light text-white/60 leading-relaxed max-w-xl">
-                  Paraline v2.6.0 introduces true dual-layer visualizer rendering. Stack two completely independent themes on your desktop simultaneously—such as subtle foreground borders with deep cosmic aurora curtains—each running on isolated audio response curves.
+                  Paraline features true dual-layer visualizer rendering. Stack two completely independent themes on your desktop simultaneously—such as subtle foreground particles with deep cosmic aurora curtains—each running on isolated audio response curves.
                 </p>
               </div>
 
@@ -238,13 +237,13 @@ export default function SettingsPage() {
 
                 {/* Layer 2: Foreground Primary Theme */}
                 <div className="absolute inset-0 pointer-events-none">
-                  <PulseLinesPreview active={true} transparent={true} />
+                  <DotParticlesPreview active={true} transparent={true} />
                 </div>
 
                 {/* HUD Overlay Badges */}
                 <div className="absolute top-3 left-3 flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-[9px] font-semibold text-white/80">
-                    Primary: Pulse Lines
+                    Primary: Dot Particles
                   </span>
                   {dualEnabled && (
                     <span className="px-2 py-0.5 rounded-md bg-cyan-950/80 backdrop-blur-md border border-cyan-500/30 text-[9px] font-semibold text-cyan-300">
