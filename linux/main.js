@@ -27,6 +27,7 @@ const {
   sanitizeSettings
 } = require("../settingsStore");
 const ThemeAgent = require("../themeAgent");
+const { formatDisplayLabel } = require("../multiMonitorHelper");
 
 let APP_VERSION = "2.6.0";
 try {
@@ -650,7 +651,7 @@ function setupIpcHandlers() {
       displays: allDisplays.map((d, index) => ({
         id: String(d.id),
         numericId: d.id,
-        label: d.label && d.label.trim().length > 0 ? d.label : `Display ${index + 1} (${d.bounds.width}x${d.bounds.height})`,
+        label: formatDisplayLabel(d, index),
         bounds: d.bounds,
         isPrimary: d.id === primaryId,
         scaleFactor: d.scaleFactor
