@@ -275,8 +275,82 @@ function computePanoramicHorizontalEdges(activeDisplays = [], contexts) {
   }
 }
 
+const STANDARD_RESOLUTIONS = Object.freeze([
+  [1280, 720],
+  [1280, 800],
+  [1366, 768],
+  [1440, 900],
+  [1600, 900],
+  [1680, 1050],
+  [1920, 1080],
+  [1920, 1200],
+  [2160, 1440],
+  [2256, 1504],
+  [2560, 1440],
+  [2560, 1600],
+  [2880, 1800],
+  [3000, 2000],
+  [3200, 1800],
+  [3440, 1440],
+  [3840, 2160],
+  [3840, 2400],
+  [5120, 1440],
+  [5120, 2880]
+]);
+
+/**
+ * Snaps raw computed physical pixels to common display resolutions if within ±3 pixels,
+ * resolving fractional rounding differences from DPI scaling (e.g. 1920 / 1.4 -> 1372 -> 1921).
+ */
+function snapToStandardResolution(width, height) {
+  for (const [stdW, stdH] of STANDARD_RESOLUTIONS) {
+    if (Math.abs(width - stdW) <= 3 && Math.abs(height - stdH) <= 3) {
+      return [stdW, stdH];
+    }
+  }
+  return [width, height];
+}
+
+/**
+ * Formats a clean, user-facing label for a display, showing true physical resolution
+ * (accounting for Windows/OS DPI scaling) and refresh rate when available.
+ *
+ * @param {Object} d - Electron display object
+ * @param {number} [index=0] - 0-based display index
+ * @returns {string} Formatted label (e.g. "Display 1 (1920×1080 @ 144Hz)")
+ */
+function formatDisplayLabel(d, index = 0) {
+  if (!d) return `Display ${index + 1}`;
+
+  const scale = typeof d.scaleFactor === "number" && d.scaleFactor > 0 ? d.scaleFactor : 1;
+  const rawW = Math.round((d.bounds?.width || 0) * scale);
+  const rawH = Math.round((d.bounds?.height || 0) * scale);
+  const [physicalWidth, physicalHeight] = snapToStandardResolution(rawW, rawH);
+
+  const resStr = physicalWidth > 0 && physicalHeight > 0 ? `${physicalWidth}×${physicalHeight}` : "";
+  const freqStr = d.displayFrequency && d.displayFrequency > 0 ? ` @ ${d.displayFrequency}Hz` : "";
+
+  let baseName = d.label && typeof d.label === "string" && d.label.trim().length > 0
+    ? d.label.trim()
+    : `Display ${index + 1}`;
+
+  // If baseName already includes the resolution (some drivers include "1920x1080" in the model name)
+  if (resStr && (baseName.includes(resStr) || baseName.includes(`${physicalWidth}x${physicalHeight}`) || baseName.includes(`${physicalWidth}X${physicalHeight}`))) {
+    return freqStr && !baseName.includes("Hz") ? `${baseName}${freqStr}` : baseName;
+  }
+
+  const specParts = [resStr, freqStr.trim()].filter(Boolean);
+  if (specParts.length === 0) {
+    return baseName;
+  }
+
+  return `${baseName} (${resStr}${freqStr})`;
+}
+
 module.exports = {
   filterDisplays,
   computeDisplayContexts,
-  computePanoramicHorizontalEdges
+  computePanoramicHorizontalEdges,
+  snapToStandardResolution,
+  formatDisplayLabel
 };

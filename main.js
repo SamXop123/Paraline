@@ -12,7 +12,7 @@ const path = require("path");
 const fs = require("fs");
 const { createAudioBridge } = require("./audioBridge");
 const { createDefaultSettings, createSettingsStore, createThemeDefaults, sanitizeSettings } = require("./settingsStore");
-const { filterDisplays, computeDisplayContexts } = require("./multiMonitorHelper");
+const { filterDisplays, computeDisplayContexts, formatDisplayLabel } = require("./multiMonitorHelper");
 const ThemeAgent = require('./themeAgent');
 const { autoUpdater } = require("electron-updater");
 
@@ -951,7 +951,7 @@ function getDisplaysInfoPayload() {
     displays: allDisplays.map((d, index) => ({
       id: String(d.id),
       numericId: d.id,
-      label: d.label && d.label.trim().length > 0 ? d.label : `Display ${index + 1} (${d.bounds.width}x${d.bounds.height})`,
+      label: formatDisplayLabel(d, index),
       bounds: d.bounds,
       isPrimary: d.id === primaryId,
       scaleFactor: d.scaleFactor
