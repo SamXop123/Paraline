@@ -693,6 +693,134 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ----------------------------------------
+    // MULTI-MONITOR & DISPLAYS LOGIC
+    // ----------------------------------------
+    let currentDisplaysInfo = null;
+
+    const multiMonitorTargetMode = document.getElementById('multi-monitor-target-mode');
+    const multiMonitorCustomContainer = document.getElementById('multi-monitor-custom-container');
+    const multiMonitorDisplaysList = document.getElementById('multi-monitor-displays-list');
+    const multiMonitorMirrorCheckbox = document.getElementById('multi-monitor-mirror-checkbox');
+    const multiMonitorSeamCheckbox = document.getElementById('multi-monitor-seam-checkbox');
+    const multiMonitorSplitThemeCheckbox = document.getElementById('multi-monitor-split-theme-checkbox');
+
+    function updateMultiMonitorSetting(patch) {
+        if (!window.visualizerSettings) return;
+        const currentMulti = cachedSettings.multiMonitor || {};
+        const nextMulti = { ...currentMulti, ...patch };
+        cachedSettings.multiMonitor = nextMulti;
+        window.visualizerSettings.update({
+            multiMonitor: nextMulti
+        });
+    }
+
+    if (multiMonitorTargetMode) {
+        multiMonitorTargetMode.addEventListener('change', (e) => {
+            const mode = e.target.value;
+            if (multiMonitorCustomContainer) {
+                multiMonitorCustomContainer.style.display = mode === 'custom' ? 'block' : 'none';
+            }
+            updateMultiMonitorSetting({ targetMode: mode });
+        });
+    }
+
+    if (multiMonitorMirrorCheckbox) {
+        multiMonitorMirrorCheckbox.addEventListener('change', (e) => {
+            updateMultiMonitorSetting({ mirrorMode: e.target.checked });
+        });
+    }
+
+    if (multiMonitorSeamCheckbox) {
+        multiMonitorSeamCheckbox.addEventListener('change', (e) => {
+            updateMultiMonitorSetting({ seamSuppression: e.target.checked });
+        });
+    }
+
+    if (multiMonitorSplitThemeCheckbox) {
+        multiMonitorSplitThemeCheckbox.addEventListener('change', (e) => {
+            updateMultiMonitorSetting({ splitTheme: e.target.checked });
+        });
+    }
+
+    function renderDisplaysList(info, multiMonitorConfig) {
+        if (!multiMonitorDisplaysList || !info || !Array.isArray(info.displays)) return;
+        multiMonitorDisplaysList.innerHTML = '';
+
+        const customIds = new Set(
+            Array.isArray(multiMonitorConfig?.customDisplayIds)
+                ? multiMonitorConfig.customDisplayIds.map(String)
+                : []
+        );
+
+        for (const display of info.displays) {
+            const row = document.createElement('div');
+            row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06);';
+
+            const infoDiv = document.createElement('div');
+            infoDiv.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+
+            const labelSpan = document.createElement('span');
+            labelSpan.style.cssText = 'font-size: 13px; font-weight: 500; color: #f1f5f9;';
+            labelSpan.textContent = display.label;
+
+            if (display.isPrimary) {
+                const badge = document.createElement('span');
+                badge.style.cssText = 'font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(0, 242, 254, 0.15); color: #00f2fe; text-transform: uppercase;';
+                badge.textContent = 'Primary';
+                infoDiv.appendChild(badge);
+            }
+            infoDiv.appendChild(labelSpan);
+
+            const switchLabel = document.createElement('label');
+            switchLabel.className = 'switch';
+            switchLabel.style.transform = 'scale(0.85)';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = customIds.has(String(display.id));
+            checkbox.dataset.displayId = String(display.id);
+
+            checkbox.addEventListener('change', () => {
+                const checkedIds = Array.from(
+                    multiMonitorDisplaysList.querySelectorAll('input[type="checkbox"]:checked')
+                ).map((cb) => cb.dataset.displayId);
+
+                updateMultiMonitorSetting({ customDisplayIds: checkedIds });
+            });
+
+            const slider = document.createElement('span');
+            slider.className = 'slider-round';
+
+            switchLabel.appendChild(checkbox);
+            switchLabel.appendChild(slider);
+
+            row.appendChild(infoDiv);
+            row.appendChild(switchLabel);
+            multiMonitorDisplaysList.appendChild(row);
+        }
+    }
+
+    async function refreshDisplaysUI(multiMonitorConfig) {
+        if (!window.paralineApp || typeof window.paralineApp.getDisplaysInfo !== 'function') {
+            return;
+        }
+
+        try {
+            currentDisplaysInfo = await window.paralineApp.getDisplaysInfo();
+            renderDisplaysList(currentDisplaysInfo, multiMonitorConfig);
+        } catch (err) {
+            console.error('Failed to get displays info:', err);
+        }
+    }
+
+    if (window.paralineApp && typeof window.paralineApp.onDisplaysChanged === 'function') {
+        window.paralineApp.onDisplaysChanged((newDisplaysInfo) => {
+            currentDisplaysInfo = newDisplaysInfo;
+            renderDisplaysList(newDisplaysInfo, cachedSettings.multiMonitor);
+        });
+    }
+
     const fpsLimitSelector = document.getElementById('fps-limit-selector');
     if (fpsLimitSelector) {
         fpsLimitSelector.addEventListener('change', (e) => {
@@ -1933,6 +2061,27 @@ refreshThemeProfiles();
                     if (valEl) valEl.textContent = `${Math.round(dual.opacity * 100)}%`;
                 }
             }
+
+            // Load Multi-Monitor settings
+            if (settings.multiMonitor) {
+                const mm = settings.multiMonitor;
+                if (multiMonitorTargetMode && mm.targetMode) {
+                    multiMonitorTargetMode.value = mm.targetMode;
+                    if (multiMonitorCustomContainer) {
+                        multiMonitorCustomContainer.style.display = mm.targetMode === 'custom' ? 'block' : 'none';
+                    }
+                }
+                if (multiMonitorMirrorCheckbox && mm.mirrorMode !== undefined) {
+                    multiMonitorMirrorCheckbox.checked = !!mm.mirrorMode;
+                }
+                if (multiMonitorSeamCheckbox && mm.seamSuppression !== undefined) {
+                    multiMonitorSeamCheckbox.checked = !!mm.seamSuppression;
+                }
+                if (multiMonitorSplitThemeCheckbox && mm.splitTheme !== undefined) {
+                    multiMonitorSplitThemeCheckbox.checked = !!mm.splitTheme;
+                }
+                refreshDisplaysUI(mm);
+            }
             
             // set custom variables into UI if they exist globally or on the active theme
             const activeThemeData = settings[settings.selectedTheme] || {};
@@ -2198,6 +2347,29 @@ refreshThemeProfiles();
             }
             if (nextSettings.colorMode !== undefined && colorModeSelector) {
                 colorModeSelector.value = nextSettings.colorMode;
+            }
+            if (nextSettings.multiMonitor !== undefined) {
+                const mm = nextSettings.multiMonitor;
+                if (multiMonitorTargetMode && mm.targetMode !== undefined) {
+                    multiMonitorTargetMode.value = mm.targetMode;
+                    if (multiMonitorCustomContainer) {
+                        multiMonitorCustomContainer.style.display = mm.targetMode === 'custom' ? 'block' : 'none';
+                    }
+                }
+                if (multiMonitorMirrorCheckbox && mm.mirrorMode !== undefined) {
+                    multiMonitorMirrorCheckbox.checked = !!mm.mirrorMode;
+                }
+                if (multiMonitorSeamCheckbox && mm.seamSuppression !== undefined) {
+                    multiMonitorSeamCheckbox.checked = !!mm.seamSuppression;
+                }
+                if (multiMonitorSplitThemeCheckbox && mm.splitTheme !== undefined) {
+                    multiMonitorSplitThemeCheckbox.checked = !!mm.splitTheme;
+                }
+                if (currentDisplaysInfo) {
+                    renderDisplaysList(currentDisplaysInfo, mm);
+                } else {
+                    refreshDisplaysUI(mm);
+                }
             }
         });
     } else {

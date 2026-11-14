@@ -310,8 +310,11 @@
     context.globalAlpha = 1;
     context.shadowBlur = 0;
 
+    const suppressed = settings.suppressedEdges || {};
+    const mirrorFactor = settings.isMirrored ? -1 : 1;
+
     for (const particle of particles) {
-      particle.direction = getParticleDirection(particle, settings);
+      particle.direction = getParticleDirection(particle, settings) * mirrorFactor;
       particle.distance += delta * speed * particle.speedSeed * particle.direction;
 
       if (particle.distance < 0) {
@@ -321,6 +324,15 @@
       }
 
       const point = getPerimeterPoint(particle.distance, width, height);
+      if (
+        (suppressed.top && point.normalY === 1) ||
+        (suppressed.right && point.normalX === -1) ||
+        (suppressed.bottom && point.normalY === -1) ||
+        (suppressed.left && point.normalX === 1)
+      ) {
+        continue;
+      }
+
       const jitter = (
         Math.sin(time * particle.jitterSpeed + particle.phase) * 0.72 +
         Math.sin(time * particle.jitterSpeed * 0.47 + particle.phase * 1.9) * 0.28

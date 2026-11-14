@@ -300,8 +300,14 @@
     const primaryColor = resolveRippleColor(settings, 0.12, Math.min(1, profile.alpha * (isMulticolor ? 1.16 : 1.06)));
     const echoColor = resolveRippleColor(settings, 0.78, profile.alpha * (isMulticolor ? 0.78 : 0.64));
 
-    drawVerticalRippleLine(context, leftBase, height, time, motion.level, profile, primaryColor, 1, performanceMode);
-    drawVerticalRippleLine(context, rightBase, height, time, motion.level, profile, primaryColor, -1, performanceMode);
+    const suppressed = settings.suppressedEdges || {};
+
+    if (!suppressed.left) {
+      drawVerticalRippleLine(context, leftBase, height, time, motion.level, profile, primaryColor, 1, performanceMode);
+    }
+    if (!suppressed.right) {
+      drawVerticalRippleLine(context, rightBase, height, time, motion.level, profile, primaryColor, -1, performanceMode);
+    }
 
     const echoProfile = {
       ...profile,
@@ -316,8 +322,12 @@
       trailGap: profile.trailGap * 1.12
     };
 
-    drawVerticalRippleLine(context, leftBase, height, time + 0.14, motion.level, echoProfile, echoColor, 1, performanceMode);
-    drawVerticalRippleLine(context, rightBase, height, time + 0.14, motion.level, echoProfile, echoColor, -1, performanceMode);
+    if (!suppressed.left) {
+      drawVerticalRippleLine(context, leftBase, height, time + 0.14, motion.level, echoProfile, echoColor, 1, performanceMode);
+    }
+    if (!suppressed.right) {
+      drawVerticalRippleLine(context, rightBase, height, time + 0.14, motion.level, echoProfile, echoColor, -1, performanceMode);
+    }
   }
 
   function drawBottomRipples(options) {
@@ -341,7 +351,11 @@
     const primaryColor = resolveRippleColor(settings, 0.22, Math.min(1, profile.alpha * (isMulticolor ? 1.16 : 1.06)));
     const echoColor = resolveRippleColor(settings, 0.82, profile.alpha * (isMulticolor ? 0.78 : 0.64));
 
-    drawHorizontalRippleLine(context, width, yBase, time, motion.level, profile, primaryColor, performanceMode);
+    const suppressed = settings.suppressedEdges || {};
+
+    if (!suppressed.bottom) {
+      drawHorizontalRippleLine(context, width, yBase, time, motion.level, profile, primaryColor, performanceMode);
+    }
 
     const echoProfile = {
       ...profile,
@@ -356,7 +370,9 @@
       trailGap: profile.trailGap * 1.1
     };
 
-    drawHorizontalRippleLine(context, width, yBase, time + 0.14, motion.level, echoProfile, echoColor, performanceMode);
+    if (!suppressed.bottom) {
+      drawHorizontalRippleLine(context, width, yBase, time + 0.14, motion.level, echoProfile, echoColor, performanceMode);
+    }
   }
 
   function drawFlatRipples(options) {

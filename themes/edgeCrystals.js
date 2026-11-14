@@ -274,7 +274,12 @@
     context.globalAlpha = 1;
     context.lineCap = "round";
 
+    const suppressed = settings.suppressedEdges || {};
+
     for (const stroke of strokes) {
+      if (suppressed[stroke.side]) {
+        continue;
+      }
       drawStroke(context, stroke, width, time, smoothedEnergy, profile, colors, glowMultiplier, performanceMode);
     }
 

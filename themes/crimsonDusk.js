@@ -348,16 +348,22 @@
 
       const radius = Math.min(barHeight * 0.5, 3);
 
+      const suppressed = settings.suppressedEdges || {};
+
       if (typeof context.roundRect === "function") {
-        context.beginPath();
-        context.roundRect(leftX,  y, barLength, barHeight, radius);
-        context.fill();
-        context.beginPath();
-        context.roundRect(rightX, y, barLength, barHeight, radius);
-        context.fill();
+        if (!suppressed.left) {
+          context.beginPath();
+          context.roundRect(leftX,  y, barLength, barHeight, radius);
+          context.fill();
+        }
+        if (!suppressed.right) {
+          context.beginPath();
+          context.roundRect(rightX, y, barLength, barHeight, radius);
+          context.fill();
+        }
       } else {
-        context.fillRect(leftX,  y, barLength, barHeight);
-        context.fillRect(rightX, y, barLength, barHeight);
+        if (!suppressed.left) context.fillRect(leftX,  y, barLength, barHeight);
+        if (!suppressed.right) context.fillRect(rightX, y, barLength, barHeight);
       }
     }
   }
@@ -366,36 +372,44 @@
   // Soft crimson/amber glow along all screen edges — atmospheric, ambient.
   // Always rendered regardless of barMode, gives Crimson Dusk its warmth.
 
-  function drawCrimsonEdgeGlow(context, width, height, smoothedLevel, glowMultiplier) {
+  function drawCrimsonEdgeGlow(context, width, height, smoothedLevel, glowMultiplier, suppressed = {}) {
     const intensity = (0.06 + smoothedLevel * 0.08) * glowMultiplier;
 
     // Bottom
-    const gradB = context.createLinearGradient(0, height - 60, 0, height);
-    gradB.addColorStop(0, `rgba(0,0,0,0)`);
-    gradB.addColorStop(1, `rgba(192,57,43,${intensity * 2.2})`);
-    context.fillStyle = gradB;
-    context.fillRect(0, height - 60, width, 60);
+    if (!suppressed.bottom) {
+      const gradB = context.createLinearGradient(0, height - 60, 0, height);
+      gradB.addColorStop(0, `rgba(0,0,0,0)`);
+      gradB.addColorStop(1, `rgba(192,57,43,${intensity * 2.2})`);
+      context.fillStyle = gradB;
+      context.fillRect(0, height - 60, width, 60);
+    }
 
     // Left
-    const gradL = context.createLinearGradient(0, 0, 55, 0);
-    gradL.addColorStop(0, `rgba(192,57,43,${intensity * 1.6})`);
-    gradL.addColorStop(1, `rgba(0,0,0,0)`);
-    context.fillStyle = gradL;
-    context.fillRect(0, 0, 55, height);
+    if (!suppressed.left) {
+      const gradL = context.createLinearGradient(0, 0, 55, 0);
+      gradL.addColorStop(0, `rgba(192,57,43,${intensity * 1.6})`);
+      gradL.addColorStop(1, `rgba(0,0,0,0)`);
+      context.fillStyle = gradL;
+      context.fillRect(0, 0, 55, height);
+    }
 
     // Right
-    const gradR = context.createLinearGradient(width - 55, 0, width, 0);
-    gradR.addColorStop(0, `rgba(0,0,0,0)`);
-    gradR.addColorStop(1, `rgba(192,57,43,${intensity * 1.6})`);
-    context.fillStyle = gradR;
-    context.fillRect(width - 55, 0, 55, height);
+    if (!suppressed.right) {
+      const gradR = context.createLinearGradient(width - 55, 0, width, 0);
+      gradR.addColorStop(0, `rgba(0,0,0,0)`);
+      gradR.addColorStop(1, `rgba(192,57,43,${intensity * 1.6})`);
+      context.fillStyle = gradR;
+      context.fillRect(width - 55, 0, 55, height);
+    }
 
     // Top (subtle)
-    const gradT = context.createLinearGradient(0, 0, 0, 35);
-    gradT.addColorStop(0, `rgba(160,40,8,${intensity * 0.9})`);
-    gradT.addColorStop(1, `rgba(0,0,0,0)`);
-    context.fillStyle = gradT;
-    context.fillRect(0, 0, width, 35);
+    if (!suppressed.top) {
+      const gradT = context.createLinearGradient(0, 0, 0, 35);
+      gradT.addColorStop(0, `rgba(160,40,8,${intensity * 0.9})`);
+      gradT.addColorStop(1, `rgba(0,0,0,0)`);
+      context.fillStyle = gradT;
+      context.fillRect(0, 0, width, 35);
+    }
   }
 
   // ─── Main draw entry ────────────────────────────────────────────────────────
@@ -458,9 +472,10 @@
     options.reducedMotion = reducedMotion;
 
     const glowMultiplier = getGlowMultiplier(settings.glowStrength);
+    const suppressed = settings.suppressedEdges || {};
 
     // Always: ambient edge glow
-    drawCrimsonEdgeGlow(context, width, height, smoothedLevel, glowMultiplier);
+    drawCrimsonEdgeGlow(context, width, height, smoothedLevel, glowMultiplier, suppressed);
 
     // Always: drifting ember particles
     drawCrimsonEmberParticles(options);
@@ -469,13 +484,13 @@
     const barMode = settings.barMode || "bottom";
 
     if (barMode === "bottom") {
-      drawCrimsonDuskBottomFull(options);
+      if (!suppressed.bottom) drawCrimsonDuskBottomFull(options);
     } else if (barMode === "bottomCompact") {
-      drawCrimsonDuskBottom(options);
+      if (!suppressed.bottom) drawCrimsonDuskBottom(options);
     } else if (barMode === "side") {
       drawCrimsonDuskSide(options);
     } else if (barMode === "both") {
-      drawCrimsonDuskBottomFull(options);
+      if (!suppressed.bottom) drawCrimsonDuskBottomFull(options);
       drawCrimsonDuskSide(options);
     }
 

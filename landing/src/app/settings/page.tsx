@@ -27,7 +27,7 @@ const initialGroups: SettingGroup[] = [
     settings: [
       { 
         id: "dual-theme-layering", 
-        name: "Dual Theme Layering (Beta)", 
+        name: "Dual Theme Layering", 
         isNew: true, 
         description: "Blend and render two visualizer themes simultaneously with independent secondary layer opacity and decoupled audio signal processing.", 
         options: ["Dual Visualizers", "Layer Opacity (10% - 100%)", "Isolated Audio", "Secondary Tuning"] 
@@ -51,6 +51,13 @@ const initialGroups: SettingGroup[] = [
     title: "System & Automation Settings",
     icon: Sliders,
     settings: [
+      { 
+        id: "multi-monitor-tweaks", 
+        name: "Multi-Monitor Tweaks (Beta)", 
+        isNew: true, 
+        description: "Configure multi-display overlays with desk symmetry mirroring, unbroken panoramic edge suppression, and display split themes across monitors.", 
+        options: ["All Displays", "Desk Symmetry", "Panoramic Span", "Display Split Theme", "Custom Selection"] 
+      },
       { id: "focus-mode", name: "Focus Mode Integration", description: "Automatically dim visualizer opacity when your system goes idle to prevent distraction.", options: ["Idle Timeout", "Dim Opacity (0% - 90%)"] },
       { id: "fps-limits", name: "Framerate Optimization", description: "Configure frame capping for low CPU consumption or unlock it for high-refresh monitors.", options: ["Battery (30 FPS)", "Balanced (60 FPS)", "Unlocked"] },
       { id: "theme-automation", name: "Automatic Theme Schedules", description: "Auto-transition themes dynamically between day and night profiles using system clock time.", options: ["Day/Night Sync", "Hourly Automation"] },
@@ -165,8 +172,8 @@ export default function SettingsPage() {
                   <Sparkles className="w-3 h-3 text-cyan-400" />
                   Featured in v2.6.0
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-400/20 text-purple-300 text-[10px] font-bold uppercase tracking-wider">
-                  Dual Layering Beta
+                <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-400/20 text-cyan-300 text-[10px] font-bold uppercase tracking-wider">
+                  Dual Layering Engine
                 </span>
               </div>
 
