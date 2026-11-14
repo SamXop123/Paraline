@@ -1,6 +1,11 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { filterDisplays, computeDisplayContexts } = require("../multiMonitorHelper");
+const {
+  filterDisplays,
+  computeDisplayContexts,
+  formatDisplayLabel,
+  snapToStandardResolution
+} = require("../multiMonitorHelper");
 
 const DISPLAY_A = {
   id: 1,
@@ -231,4 +236,68 @@ test("multiMonitorHelper - computeDisplayContexts panoramic span metrics and edg
   );
   assert.strictEqual(noSuppression.get(1).panoramic, null);
   assert.strictEqual(noSuppression.get(2).panoramic, null);
+});
+
+test("multiMonitorHelper - snapToStandardResolution and formatDisplayLabel", () => {
+  // Test snapping to standard resolution
+  assert.deepStrictEqual(snapToStandardResolution(1921, 1081), [1920, 1080]);
+  assert.deepStrictEqual(snapToStandardResolution(1919, 1079), [1920, 1080]);
+  assert.deepStrictEqual(snapToStandardResolution(2559, 1441), [2560, 1440]);
+  assert.deepStrictEqual(snapToStandardResolution(3842, 2161), [3840, 2160]);
+  assert.deepStrictEqual(snapToStandardResolution(1234, 567), [1234, 567]);
+
+  // Test user case: Laptop with Windows 140% scaling (1372x772 DIP) at 144Hz without OS label
+  const laptopDisplay = {
+    id: 1,
+    bounds: { x: 0, y: 0, width: 1372, height: 772 },
+    scaleFactor: 1.4,
+    displayFrequency: 144,
+    label: ""
+  };
+  assert.strictEqual(
+    formatDisplayLabel(laptopDisplay, 0),
+    "Display 1 (1920×1080 @ 144Hz)"
+  );
+
+  // Test external monitor: Acer K222HQL 1080p @ 60Hz
+  const externalAcer = {
+    id: 2,
+    bounds: { x: 1920, y: 0, width: 1920, height: 1080 },
+    scaleFactor: 1.0,
+    displayFrequency: 60,
+    label: "Acer K222HQL"
+  };
+  assert.strictEqual(
+    formatDisplayLabel(externalAcer, 1),
+    "Acer K222HQL (1920×1080 @ 60Hz)"
+  );
+
+  // Test 125% scaling (1536x864 DIP -> 1920x1080)
+  const display125 = {
+    id: 3,
+    bounds: { x: 0, y: 0, width: 1536, height: 864 },
+    scaleFactor: 1.25,
+    displayFrequency: 60,
+    label: ""
+  };
+  assert.strictEqual(
+    formatDisplayLabel(display125, 1),
+    "Display 2 (1920×1080 @ 60Hz)"
+  );
+
+  // Test display without frequency
+  const displayNoFreq = {
+    id: 4,
+    bounds: { x: 0, y: 0, width: 1920, height: 1080 },
+    scaleFactor: 1.0,
+    label: ""
+  };
+  assert.strictEqual(
+    formatDisplayLabel(displayNoFreq, 0),
+    "Display 1 (1920×1080)"
+  );
+
+  // Fallbacks
+  assert.strictEqual(formatDisplayLabel(null, 0), "Display 1");
+  assert.strictEqual(formatDisplayLabel({}, 2), "Display 3");
 });
