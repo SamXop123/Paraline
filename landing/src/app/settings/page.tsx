@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Palette, Activity, Sliders, Layers, Sparkles } from "lucide-react";
+import { Palette, Activity, Sliders, Layers, Sparkles, Monitor } from "lucide-react";
 import { AuroraDriftPreview } from "@/components/visualizers/AuroraDriftPreview";
+import { PulseLinesPreview } from "@/components/visualizers/PulseLinesPreview";
 import { DotParticlesPreview } from "@/components/visualizers/DotParticlesPreview";
 
 interface SettingItem {
@@ -52,10 +53,10 @@ const initialGroups: SettingGroup[] = [
     settings: [
       { 
         id: "multi-monitor-tweaks", 
-        name: "Multi-Monitor Tweaks (Beta)", 
-        badge: "New in v2.7.0", 
-        description: "Configure multi-display overlays with desk symmetry mirroring, unbroken panoramic edge suppression, and display split themes across monitors.", 
-        options: ["All Displays", "Desk Symmetry", "Panoramic Span", "Display Split Theme", "Custom Selection"] 
+        name: "Multi-Monitor Architecture", 
+        badge: "Coming in v2.7.0", 
+        description: "Configure multi-display setups with true hardware resolution and refresh rate detection (e.g. 1920×1080 @ 144Hz), desk symmetry mirroring, unbroken panoramic edge suppression, and custom display targeting.", 
+        options: ["All Displays", "Desk Symmetry", "Panoramic Span", "Display Split Theme", "Custom Selection", "True Resolution & Refresh Rate"] 
       },
       { id: "focus-mode", name: "Focus Mode Integration", description: "Automatically dim visualizer opacity when your system goes idle to prevent distraction.", options: ["Idle Timeout", "Dim Opacity (0% - 90%)"] },
       { id: "fps-limits", name: "Framerate Optimization", description: "Configure frame capping for low CPU consumption or unlock it for high-refresh monitors.", options: ["Battery (30 FPS)", "Balanced (60 FPS)", "Unlocked"] },
@@ -67,6 +68,11 @@ const initialGroups: SettingGroup[] = [
 export default function SettingsPage() {
   const [dualEnabled, setDualEnabled] = useState(true);
   const [secondaryOpacity, setSecondaryOpacity] = useState(0.7);
+
+  // Multi-Monitor showcase interactive state (v2.7.0)
+  const [multiMonitorMode, setMultiMonitorMode] = useState<"panoramic" | "symmetry" | "custom">("panoramic");
+  const [display1Enabled, setDisplay1Enabled] = useState(true);
+  const [display2Enabled, setDisplay2Enabled] = useState(true);
 
   return (
     <main className="flex min-h-screen flex-col pt-32 pb-24 bg-[#060913] relative overflow-hidden z-0">
@@ -153,12 +159,187 @@ export default function SettingsPage() {
           ))}
         </div>
 
+        {/* Multi-Monitor Architecture Spotlight Section (v2.7.0 Feature) */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="mt-12 rounded-[22px] border border-cyan-500/20 bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-5 md:p-6 backdrop-blur-xl shadow-[0_15px_35px_rgba(0,0,0,0.4)] relative overflow-hidden"
+        >
+          {/* Subtle background ambient glow */}
+          <div className="absolute top-0 right-0 w-[300px] h-[200px] bg-gradient-to-bl from-cyan-500/10 via-blue-500/5 to-transparent blur-[60px] pointer-events-none -z-0" />
+          
+          <div className="relative z-10 flex flex-col lg:flex-row gap-6 items-center justify-between">
+            {/* Left Column: Description & Compact Controls */}
+            <div className="flex-1 space-y-3.5">
+              <div className="flex items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-[10px] font-bold tracking-widest uppercase shadow-[0_0_12px_rgba(6,182,212,0.25)]">
+                  <Monitor className="w-3 h-3 text-cyan-400" />
+                  Upcoming in v2.7.0
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/10 text-white/60 text-[9px] font-bold uppercase tracking-wider">
+                  Multi-Display Engine
+                </span>
+              </div>
+
+              <div>
+                <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+                  Multi-Monitor Architecture
+                </h2>
+                <p className="mt-1 text-xs md:text-sm font-light text-white/60 leading-relaxed max-w-xl">
+                  Scale visualizer motion across dual displays with unbroken panoramic seam suppression, bilateral desk symmetry, and high-refresh hardware detection.
+                </p>
+              </div>
+
+              {/* Mode Selection Pills */}
+              <div className="flex flex-wrap gap-1.5 max-w-xl">
+                {[
+                  { id: "panoramic", label: "Panoramic Span" },
+                  { id: "symmetry", label: "Desk Symmetry" },
+                  { id: "custom", label: "Custom Selection" }
+                ].map((mode) => (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    onClick={() => setMultiMonitorMode(mode.id as any)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 border ${
+                      multiMonitorMode === mode.id
+                        ? "bg-cyan-500/20 border-cyan-400/50 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                        : "bg-white/[0.02] border-white/10 text-white/50 hover:text-white hover:bg-white/[0.05]"
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Compact Displays List Showcase */}
+              <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 space-y-1.5 max-w-xl">
+                {/* Monitor 1 Row */}
+                <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+                  <div className="flex items-center gap-2">
+                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-cyan-500/15 text-cyan-300">
+                      Primary
+                    </span>
+                    <span className="text-xs font-medium text-white/80">Monitor 1 (1920×1080 @ 144Hz)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDisplay1Enabled(!display1Enabled)}
+                    className={`relative inline-flex h-4 w-7.5 items-center rounded-full transition-colors focus:outline-none ${display1Enabled ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]' : 'bg-white/10'}`}
+                  >
+                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${display1Enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                  </button>
+                </div>
+
+                {/* Monitor 2 Row */}
+                <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+                  <div className="flex items-center gap-2">
+                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-white/10 text-white/50">
+                      Secondary
+                    </span>
+                    <span className="text-xs font-medium text-white/80">Monitor 2 (1920×1080 @ 60Hz)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDisplay2Enabled(!display2Enabled)}
+                    className={`relative inline-flex h-4 w-7.5 items-center rounded-full transition-colors focus:outline-none ${display2Enabled ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]' : 'bg-white/10'}`}
+                  >
+                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${display2Enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Multi-Monitor Dual Display Visualization */}
+            <div className="w-full lg:w-[400px] shrink-0">
+              <div className="p-3 rounded-xl border border-white/10 bg-[#02040a] shadow-[0_10px_25px_rgba(0,0,0,0.6)] space-y-2">
+                <div className="flex items-center justify-between text-[9px] font-mono">
+                  <span className="text-cyan-400 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                    DUAL DISPLAY PREVIEW
+                  </span>
+                  <span className="text-white/40 uppercase">
+                    {multiMonitorMode === "panoramic" ? "Seam Suppressed" : multiMonitorMode === "symmetry" ? "Bilateral Symmetry" : "Custom Target"}
+                  </span>
+                </div>
+
+                {/* Side-by-Side Dual Display Mockup */}
+                <div className="flex gap-1.5 items-stretch h-[140px]">
+                  {/* Left Monitor (Monitor 1) */}
+                  <div className={`flex-1 flex flex-col rounded-lg border transition-all duration-300 relative overflow-hidden bg-black/60 ${
+                    display1Enabled ? "border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]" : "border-white/5 opacity-25"
+                  }`}>
+                    {/* Monitor Top Bar */}
+                    <div className="px-1.5 py-0.5 bg-white/[0.04] border-b border-white/5 flex items-center justify-between text-[7px] font-mono text-white/50">
+                      <span>Monitor 1</span>
+                      <span className="text-cyan-400 font-bold">{display1Enabled ? "ACTIVE" : "OFF"}</span>
+                    </div>
+
+                    {/* Dot Particles Canvas Area */}
+                    <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+                      {display1Enabled && (
+                        <div className="absolute inset-0 pointer-events-none">
+                          <DotParticlesPreview active={true} transparent={true} />
+                        </div>
+                      )}
+                      {multiMonitorMode === "panoramic" && display1Enabled && (
+                        <div className="absolute top-1 right-1 text-[7px] font-mono text-emerald-400 bg-emerald-950/80 px-1 rounded border border-emerald-500/30">
+                          Seam →
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Seam Separator line indicator */}
+                  {multiMonitorMode === "panoramic" && (
+                    <div className="w-0.5 flex flex-col items-center justify-center">
+                      <div className="h-full w-[1px] bg-emerald-500/50 animate-pulse" />
+                    </div>
+                  )}
+
+                  {/* Right Monitor (Monitor 2) */}
+                  <div className={`flex-1 flex flex-col rounded-lg border transition-all duration-300 relative overflow-hidden bg-black/60 ${
+                    display2Enabled ? "border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]" : "border-white/5 opacity-25"
+                  }`}>
+                    {/* Monitor Top Bar */}
+                    <div className="px-1.5 py-0.5 bg-white/[0.04] border-b border-white/5 flex items-center justify-between text-[7px] font-mono text-white/50">
+                      <span>Monitor 2</span>
+                      <span className="text-cyan-400 font-bold">{display2Enabled ? "ACTIVE" : "OFF"}</span>
+                    </div>
+
+                    {/* Dot Particles Canvas Area */}
+                    <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+                      {display2Enabled && (
+                        <div className="absolute inset-0 pointer-events-none" style={{ transform: multiMonitorMode === "symmetry" ? "scaleX(-1)" : "none" }}>
+                          <DotParticlesPreview active={true} transparent={true} />
+                        </div>
+                      )}
+                      {multiMonitorMode === "panoramic" && display2Enabled && (
+                        <div className="absolute top-1 left-1 text-[7px] font-mono text-emerald-400 bg-emerald-950/80 px-1 rounded border border-emerald-500/30">
+                          ← Seam
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer specs */}
+                <div className="flex items-center justify-between text-[8px] text-white/40 pt-0.5 border-t border-white/5">
+                  <span>Dual Display Desktop</span>
+                  <span>Dot Particles Theme</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Dual Theme Interactive Spotlight Section */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.15 }}
-          className="mt-20 rounded-[28px] border border-cyan-500/20 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-6 md:p-8 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] relative overflow-hidden"
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="mt-12 rounded-[28px] border border-cyan-500/20 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-6 md:p-8 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] relative overflow-hidden"
         >
           {/* Subtle background ambient gradients */}
           <div className="absolute top-0 right-0 w-[400px] h-[300px] bg-gradient-to-bl from-purple-500/15 via-cyan-500/10 to-transparent blur-[80px] pointer-events-none -z-0" />
@@ -181,7 +362,7 @@ export default function SettingsPage() {
                   Dual Theme Blending Engine
                 </h2>
                 <p className="mt-2 text-sm font-light text-white/60 leading-relaxed max-w-xl">
-                  Paraline features true dual-layer visualizer rendering. Stack two completely independent themes on your desktop simultaneously—such as subtle foreground particles with deep cosmic aurora curtains—each running on isolated audio response curves.
+                  Paraline features true dual-layer visualizer rendering. Stack two completely independent themes on your desktop simultaneously—such as subtle foreground borders with deep cosmic aurora curtains—each running on isolated audio response curves.
                 </p>
               </div>
 
@@ -237,13 +418,13 @@ export default function SettingsPage() {
 
                 {/* Layer 2: Foreground Primary Theme */}
                 <div className="absolute inset-0 pointer-events-none">
-                  <DotParticlesPreview active={true} transparent={true} />
+                  <PulseLinesPreview active={true} transparent={true} />
                 </div>
 
                 {/* HUD Overlay Badges */}
                 <div className="absolute top-3 left-3 flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-[9px] font-semibold text-white/80">
-                    Primary: Dot Particles
+                    Primary: Pulse Lines
                   </span>
                   {dualEnabled && (
                     <span className="px-2 py-0.5 rounded-md bg-cyan-950/80 backdrop-blur-md border border-cyan-500/30 text-[9px] font-semibold text-cyan-300">
