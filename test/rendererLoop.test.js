@@ -153,3 +153,35 @@ test("cleanup cancels the active frame and prevents restart", () => {
   assert.equal(harness.pendingFrames.size, 0);
   assert.deepEqual(harness.requestedFrameIds, [1]);
 });
+
+test("an unhandled exception in renderFrame does not halt subsequent frame scheduling", () => {
+  let throwsOnFirst = true;
+  const harness = createHarness(false, () => {
+    if (throwsOnFirst) {
+      throwsOnFirst = false;
+      throw new Error("Simulated transient render crash");
+    }
+  });
+
+  // Temporarily suppress console.error during expected throw
+  const origError = console.error;
+  console.error = () => {};
+
+  try {
+    harness.loop.start();
+    assert.deepEqual(harness.requestedFrameIds, [1]);
+
+    // Run frame 1 - will throw
+    harness.runFrame(1, 100);
+
+    // Frame 2 must still be scheduled despite the throw
+    assert.deepEqual(harness.requestedFrameIds, [1, 2]);
+    assert.equal(harness.pendingFrames.size, 1);
+
+    // Run frame 2 - succeeds
+    harness.runFrame(2, 200);
+    assert.deepEqual(harness.requestedFrameIds, [1, 2, 3]);
+  } finally {
+    console.error = origError;
+  }
+});

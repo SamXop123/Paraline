@@ -33,8 +33,13 @@
         return;
       }
 
-      renderFrame(now);
-      scheduleFrame();
+      try {
+        renderFrame(now);
+      } catch (err) {
+        console.error("Paraline render error:", err);
+      } finally {
+        scheduleFrame();
+      }
     }
 
     function cancelPendingFrame() {
