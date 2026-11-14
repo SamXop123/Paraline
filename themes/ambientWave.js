@@ -103,12 +103,17 @@
 
     drawGlowBand(context, width, height, edgeGradient, glowScale);
 
-    const drawTop = settings.edgeMode === "top" || settings.edgeMode === "both";
-    const drawBottom = settings.edgeMode === "bottom" || settings.edgeMode === "both";
+    const suppressed = settings.suppressedEdges || {};
+    const drawTop = (settings.edgeMode === "top" || settings.edgeMode === "both") && !suppressed.top;
+    const drawBottom = (settings.edgeMode === "bottom" || settings.edgeMode === "both") && !suppressed.bottom;
     const topBase = 26 + smoothedLevel * 6;
     const bottomBase = height - 62 - smoothedLevel * 18;
     const primaryAmplitude = helperDriven ? 8 + smoothedLevel * 38 : 5 + smoothedLevel * 12;
     const secondaryAmplitude = helperDriven ? 3 + smoothedLevel * 16 : 2 + smoothedLevel * 6;
+    const isMirrored = Boolean(settings.isMirrored);
+    const xOffset = (settings.panoramic && typeof settings.panoramic.xOffset === "number")
+      ? settings.panoramic.xOffset
+      : (typeof settings.xOffset === "number" ? settings.xOffset : 0);
 
     if (drawTop) {
       drawSoftFill(context, {
@@ -121,7 +126,9 @@
         color: ambientTheme.topGlow,
         thickness: 28,
         alphaScale: topGlowScale,
-        invert: true
+        invert: true,
+        xOffset,
+        isMirrored
       });
       drawWave(context, {
         width,
@@ -134,7 +141,9 @@
         lineWidth: 1.05,
         opacity: 0.56,
         glowScale: topGlowScale,
-        invert: true
+        invert: true,
+        xOffset,
+        isMirrored
       });
       drawWave(context, {
         width,
@@ -147,7 +156,9 @@
         lineWidth: 0.8,
         opacity: 0.18,
         glowScale: topGlowScale,
-        invert: true
+        invert: true,
+        xOffset,
+        isMirrored
       });
     }
 
@@ -161,7 +172,9 @@
         speed: 0.32,
         color: ambientTheme.bottomGlow,
         thickness: 40,
-        alphaScale: bottomGlowScale
+        alphaScale: bottomGlowScale,
+        xOffset,
+        isMirrored
       });
       drawWave(context, {
         width,
@@ -173,7 +186,9 @@
         color: ambientTheme.bottomLine,
         lineWidth: 1.25 * bottomLineWidthBoost,
         opacity: 0.68 * bottomOpacityBoost,
-        glowScale: bottomGlowScale
+        glowScale: bottomGlowScale,
+        xOffset,
+        isMirrored
       });
       drawWave(context, {
         width,
@@ -185,7 +200,9 @@
         color: ambientTheme.bottomGlow,
         lineWidth: 0.9 * bottomLineWidthBoost,
         opacity: 0.28 * bottomOpacityBoost,
-        glowScale: bottomGlowScale
+        glowScale: bottomGlowScale,
+        xOffset,
+        isMirrored
       });
     }
   }

@@ -45,7 +45,9 @@
       lineWidth,
       opacity,
       glowScale = 1,
-      invert = false
+      invert = false,
+      xOffset = 0,
+      isMirrored = false
     } = options;
 
     const step = 20;
@@ -55,8 +57,9 @@
     context.beginPath();
 
     for (let x = 0; x <= width; x += step) {
-      const waveA = Math.sin(x * frequency + phaseA);
-      const waveB = Math.sin(x * frequency * 0.42 - phaseB);
+      const sampleX = isMirrored ? (width - x) : (x + xOffset);
+      const waveA = Math.sin(sampleX * frequency + phaseA);
+      const waveB = Math.sin(sampleX * frequency * 0.42 - phaseB);
       const lift = (waveA + waveB) * amplitude;
       const y = yBase + (invert ? -lift : lift);
 
@@ -93,7 +96,9 @@
       color,
       thickness,
       alphaScale = 1,
-      invert = false
+      invert = false,
+      xOffset = 0,
+      isMirrored = false
     } = options;
 
     const step = 24;
@@ -104,8 +109,9 @@
     context.moveTo(0, yBase);
 
     for (let x = 0; x <= width; x += step) {
-      const waveA = Math.sin(x * frequency + phaseA);
-      const waveB = Math.sin(x * frequency * 0.35 - phaseB);
+      const sampleX = isMirrored ? (width - x) : (x + xOffset);
+      const waveA = Math.sin(sampleX * frequency + phaseA);
+      const waveB = Math.sin(sampleX * frequency * 0.35 - phaseB);
       const lift = (waveA + waveB) * amplitude;
       context.lineTo(x, yBase + (invert ? -lift : lift));
     }
@@ -120,12 +126,12 @@
     context.fill();
   }
 
-  function computeWrappedDistance(fromDistance, toDistance, perimeter, direction) {
+  function computeWrappedDistance(leadDistance, segmentDistance, perimeter, direction) {
     if (direction >= 0) {
-      return (toDistance - fromDistance + perimeter) % perimeter;
+      return ((leadDistance - segmentDistance) % perimeter + perimeter) % perimeter;
     }
 
-    return (fromDistance - toDistance + perimeter) % perimeter;
+    return ((segmentDistance - leadDistance) % perimeter + perimeter) % perimeter;
   }
 
   function hexToRgb(hex) {
