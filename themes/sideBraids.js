@@ -181,7 +181,7 @@
     rightScrollOffset += delta * rightTargetSpeed;
 
     const isReversed = settings.flowDirection === "bottomUp";
-    const flowDir = isReversed ? -1 : 1;
+    const flowDir = (isReversed ? -1 : 1) * (settings.isMirrored ? -1 : 1);
 
     // We use a frequency that gives elegant curves (about 0.012)
     const frequency = 0.012;
@@ -197,11 +197,17 @@
     const leftBaseX = edgeInset;
     const rightBaseX = width - edgeInset;
 
+    const suppressed = settings.suppressedEdges || {};
+
     // Draw Left Braid (alternating z-index overlays based on 3D helix projection)
-    drawSegmentedBraid(context, leftBaseX, height, currentLeftAmp, leftPhase, frequency, palette.a, palette.b, glowRadius, lineWidth, performanceMode);
+    if (!suppressed.left) {
+      drawSegmentedBraid(context, leftBaseX, height, currentLeftAmp, leftPhase, frequency, palette.a, palette.b, glowRadius, lineWidth, performanceMode);
+    }
 
     // Draw Right Braid (alternating z-index overlays based on 3D helix projection)
-    drawSegmentedBraid(context, rightBaseX, height, currentRightAmp, rightPhase, frequency, palette.b, palette.a, glowRadius, lineWidth, performanceMode);
+    if (!suppressed.right) {
+      drawSegmentedBraid(context, rightBaseX, height, currentRightAmp, rightPhase, frequency, palette.b, palette.a, glowRadius, lineWidth, performanceMode);
+    }
 
     // Clean shadow states
     context.shadowBlur = 0;

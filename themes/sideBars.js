@@ -110,13 +110,15 @@
     }
 
     const palette = style.colors;
-    const travel = (normalizedY + time * 0.045) % 1;
+    const rawTravel = (normalizedY + time * 0.045) % 1;
+    const travel = rawTravel < 0 ? rawTravel + 1 : rawTravel;
     const scaled = travel * palette.length;
     const indexA = Math.floor(scaled) % palette.length;
-    const indexB = (indexA + 1) % palette.length;
+    const safeIndexA = (indexA + palette.length) % palette.length;
+    const safeIndexB = (safeIndexA + 1) % palette.length;
     const blend = scaled - Math.floor(scaled);
-    const colorA = palette[indexA];
-    const colorB = palette[indexB];
+    const colorA = palette[safeIndexA] || [255, 255, 255];
+    const colorB = palette[safeIndexB] || [255, 255, 255];
 
     return {
       r: mixChannel(colorA[0], colorB[0], blend),
@@ -164,16 +166,19 @@
     context.globalAlpha = 1;
     context.shadowBlur = 0;
 
+    const suppressed = settings.suppressedEdges || {};
+    const timeDirection = settings.isMirrored ? -1 : 1;
+
     for (let index = 0; index < count; index++) {
       const normalizedY = count <= 1 ? 0.5 : index / (count - 1);
       const distanceFromCenter = Math.abs(normalizedY - 0.5) / 0.5;
       const centerBias = Math.pow(1 - distanceFromCenter, 1.4);
-      const motion = Math.sin(time * 3.8 + normalizedY * 10.5) * 0.5 + 0.5;
+      const motion = Math.sin(time * 3.8 * timeDirection + normalizedY * 10.5) * 0.5 + 0.5;
       const audioWeight = 0.2 + centerBias * 1.45;
       const baseLength = 3 + centerBias * 8;
       const activeLength = smoothedLevel * (10 + centerBias * 54) * (0.72 + motion * 0.5);
       const barLength = Math.max(2, baseLength + activeLength);
-      const color = resolveSideBarsColor(style, normalizedY, time);
+      const color = resolveSideBarsColor(style, normalizedY, time * timeDirection);
       const opacity = clamp01(baseOpacity + centerBias * 0.24 + motion * 0.06);
       const y = -edgeOverscan + index * step;
       const leftX = sideInset;
@@ -182,8 +187,12 @@
 
       context.fillStyle = fillColor;
       applyOptimizedShadow(context, fillColor, glowBlur * (0.4 + audioWeight * 0.45), performanceMode);
-      drawRoundedBar(context, leftX, y, barLength, barHeight);
-      drawRoundedBar(context, rightX, y, barLength, barHeight);
+      if (!suppressed.left) {
+        drawRoundedBar(context, leftX, y, barLength, barHeight);
+      }
+      if (!suppressed.right) {
+        drawRoundedBar(context, rightX, y, barLength, barHeight);
+      }
     }
   }
 
