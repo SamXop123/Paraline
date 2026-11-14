@@ -212,9 +212,9 @@ function drawFlowEdge(ctx: CanvasRenderingContext2D, options: FlowEdgeOptions) {
   ctx.restore();
 }
 
-function computeWrappedDistance(fromDistance: number, toDistance: number, perimeter: number, direction: number) {
+function computeWrappedDistance(leadDistance: number, segmentDistance: number, perimeter: number, direction: number) {
   if (direction >= 0) {
-    return (toDistance - fromDistance + perimeter) % perimeter;
+    return ((leadDistance - segmentDistance) % perimeter + perimeter) % perimeter;
   }
-  return (fromDistance - toDistance + perimeter) % perimeter;
+  return ((segmentDistance - leadDistance) % perimeter + perimeter) % perimeter;
 }

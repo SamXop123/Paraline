@@ -43,8 +43,9 @@
     return base;
   }
 
-  function getFlowDirectionValue(settings) {
-    return settings.direction === "anticlockwise" ? -1 : 1;
+  function getFlowDirectionValue(settings = {}) {
+    const base = settings.direction === "anticlockwise" ? -1 : 1;
+    return settings.isMirrored ? -base : base;
   }
 
   function getFlowSegmentLength(settings) {
@@ -128,7 +129,7 @@
     const segmentCount = Math.max(1, Math.ceil(edgeLength / segmentLength));
     const stopCount = Math.min(segmentCount + 1, MAX_FLOW_STOPS);
     const stopDivisor = Math.max(1, stopCount - 1);
-    const leadDistance = ((travelDistance % perimeter) + perimeter) % perimeter;
+    const leadDistance = travelDistance;
     const oppositeLeadDistance = (leadDistance + perimeter * 0.5) % perimeter;
     const emphasisLength = perimeter * 0.3;
     const perfMultiplier = getPerformanceMultiplier(performanceMode);
@@ -141,14 +142,13 @@
     for (let index = 0; index < stopCount; index++) {
       const t = index / stopDivisor;
       const segmentDistance = startDistance + edgeLength * t;
-      const normalizedDistance = segmentDistance / perimeter;
+      const normalizedDistance = ((segmentDistance % perimeter) + perimeter) % perimeter / perimeter;
       const wrappedDistanceA = computeWrappedDistance(leadDistance, segmentDistance, perimeter, direction);
       const wrappedDistanceB = computeWrappedDistance(oppositeLeadDistance, segmentDistance, perimeter, direction);
       const bandStrengthA = clamp01(1 - wrappedDistanceA / emphasisLength);
       const bandStrengthB = clamp01(1 - wrappedDistanceB / emphasisLength);
       const trailStrength = Math.max(bandStrengthA * bandStrengthA, bandStrengthB * bandStrengthB);
-      const signedTravel = (travelDistance / perimeter) * direction;
-      const shimmerPhase = normalizedDistance * Math.PI * 2 - signedTravel * 4.8;
+      const shimmerPhase = normalizedDistance * Math.PI * 2 - (travelDistance / perimeter) * 4.8;
       const shimmer = Math.sin(shimmerPhase * 2.1 - 0.8) * 0.5 + 0.5;
       const intensity = 0.22 + trailStrength * 0.62 + shimmer * 0.08;
       const opacity = Math.min(0.92, (0.2 + intensity * 0.5) * (0.88 + glowMultiplier * 0.18));
@@ -204,10 +204,14 @@
 
     // Use cached border geometry — only recomputed when dimensions or offset change
     const geo = getCachedBorderGeometry(width, height, edgeOffset);
-    const { left, top, right, bottom, horizontal, vertical, perimeter } = geo;
+    const { left, top, right, bottom, horizontal, vertical } = geo;
+
+    const panoramic = settings.panoramic;
+    const isPanoramicActive = Boolean(panoramic && panoramic.perimeter && panoramic.edges);
+    const perimeter = isPanoramicActive ? panoramic.perimeter : geo.perimeter;
 
     const direction = getFlowDirectionValue(settings);
-    const travelDistance = ((flowTravelDistance % perimeter) + perimeter) % perimeter;
+    const travelDistance = (((flowTravelDistance * direction) % perimeter) + perimeter) % perimeter;
     const segmentLength = getFlowSegmentLength(settings);
     const glowBlur = (8 + smoothedLevel * 12) * glowMultiplier;
 
@@ -215,10 +219,25 @@
     context.lineCap = "round";
     context.lineJoin = "round";
 
-    drawFlowBorderEdge(context, { x1: left, y1: top, x2: right, y2: top, startDistance: 0, perimeter, travelDistance, direction, thickness, glowBlur, glowMultiplier, segmentLength, colorStyle, performanceMode });
-    drawFlowBorderEdge(context, { x1: right, y1: top, x2: right, y2: bottom, startDistance: horizontal, perimeter, travelDistance, direction, thickness, glowBlur, glowMultiplier, segmentLength, colorStyle, performanceMode });
-    drawFlowBorderEdge(context, { x1: right, y1: bottom, x2: left, y2: bottom, startDistance: horizontal + vertical, perimeter, travelDistance, direction, thickness, glowBlur, glowMultiplier, segmentLength, colorStyle, performanceMode });
-    drawFlowBorderEdge(context, { x1: left, y1: bottom, x2: left, y2: top, startDistance: horizontal * 2 + vertical, perimeter, travelDistance, direction, thickness, glowBlur, glowMultiplier, segmentLength, colorStyle, performanceMode });
+    const suppressed = settings.suppressedEdges || {};
+
+    const topStart = isPanoramicActive && panoramic.edges.top ? panoramic.edges.top.startDistance : 0;
+    const rightStart = isPanoramicActive && panoramic.edges.right ? panoramic.edges.right.startDistance : horizontal;
+    const bottomStart = isPanoramicActive && panoramic.edges.bottom ? panoramic.edges.bottom.startDistance : horizontal + vertical;
+    const leftStart = isPanoramicActive && panoramic.edges.left ? panoramic.edges.left.startDistance : horizontal * 2 + vertical;
+
+    if (!suppressed.top && (!isPanoramicActive || panoramic.edges.top)) {
+      drawFlowBorderEdge(context, { x1: left, y1: top, x2: right, y2: top, startDistance: topStart, perimeter, travelDistance, direction, thickness, glowBlur, glowMultiplier, segmentLength, colorStyle, performanceMode });
+    }
+    if (!suppressed.right && (!isPanoramicActive || panoramic.edges.right)) {
+      drawFlowBorderEdge(context, { x1: right, y1: top, x2: right, y2: bottom, startDistance: rightStart, perimeter, travelDistance, direction, thickness, glowBlur, glowMultiplier, segmentLength, colorStyle, performanceMode });
+    }
+    if (!suppressed.bottom && (!isPanoramicActive || panoramic.edges.bottom)) {
+      drawFlowBorderEdge(context, { x1: right, y1: bottom, x2: left, y2: bottom, startDistance: bottomStart, perimeter, travelDistance, direction, thickness, glowBlur, glowMultiplier, segmentLength, colorStyle, performanceMode });
+    }
+    if (!suppressed.left && (!isPanoramicActive || panoramic.edges.left)) {
+      drawFlowBorderEdge(context, { x1: left, y1: bottom, x2: left, y2: top, startDistance: leftStart, perimeter, travelDistance, direction, thickness, glowBlur, glowMultiplier, segmentLength, colorStyle, performanceMode });
+    }
   }
 
   window.ParalineFlowBorder = {

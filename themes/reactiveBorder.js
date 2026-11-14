@@ -140,12 +140,19 @@
 
     // Use cached border geometry — only recomputed when dimensions or offset change
     const geo = getCachedBorderGeometry(width, height, edgeOffset);
-    const { left, top, right, bottom, horizontal, vertical, perimeter } = geo;
+    const { left, top, right, bottom, horizontal, vertical } = geo;
 
-    const speed = 32 + smoothedLevel * 180 * intensityMultiplier;
+    const panoramic = settings.panoramic;
+    const isPanoramicActive = Boolean(panoramic && panoramic.perimeter && panoramic.edges);
+    const perimeter = isPanoramicActive ? panoramic.perimeter : geo.perimeter;
+
+    const speed = (32 + smoothedLevel * 180 * intensityMultiplier) * (settings.isMirrored ? -1 : 1);
     const hueOffset = time * speed;
     const glowBlur = (7 + smoothedLevel * 10) * glowMultiplier;
     const opacity = 0.54 + smoothedLevel * 0.18 * intensityMultiplier;
+
+    const suppressed = settings.suppressedEdges || {};
+    const hasSuppression = suppressed.left || suppressed.right || suppressed.top || suppressed.bottom;
 
     context.globalAlpha = 1;
     context.lineCap = "round";
@@ -153,12 +160,47 @@
     context.shadowBlur = 0;
     context.strokeStyle = "rgba(255, 255, 255, 0.06)";
     context.lineWidth = thickness + 0.8;
-    context.strokeRect(left, top, horizontal, vertical);
 
-    drawReactiveBorderEdge(context, { x1: left, y1: top, x2: right, y2: top, startDistance: 0, perimeter, colorStyle: reactiveStyle, hueOffset, thickness, glowBlur, opacity, performanceMode });
-    drawReactiveBorderEdge(context, { x1: right, y1: top, x2: right, y2: bottom, startDistance: horizontal, perimeter, colorStyle: reactiveStyle, hueOffset, thickness, glowBlur, opacity, performanceMode });
-    drawReactiveBorderEdge(context, { x1: right, y1: bottom, x2: left, y2: bottom, startDistance: horizontal + vertical, perimeter, colorStyle: reactiveStyle, hueOffset, thickness, glowBlur, opacity, performanceMode });
-    drawReactiveBorderEdge(context, { x1: left, y1: bottom, x2: left, y2: top, startDistance: horizontal * 2 + vertical, perimeter, colorStyle: reactiveStyle, hueOffset, thickness, glowBlur, opacity, performanceMode });
+    if (!hasSuppression) {
+      context.strokeRect(left, top, horizontal, vertical);
+    } else {
+      context.beginPath();
+      if (!suppressed.top && (!isPanoramicActive || panoramic.edges.top)) {
+        context.moveTo(left, top);
+        context.lineTo(right, top);
+      }
+      if (!suppressed.right && (!isPanoramicActive || panoramic.edges.right)) {
+        context.moveTo(right, top);
+        context.lineTo(right, bottom);
+      }
+      if (!suppressed.bottom && (!isPanoramicActive || panoramic.edges.bottom)) {
+        context.moveTo(right, bottom);
+        context.lineTo(left, bottom);
+      }
+      if (!suppressed.left && (!isPanoramicActive || panoramic.edges.left)) {
+        context.moveTo(left, bottom);
+        context.lineTo(left, top);
+      }
+      context.stroke();
+    }
+
+    const topStart = isPanoramicActive && panoramic.edges.top ? panoramic.edges.top.startDistance : 0;
+    const rightStart = isPanoramicActive && panoramic.edges.right ? panoramic.edges.right.startDistance : horizontal;
+    const bottomStart = isPanoramicActive && panoramic.edges.bottom ? panoramic.edges.bottom.startDistance : horizontal + vertical;
+    const leftStart = isPanoramicActive && panoramic.edges.left ? panoramic.edges.left.startDistance : horizontal * 2 + vertical;
+
+    if (!suppressed.top && (!isPanoramicActive || panoramic.edges.top)) {
+      drawReactiveBorderEdge(context, { x1: left, y1: top, x2: right, y2: top, startDistance: topStart, perimeter, colorStyle: reactiveStyle, hueOffset, thickness, glowBlur, opacity, performanceMode });
+    }
+    if (!suppressed.right && (!isPanoramicActive || panoramic.edges.right)) {
+      drawReactiveBorderEdge(context, { x1: right, y1: top, x2: right, y2: bottom, startDistance: rightStart, perimeter, colorStyle: reactiveStyle, hueOffset, thickness, glowBlur, opacity, performanceMode });
+    }
+    if (!suppressed.bottom && (!isPanoramicActive || panoramic.edges.bottom)) {
+      drawReactiveBorderEdge(context, { x1: right, y1: bottom, x2: left, y2: bottom, startDistance: bottomStart, perimeter, colorStyle: reactiveStyle, hueOffset, thickness, glowBlur, opacity, performanceMode });
+    }
+    if (!suppressed.left && (!isPanoramicActive || panoramic.edges.left)) {
+      drawReactiveBorderEdge(context, { x1: left, y1: bottom, x2: left, y2: top, startDistance: leftStart, perimeter, colorStyle: reactiveStyle, hueOffset, thickness, glowBlur, opacity, performanceMode });
+    }
   }
 
   window.ParalineReactiveBorder = {
