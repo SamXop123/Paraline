@@ -264,64 +264,72 @@ export default function SettingsPage() {
                   </span>
                 </div>
 
-                {/* Side-by-Side Dual Display Mockup */}
-                <div className="flex gap-1.5 items-stretch h-[140px]">
-                  {/* Left Monitor (Monitor 1) */}
-                  <div className={`flex-1 flex flex-col rounded-lg border transition-all duration-300 relative overflow-hidden bg-black/60 ${
-                    display1Enabled ? "border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]" : "border-white/5 opacity-25"
-                  }`}>
-                    {/* Monitor Top Bar */}
-                    <div className="px-1.5 py-0.5 bg-white/[0.04] border-b border-white/5 flex items-center justify-between text-[7px] font-mono text-white/50">
-                      <span>Monitor 1</span>
-                      <span className="text-cyan-400 font-bold">{display1Enabled ? "ACTIVE" : "OFF"}</span>
-                    </div>
+                {/* Side-by-Side Dual Display Mockup Container */}
+                <div className="h-[140px] flex">
+                  {multiMonitorMode === "panoramic" ? (
+                    /* Unified Panoramic Span: One continuous Dot Particles loop crossing both screens */
+                    <div className="flex-1 relative flex rounded-xl border border-cyan-500/30 bg-black/60 shadow-[0_0_20px_rgba(6,182,212,0.12)] overflow-hidden">
+                      {/* Single continuous Dot Particles canvas spanning both monitors */}
+                      <div className="absolute inset-0 pointer-events-none">
+                        <DotParticlesPreview active={true} transparent={true} />
+                      </div>
 
-                    {/* Dot Particles Canvas Area */}
-                    <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-                      {display1Enabled && (
-                        <div className="absolute inset-0 pointer-events-none">
-                          <DotParticlesPreview active={true} transparent={true} />
+                      {/* Monitor 1 Half */}
+                      <div className="flex-1 flex flex-col relative z-10 border-r border-white/10 pointer-events-none">
+                        <div className="px-2 py-1 bg-white/[0.04] border-b border-white/5 flex items-center justify-between text-[7px] font-mono text-white/50">
+                          <span>Monitor 1 (144Hz)</span>
+                          <span className="text-cyan-400 font-bold">ACTIVE</span>
                         </div>
-                      )}
-                      {multiMonitorMode === "panoramic" && display1Enabled && (
-                        <div className="absolute top-1 right-1 text-[7px] font-mono text-emerald-400 bg-emerald-950/80 px-1 rounded border border-emerald-500/30">
-                          Seam →
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                        <div className="flex-1" />
+                      </div>
 
-                  {/* Seam Separator line indicator */}
-                  {multiMonitorMode === "panoramic" && (
-                    <div className="w-0.5 flex flex-col items-center justify-center">
-                      <div className="h-full w-[1px] bg-emerald-500/50 animate-pulse" />
+                      {/* Monitor 2 Half */}
+                      <div className="flex-1 flex flex-col relative z-10 pointer-events-none">
+                        <div className="px-2 py-1 bg-white/[0.04] border-b border-white/5 flex items-center justify-between text-[7px] font-mono text-white/50">
+                          <span>Monitor 2 (60Hz)</span>
+                          <span className="text-cyan-400 font-bold">ACTIVE</span>
+                        </div>
+                        <div className="flex-1" />
+                      </div>
+                    </div>
+                  ) : (
+                    /* Independent Dual Displays (Desk Symmetry & Custom Selection Mode) */
+                    <div className="flex gap-1.5 items-stretch flex-1">
+                      {/* Left Monitor (Monitor 1) */}
+                      <div className={`flex-1 flex flex-col rounded-xl border transition-all duration-300 relative overflow-hidden bg-black/60 ${
+                        display1Enabled ? "border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]" : "border-white/5 opacity-25"
+                      }`}>
+                        <div className="px-2 py-1 bg-white/[0.04] border-b border-white/5 flex items-center justify-between text-[7px] font-mono text-white/50">
+                          <span>Monitor 1</span>
+                          <span className="text-cyan-400 font-bold">{display1Enabled ? "ACTIVE" : "OFF"}</span>
+                        </div>
+                        <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+                          {display1Enabled && (
+                            <div className="absolute inset-0 pointer-events-none">
+                              <DotParticlesPreview active={true} transparent={true} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right Monitor (Monitor 2) */}
+                      <div className={`flex-1 flex flex-col rounded-xl border transition-all duration-300 relative overflow-hidden bg-black/60 ${
+                        display2Enabled ? "border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]" : "border-white/5 opacity-25"
+                      }`}>
+                        <div className="px-2 py-1 bg-white/[0.04] border-b border-white/5 flex items-center justify-between text-[7px] font-mono text-white/50">
+                          <span>Monitor 2</span>
+                          <span className="text-cyan-400 font-bold">{display2Enabled ? "ACTIVE" : "OFF"}</span>
+                        </div>
+                        <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+                          {display2Enabled && (
+                            <div className="absolute inset-0 pointer-events-none" style={{ transform: multiMonitorMode === "symmetry" ? "scaleX(-1)" : "none" }}>
+                              <DotParticlesPreview active={true} transparent={true} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
-
-                  {/* Right Monitor (Monitor 2) */}
-                  <div className={`flex-1 flex flex-col rounded-lg border transition-all duration-300 relative overflow-hidden bg-black/60 ${
-                    display2Enabled ? "border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]" : "border-white/5 opacity-25"
-                  }`}>
-                    {/* Monitor Top Bar */}
-                    <div className="px-1.5 py-0.5 bg-white/[0.04] border-b border-white/5 flex items-center justify-between text-[7px] font-mono text-white/50">
-                      <span>Monitor 2</span>
-                      <span className="text-cyan-400 font-bold">{display2Enabled ? "ACTIVE" : "OFF"}</span>
-                    </div>
-
-                    {/* Dot Particles Canvas Area */}
-                    <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-                      {display2Enabled && (
-                        <div className="absolute inset-0 pointer-events-none" style={{ transform: multiMonitorMode === "symmetry" ? "scaleX(-1)" : "none" }}>
-                          <DotParticlesPreview active={true} transparent={true} />
-                        </div>
-                      )}
-                      {multiMonitorMode === "panoramic" && display2Enabled && (
-                        <div className="absolute top-1 left-1 text-[7px] font-mono text-emerald-400 bg-emerald-950/80 px-1 rounded border border-emerald-500/30">
-                          ← Seam
-                        </div>
-                      )}
-                    </div>
-                  </div>
                 </div>
 
                 {/* Footer specs */}
