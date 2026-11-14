@@ -12,10 +12,12 @@ const path = require("path");
 const fs = require("fs");
 const { createAudioBridge } = require("./audioBridge");
 const { createDefaultSettings, createSettingsStore, createThemeDefaults, sanitizeSettings } = require("./settingsStore");
+const { filterDisplays, computeDisplayContexts } = require("./multiMonitorHelper");
 const ThemeAgent = require('./themeAgent');
 const { autoUpdater } = require("electron-updater");
 
 const overlayWindows = new Map();
+let displayContexts = new Map();
 let lastBridgeMode = null;
 let lastBridgeReason = null;
 let audioBridge;
@@ -542,6 +544,7 @@ function createOverlayWindow(display) {
     }
   });
 
+  overlayWindow.displayId = display.id;
   overlayWindows.set(display.id, overlayWindow);
   applyOverlayWindowDisplayState(overlayWindow, display);
   overlayWindow.showInactive();
@@ -549,7 +552,7 @@ function createOverlayWindow(display) {
 
   overlayWindow.webContents.on("did-finish-load", () => {
     setTimeout(() => {
-      sendVisualizerSettingsToWindow(overlayWindow);
+      sendVisualizerSettingsToWindow(overlayWindow, display.id);
       sendFocusModeOpacityToWindow(overlayWindow, getCurrentFocusModeOpacity());
     }, 100);
   });
@@ -559,8 +562,12 @@ function createOverlayWindow(display) {
       overlayWindows.delete(display.id);
     }
 
-    const displayCount = screen.getAllDisplays().length;
-    if (!isQuitting && !isReconcilingDisplays && overlayWindows.size < displayCount) {
+    const allDisplays = screen.getAllDisplays();
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const multiMonitorConfig = visualizerSettings?.multiMonitor || {};
+    const expectedCount = filterDisplays(allDisplays, primaryDisplay, multiMonitorConfig).length;
+
+    if (!isQuitting && !isReconcilingDisplays && overlayWindows.size < expectedCount) {
       reconcileOverlayWindows();
     }
   });
@@ -568,19 +575,45 @@ function createOverlayWindow(display) {
   return overlayWindow;
 }
 
-function reconcileOverlayWindows() {
-  const displays = screen.getAllDisplays();
-
-  if (displays.length === 0) {
+function updateDisplayContexts() {
+  const allDisplays = screen.getAllDisplays();
+  if (allDisplays.length === 0) {
+    displayContexts.clear();
     return;
   }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const multiMonitorConfig = visualizerSettings?.multiMonitor || {};
+  const mainTheme = visualizerSettings?.selectedTheme || "ambientWave";
+  const secondaryTheme = visualizerSettings?.dualTheme?.secondaryTheme || "none";
+
+  const filteredDisplays = filterDisplays(allDisplays, primaryDisplay, multiMonitorConfig);
+  displayContexts = computeDisplayContexts(
+    filteredDisplays,
+    primaryDisplay,
+    multiMonitorConfig,
+    mainTheme,
+    secondaryTheme
+  );
+}
+
+function reconcileOverlayWindows() {
+  const allDisplays = screen.getAllDisplays();
+
+  if (allDisplays.length === 0) {
+    return;
+  }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const multiMonitorConfig = visualizerSettings?.multiMonitor || {};
+  const filteredDisplays = filterDisplays(allDisplays, primaryDisplay, multiMonitorConfig);
 
   isReconcilingDisplays = true;
 
   try {
     const activeDisplayIds = new Set();
 
-    for (const display of displays) {
+    for (const display of filteredDisplays) {
       activeDisplayIds.add(display.id);
       createOverlayWindow(display);
     }
@@ -614,8 +647,16 @@ function sendAudioLevel(value, source) {
   }
 }
 
-function getRendererSettings() {
+function getRendererSettings(displayId = null) {
   const helperConnected = audioBridge ? (audioBridge.getStatus().mode === "helper") : false;
+  const displayCtx = (displayId !== null && displayContexts.has(displayId))
+    ? displayContexts.get(displayId)
+    : {
+        isMirrored: false,
+        suppressedEdges: { left: false, right: false, top: false, bottom: false },
+        assignedTheme: null
+      };
+
   return {
     ...visualizerSettings,
     ...getSystemColorState(),
@@ -624,24 +665,31 @@ function getRendererSettings() {
     version: APP_VERSION,
     helperConnected: helperConnected,
     shortcutRegistrationFailures: shortcutRegistrationFailures,
-    wallpaperColors: latestWallpaperColors
+    wallpaperColors: latestWallpaperColors,
+    displayContext: displayCtx
   };
 }
 
-function sendVisualizerSettingsToWindow(targetWindow) {
+function sendVisualizerSettingsToWindow(targetWindow, displayId = null) {
   if (!targetWindow || targetWindow.isDestroyed()) {
     return;
   }
 
-  targetWindow.webContents.send("visualizer-settings", getRendererSettings());
+  const resolvedDisplayId = displayId !== null
+    ? displayId
+    : (targetWindow.displayId !== undefined ? targetWindow.displayId : null);
+
+  targetWindow.webContents.send("visualizer-settings", getRendererSettings(resolvedDisplayId));
 }
 
 function sendVisualizerSettings() {
-  for (const overlayWindow of getActiveOverlayWindows()) {
-    sendVisualizerSettingsToWindow(overlayWindow);
+  updateDisplayContexts();
+
+  for (const [displayId, overlayWindow] of overlayWindows.entries()) {
+    sendVisualizerSettingsToWindow(overlayWindow, displayId);
   }
 
-  sendVisualizerSettingsToWindow(settingsWindow);
+  sendVisualizerSettingsToWindow(settingsWindow, null);
 }
 
 function mergeSettingsPatch(currentSettings, patch) {
@@ -681,6 +729,9 @@ function updateSettings(nextSettings) {
   }
   if (nextSettings.alwaysOnTop !== undefined) {
     refreshOverlayZOrder();
+  }
+  if (nextSettings.multiMonitor !== undefined) {
+    reconcileOverlayWindows();
   }
 
   sendVisualizerSettings();
@@ -891,6 +942,30 @@ function stopSimulatedAudioFallback() {
   }
 }
 
+function getDisplaysInfoPayload() {
+  const allDisplays = screen.getAllDisplays();
+  const primary = screen.getPrimaryDisplay();
+  const primaryId = primary ? primary.id : (allDisplays[0] ? allDisplays[0].id : null);
+
+  return {
+    displays: allDisplays.map((d, index) => ({
+      id: String(d.id),
+      numericId: d.id,
+      label: d.label && d.label.trim().length > 0 ? d.label : `Display ${index + 1} (${d.bounds.width}x${d.bounds.height})`,
+      bounds: d.bounds,
+      isPrimary: d.id === primaryId,
+      scaleFactor: d.scaleFactor
+    })),
+    primaryId: String(primaryId)
+  };
+}
+
+function notifyDisplaysChanged() {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.webContents.send("displays:changed", getDisplaysInfoPayload());
+  }
+}
+
 function handleDisplayMetricsChanged(_event, display) {
   const overlayWindow = overlayWindows.get(display.id);
 
@@ -899,14 +974,16 @@ function handleDisplayMetricsChanged(_event, display) {
   }
 
   reconcileOverlayWindows();
+  sendVisualizerSettings();
   refreshOverlayZOrder();
+  notifyDisplaysChanged();
 }
 
 function handleDisplayAdded(_event, display) {
-  createOverlayWindow(display);
   reconcileOverlayWindows();
   sendVisualizerSettings();
   refreshOverlayZOrder();
+  notifyDisplaysChanged();
 }
 
 function handleDisplayRemoved(_event, display) {
@@ -921,6 +998,7 @@ function handleDisplayRemoved(_event, display) {
   reconcileOverlayWindows();
   sendVisualizerSettings();
   refreshOverlayZOrder();
+  notifyDisplaysChanged();
 }
 
 function handleAudioBridgeStatusChange(status) {
@@ -2120,8 +2198,21 @@ app.whenReady().then(() => {
     return audioBridge.getStatus();
   });
 
-  ipcMain.handle("visualizer-settings:get", () => {
-    return getRendererSettings();
+  ipcMain.handle("visualizer-settings:get", (event) => {
+    let displayId = null;
+    if (event && event.sender) {
+      for (const [id, win] of overlayWindows.entries()) {
+        if (!win.isDestroyed() && win.webContents === event.sender) {
+          displayId = id;
+          break;
+        }
+      }
+    }
+    return getRendererSettings(displayId);
+  });
+
+  ipcMain.handle("displays:get-info", () => {
+    return getDisplaysInfoPayload();
   });
 
   ipcMain.on("visualizer-action", (event, { action, data }) => {

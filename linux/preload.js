@@ -132,5 +132,16 @@ contextBridge.exposeInMainWorld("paralineApp", {
     ipcRenderer.invoke("settings:export-all"),
 
   importAllSettings: () =>
-    ipcRenderer.invoke("settings:import-all")
+    ipcRenderer.invoke("settings:import-all"),
+
+  getDisplaysInfo: () =>
+    ipcRenderer.invoke("displays:get-info"),
+
+  onDisplaysChanged: (listener) => {
+    const wrapped = (_event, payload) => listener(payload);
+    ipcRenderer.on("displays:changed", wrapped);
+    return () => {
+      ipcRenderer.removeListener("displays:changed", wrapped);
+    };
+  }
 });
