@@ -276,6 +276,18 @@ let visualizerState = {
     secondaryTheme: "none",
     opacity: 0.7
   },
+  multiMonitor: {
+    targetMode: "all",
+    customDisplayIds: [],
+    mirrorMode: false,
+    seamSuppression: false,
+    splitTheme: false
+  },
+  displayContext: {
+    isMirrored: false,
+    suppressedEdges: { left: false, right: false, top: false, bottom: false },
+    assignedTheme: null
+  },
   paused: false
 };
 
@@ -470,7 +482,15 @@ function getAdaptivePaletteHex() {
   return adaptivePaletteState.current.map(rgbToHex);
 }
 
-function getResolvedThemeSettings(themeId, settings) {
+function getResolvedThemeSettings(themeId, rawSettings) {
+  const displayCtx = visualizerState.displayContext || {};
+  let settings = {
+    ...rawSettings,
+    isMirrored: displayCtx.isMirrored || false,
+    suppressedEdges: displayCtx.suppressedEdges || { left: false, right: false, top: false, bottom: false },
+    panoramic: displayCtx.panoramic || null
+  };
+
   if (visualizerState.colorMode !== "adaptive" && visualizerState.colorMode !== "wallpaper") {
     return settings;
   }
@@ -961,17 +981,33 @@ function renderFrame(now) {
     return;
   }
 
+  const isSplitThemeActive = Boolean(
+    visualizerState.multiMonitor?.splitTheme &&
+    visualizerState.displayContext?.assignedTheme
+  );
+
+  const activeMainTheme = isSplitThemeActive
+    ? visualizerState.displayContext.assignedTheme
+    : visualizerState.selectedTheme;
+
   let activeFrameInterval = 0;
   const currentLimit = visualizerState.fpsLimit || "default";
+
+  const dual = visualizerState.dualTheme;
+  const isDualThemeActive = !isSplitThemeActive &&
+    dual &&
+    dual.enabled &&
+    dual.secondaryTheme &&
+    dual.secondaryTheme !== "none" &&
+    dual.secondaryTheme !== activeMainTheme;
 
   if (currentLimit === "battery") {
     activeFrameInterval = 1000 / 30; // Lock at 30 FPS Globally
   } else if (currentLimit === "unlocked") {
     activeFrameInterval = 0; // Unlocked / Native Monitor Refresh Rate
   } else {
-    activeFrameInterval = getThemeFrameInterval(visualizerState.selectedTheme);
-    const dual = visualizerState.dualTheme;
-    if (dual && dual.enabled && dual.secondaryTheme && dual.secondaryTheme !== "none" && dual.secondaryTheme !== visualizerState.selectedTheme) {
+    activeFrameInterval = getThemeFrameInterval(activeMainTheme);
+    if (isDualThemeActive) {
       activeFrameInterval = Math.min(activeFrameInterval, getThemeFrameInterval(dual.secondaryTheme));
     }
   }
@@ -983,13 +1019,6 @@ function renderFrame(now) {
   const deltaMs = lastFrameAt ? now - lastFrameAt : (activeFrameInterval || 16.6);
   lastFrameAt = now;
 
-  const dual = visualizerState.dualTheme;
-  const isDualThemeActive = dual &&
-    dual.enabled &&
-    dual.secondaryTheme &&
-    dual.secondaryTheme !== "none" &&
-    dual.secondaryTheme !== visualizerState.selectedTheme;
-
   if (!visualizerState.paused) {
     time += deltaMs * 0.001;
 
@@ -997,7 +1026,7 @@ function renderFrame(now) {
     const flowLevel = isFlowBorderSecondary ? secondarySmoothedLevel : primarySmoothedLevel;
     const flowSpeedProfile = getFlowSpeedProfile(getFlowBorderSettings());
     const flowSpeed = flowSpeedProfile.base + flowLevel * flowSpeedProfile.boost;
-    flowTravelDistance += deltaMs * 0.001 * flowSpeed * getFlowDirectionValue(getFlowBorderSettings());
+    flowTravelDistance += deltaMs * 0.001 * flowSpeed;
   }
 
   updateAudioLevel(now);
@@ -1005,8 +1034,8 @@ function renderFrame(now) {
 
   const adaptivePaletteChanged = stepAdaptivePalette();
 
-  const isAmbientActive = visualizerState.selectedTheme === "ambientWave" ||
-    (visualizerState.dualTheme?.enabled && visualizerState.dualTheme?.secondaryTheme === "ambientWave");
+  const isAmbientActive = activeMainTheme === "ambientWave" ||
+    (isDualThemeActive && dual?.secondaryTheme === "ambientWave");
 
   if (adaptivePaletteChanged && isAmbientActive) {
     rebuildCachedPaint();
@@ -1024,11 +1053,11 @@ function renderFrame(now) {
     context.restore();
   }
 
-  // 2. Render Primary Theme (Foreground Layer)
+  // 2. Render Main/Assigned Theme (Foreground Layer)
   context.save();
   currentLayerOpacity = 1.0;
   context.globalAlpha = 1;
-  drawThemeLayer(visualizerState.selectedTheme, context, primarySmoothedLevel);
+  drawThemeLayer(activeMainTheme, context, primarySmoothedLevel);
   context.restore();
 
   context.globalAlpha = 1;
@@ -1101,6 +1130,15 @@ function applySettings(nextSettings) {
     dualTheme: {
       ...visualizerState.dualTheme,
       ...(nextSettings?.dualTheme || {})
+    },
+    multiMonitor: {
+      ...visualizerState.multiMonitor,
+      ...(nextSettings?.multiMonitor || {})
+    },
+    displayContext: nextSettings.displayContext || visualizerState.displayContext || {
+      isMirrored: false,
+      suppressedEdges: { left: false, right: false, top: false, bottom: false },
+      assignedTheme: null
     }
   };
 
