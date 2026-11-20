@@ -297,6 +297,10 @@
       performanceMode = 'balanced'
     } = options;
 
+    if (settings && settings.suppressedEdges && settings.suppressedEdges.top) {
+      return;
+    }
+
     ensureThemeState(width, height, settings);
 
     const delta = lastTime ? Math.min(0.05, Math.max(0.001, time - lastTime)) : 1 / 48;

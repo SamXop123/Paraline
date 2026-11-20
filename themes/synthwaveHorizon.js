@@ -101,6 +101,7 @@
     } = options;
 
     if (!context || width <= 0 || height <= 0) return;
+    if (settings.suppressedEdges?.bottom) return;
 
     // Delta time calculation
     const now = typeof performance !== "undefined" ? performance.now() : Date.now();

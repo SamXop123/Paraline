@@ -317,11 +317,7 @@
       particle.direction = getParticleDirection(particle, settings) * mirrorFactor;
       particle.distance += delta * speed * particle.speedSeed * particle.direction;
 
-      if (particle.distance < 0) {
-        particle.distance += perimeter;
-      } else if (particle.distance > perimeter) {
-        particle.distance -= perimeter;
-      }
+      particle.distance = ((particle.distance % perimeter) + perimeter) % perimeter;
 
       const point = getPerimeterPoint(particle.distance, width, height);
       if (

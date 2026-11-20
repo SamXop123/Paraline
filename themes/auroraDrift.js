@@ -242,8 +242,10 @@
       smoothedLevel
     } = options;
 
-    // Resolve user-defined configurations or fall back to theme defaults
     const settings = options.settings || {};
+    if (settings.suppressedEdges && settings.suppressedEdges.bottom) {
+      return;
+    }
 
     // 1. Resolve Style modifiers
     const style = settings.auroraStyle || "cinematic";
