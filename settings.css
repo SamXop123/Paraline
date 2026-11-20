@@ -1344,6 +1344,252 @@ input[type="number"]:focus {
 }
 
 /* ============================================
+   CONTACT & FEEDBACK MODAL
+   ============================================ */
+
+.contact-modal-box {
+    background: #0d111a;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md);
+    padding: 24px 28px;
+    max-width: 520px;
+    width: 92%;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 212, 255, 0.1);
+    animation: confirm-pop-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    box-sizing: border-box;
+}
+
+.contact-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.contact-modal-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.contact-modal-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(0, 212, 255, 0.12);
+    border: 1px solid rgba(0, 212, 255, 0.25);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.contact-modal-title-group h3 {
+    margin: 0;
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: -0.2px;
+}
+
+.contact-modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.contact-modal-close:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.contact-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.contact-row {
+    display: flex;
+    gap: 12px;
+}
+
+.contact-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.contact-field label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+}
+
+.contact-input,
+.contact-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    background-color: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border-input);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 400;
+    outline: none;
+    transition: all var(--duration-normal) var(--ease-smooth);
+    box-shadow: var(--shadow-input);
+    box-sizing: border-box;
+}
+
+.contact-input:hover,
+.contact-textarea:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background-color: var(--bg-input-hover);
+}
+
+.contact-input:focus,
+.contact-textarea:focus {
+    border-color: var(--border-focus);
+    box-shadow: var(--shadow-input), 0 0 0 3px rgba(0, 212, 255, 0.1);
+    background-color: rgba(16, 22, 36, 0.95);
+}
+
+.contact-textarea {
+    resize: vertical;
+    min-height: 90px;
+    line-height: 1.5;
+}
+
+.contact-status-msg {
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.contact-status-msg.success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    color: #34d399;
+}
+
+.contact-status-msg.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #f87171;
+}
+
+.contact-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 6px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.btn-contact-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #94a3b8;
+    border-radius: var(--radius-sm);
+    padding: 9px 18px;
+    font-size: 0.86rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--duration-normal) var(--ease-smooth);
+    outline: none;
+    user-select: none;
+}
+
+.btn-contact-cancel:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #f8fafc;
+    transform: translateY(-1px);
+}
+
+.btn-contact-cancel:active {
+    transform: translateY(0);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.btn-contact-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--accent-gradient);
+    color: #060b14;
+    border: 1px solid rgba(0, 212, 255, 0.35);
+    border-radius: var(--radius-sm);
+    padding: 9px 22px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--duration-normal) var(--ease-smooth);
+    box-shadow: 0 4px 16px rgba(0, 212, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    outline: none;
+    user-select: none;
+    letter-spacing: 0.2px;
+}
+
+.btn-contact-submit:hover:not(:disabled) {
+    opacity: 0.95;
+    border-color: rgba(0, 212, 255, 0.65);
+    box-shadow: 0 6px 22px rgba(0, 212, 255, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    transform: translateY(-1px);
+}
+
+.btn-contact-submit:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 212, 255, 0.2);
+}
+
+.btn-contact-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.contact-send-icon {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    transition: transform var(--duration-normal) var(--ease-smooth);
+}
+
+.btn-contact-submit:hover:not(:disabled) .contact-send-icon {
+    transform: translate(2px, -2px);
+}
+
+/* ============================================
    AUDIO DIAGNOSTICS & LIVE VU METER
    ============================================ */
 

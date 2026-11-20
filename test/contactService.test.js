@@ -3,15 +3,16 @@
  *
  * Unit tests for the in-app contact and feedback service:
  * - Field validation and sanitization
- * - Discord embed payload generation (category colors, metadata, length limits)
+ * - Discord embed payload generation (metadata, length limits)
+ * - Environment resolution: reads webhook from environment or landing/.env (zero hardcoded secrets)
  * - Dispatch flow: direct Discord webhook with graceful website API fallback
  */
 
 const test = require("node:test");
 const assert = require("node:assert");
 const {
-  DISCORD_WEBHOOK_URL,
   FALLBACK_API_URL,
+  getDiscordWebhookUrl,
   validateContactPayload,
   buildDiscordPayload,
   submitContactMessage
@@ -92,6 +93,27 @@ test("validateContactPayload - sanitizes and trims valid payload", () => {
   });
 });
 
+test("getDiscordWebhookUrl - dynamically loads from environment or landing/.env without hardcoding", () => {
+  const originalEnv = process.env.DISCORD_WEBHOOK_URL;
+  try {
+    process.env.DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/mock-env-test/token";
+    assert.strictEqual(getDiscordWebhookUrl(), "https://discord.com/api/webhooks/mock-env-test/token");
+  } finally {
+    if (originalEnv) {
+      process.env.DISCORD_WEBHOOK_URL = originalEnv;
+    } else {
+      delete process.env.DISCORD_WEBHOOK_URL;
+    }
+  }
+
+  // Without process.env override, in this repo it should resolve from landing/.env
+  const resolved = getDiscordWebhookUrl();
+  assert.ok(typeof resolved === "string");
+  if (resolved) {
+    assert.ok(resolved.startsWith("https://discord.com/api/webhooks/"));
+  }
+});
+
 test("buildDiscordPayload - formats rich embeds with appropriate category colors & icons", () => {
   const categories = [
     { cat: "General", color: 58879, icon: "📬" },
@@ -128,47 +150,6 @@ test("buildDiscordPayload - formats rich embeds with appropriate category colors
   }
 });
 
-test("buildDiscordPayload - truncates embed message field to prevent Discord API 1024 char rejection", () => {
-  const longMsg = "Z".repeat(1500);
-  const payload = buildDiscordPayload({
-    name: "User",
-    email: "user@example.com",
-    category: "General",
-    message: longMsg
-  });
-
-  const messageField = payload.embeds[0].fields.find(f => f.name === "Message");
-  assert.strictEqual(messageField.value.length, 1024);
-  assert.ok(messageField.value.endsWith("..."));
-});
-
-test("submitContactMessage - dispatches to Discord webhook directly when reachable", async () => {
-  let calledUrl = null;
-  let postedBody = null;
-
-  const mockFetch = async (url, options) => {
-    calledUrl = url;
-    postedBody = JSON.parse(options.body);
-    return { ok: true, status: 204 };
-  };
-
-  const result = await submitContactMessage(
-    {
-      name: "Sam",
-      email: "sam@example.com",
-      subject: "Great app",
-      category: "Appreciation",
-      message: "Loving the new multi-monitor modes!"
-    },
-    "2.6.1",
-    mockFetch
-  );
-
-  assert.strictEqual(result.success, true);
-  assert.strictEqual(calledUrl, DISCORD_WEBHOOK_URL);
-  assert.ok(postedBody.embeds[0].title.includes("Appreciation"));
-});
-
 test("buildDiscordPayload - formats embeds correctly when category is omitted (website parity)", () => {
   const payload = buildDiscordPayload(
     {
@@ -193,12 +174,67 @@ test("buildDiscordPayload - formats embeds correctly when category is omitted (w
   assert.strictEqual(fieldsMap["Message"], "Can we get custom gradient stops?");
 });
 
-test("submitContactMessage - falls back to website API if Discord webhook returns error or throws", async () => {
-  const calls = [];
+test("buildDiscordPayload - truncates embed message field to prevent Discord API 1024 char rejection", () => {
+  const longMsg = "Z".repeat(1500);
+  const payload = buildDiscordPayload({
+    name: "User",
+    email: "user@example.com",
+    category: "General",
+    message: longMsg
+  });
+
+  const messageField = payload.embeds[0].fields.find(f => f.name === "Message");
+  assert.strictEqual(messageField.value.length, 1024);
+  assert.ok(messageField.value.endsWith("..."));
+});
+
+test("submitContactMessage - dispatches to Discord webhook directly when URL is configured", async () => {
+  const testWebhook = "https://discord.com/api/webhooks/mock-direct-test/secret-token";
+  const originalEnv = process.env.DISCORD_WEBHOOK_URL;
+  process.env.DISCORD_WEBHOOK_URL = testWebhook;
+
+  let calledUrl = null;
+  let postedBody = null;
 
   const mockFetch = async (url, options) => {
+    calledUrl = url;
+    postedBody = JSON.parse(options.body);
+    return { ok: true, status: 204 };
+  };
+
+  try {
+    const result = await submitContactMessage(
+      {
+        name: "Sam",
+        email: "sam@example.com",
+        subject: "Great app",
+        message: "Loving the new multi-monitor modes!"
+      },
+      "2.6.1",
+      mockFetch
+    );
+
+    assert.strictEqual(result.success, true);
+    assert.strictEqual(calledUrl, testWebhook);
+    assert.ok(postedBody.embeds[0].title.includes("Great app"));
+  } finally {
+    if (originalEnv) {
+      process.env.DISCORD_WEBHOOK_URL = originalEnv;
+    } else {
+      delete process.env.DISCORD_WEBHOOK_URL;
+    }
+  }
+});
+
+test("submitContactMessage - falls back to website API if Discord webhook returns error or throws", async () => {
+  const testWebhook = "https://discord.com/api/webhooks/mock-failing/token";
+  const originalEnv = process.env.DISCORD_WEBHOOK_URL;
+  process.env.DISCORD_WEBHOOK_URL = testWebhook;
+
+  const calls = [];
+  const mockFetch = async (url, options) => {
     calls.push({ url, body: JSON.parse(options.body) });
-    if (url === DISCORD_WEBHOOK_URL) {
+    if (url === testWebhook) {
       throw new Error("Discord webhook blocked by firewall");
     }
     if (url === FALLBACK_API_URL) {
@@ -207,23 +243,31 @@ test("submitContactMessage - falls back to website API if Discord webhook return
     return { ok: false, status: 404 };
   };
 
-  const result = await submitContactMessage(
-    {
-      name: "Morgan",
-      email: "morgan@example.com",
-      category: "Bug Report",
-      message: "Audio device disconnected unexpectedly."
-    },
-    "2.6.1",
-    mockFetch
-  );
+  try {
+    const result = await submitContactMessage(
+      {
+        name: "Morgan",
+        email: "morgan@example.com",
+        subject: "Audio Issue",
+        message: "Audio device disconnected unexpectedly."
+      },
+      "2.6.1",
+      mockFetch
+    );
 
-  assert.strictEqual(result.success, true);
-  assert.strictEqual(calls.length, 2);
-  assert.strictEqual(calls[0].url, DISCORD_WEBHOOK_URL);
-  assert.strictEqual(calls[1].url, FALLBACK_API_URL);
-  assert.strictEqual(calls[1].body.name, "Morgan");
-  assert.strictEqual(calls[1].body.email, "morgan@example.com");
+    assert.strictEqual(result.success, true);
+    assert.strictEqual(calls.length, 2);
+    assert.strictEqual(calls[0].url, testWebhook);
+    assert.strictEqual(calls[1].url, FALLBACK_API_URL);
+    assert.strictEqual(calls[1].body.name, "Morgan");
+    assert.strictEqual(calls[1].body.email, "morgan@example.com");
+  } finally {
+    if (originalEnv) {
+      process.env.DISCORD_WEBHOOK_URL = originalEnv;
+    } else {
+      delete process.env.DISCORD_WEBHOOK_URL;
+    }
+  }
 });
 
 test("submitContactMessage - returns graceful failure if both Discord and website API fail", async () => {

@@ -13,6 +13,7 @@ const fs = require("fs");
 const { createAudioBridge } = require("./audioBridge");
 const { createDefaultSettings, createSettingsStore, createThemeDefaults, sanitizeSettings } = require("./settingsStore");
 const { filterDisplays, computeDisplayContexts, formatDisplayLabel } = require("./multiMonitorHelper");
+const { submitContactMessage } = require("./contactService");
 const ThemeAgent = require('./themeAgent');
 const { autoUpdater } = require("electron-updater");
 
@@ -151,6 +152,19 @@ function createSettingsWindow() {
   settingsWindow.on("closed", () => {
     settingsWindow = null;
   });
+}
+
+function openContactInSettings() {
+  createSettingsWindow();
+  if (settingsWindow) {
+    if (settingsWindow.webContents.isLoading()) {
+      settingsWindow.webContents.once("did-finish-load", () => {
+        settingsWindow.webContents.send("settings:open-contact");
+      });
+    } else {
+      settingsWindow.webContents.send("settings:open-contact");
+    }
+  }
 }
 
 const APP_VERSION = app.getVersion();
@@ -2075,6 +2089,10 @@ function refreshTrayMenu() {
     },
     { type: "separator" },
     {
+      label: "Contact & Feedback",
+      click: () => openContactInSettings()
+    },
+    {
       label: "Open Landing Page",
       click: () => openExternalUrl(LANDING_URL)
     },
@@ -2237,6 +2255,8 @@ app.whenReady().then(() => {
       openExternalUrl(data);
     } else if (action === "open-settings") {
       createSettingsWindow();
+    } else if (action === "open-contact") {
+      openContactInSettings();
     } else if (action === "quit") {
       app.quit();
     }
@@ -2517,6 +2537,10 @@ app.whenReady().then(() => {
   
   ipcMain.handle("app:open-external", (_event, url) => {
     openExternalUrl(url);
+  });
+
+  ipcMain.handle("contact:submit", async (_event, payload) => {
+    return submitContactMessage(payload, APP_VERSION);
   });
 
   reconcileOverlayWindows();

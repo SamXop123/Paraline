@@ -115,6 +115,13 @@
                     </svg>
                     Reload Visualizer
                 </button>
+                <button class="sidebar-action-btn" id="btn-sidebar-contact">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Contact & Feedback
+                </button>
             </div>
         </nav>
 
@@ -958,8 +965,8 @@
                         <div class="about-brand">
                             <img src="assets/appicon1.png" alt="Paraline Logo" class="about-logo-img">
                             <div class="about-logo-text">PARALINE</div>
-                            <p class="about-tagline">Desktop Audio Visualizer for Windows</p>
-                            <div class="about-version-badge">v2.6.0 — Stable Release</div>
+                            <p class="about-tagline">Desktop Audio Visualizer</p>
+                            <div class="about-version-badge">v2.6.1 — Stable Release</div>
                         </div>
 
                         <div class="about-divider"></div>
@@ -971,6 +978,12 @@
                         </p>
 
                         <div class="about-links">
+                            <button class="btn-secondary" id="btn-contact">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                Contact & Feedback
+                            </button>
                             <button class="btn-secondary" id="btn-github">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
@@ -1011,6 +1024,64 @@
                 <button class="btn-confirm-cancel" id="btn-inline-confirm-cancel">Cancel</button>
                 <button class="btn-confirm-ok" id="btn-inline-confirm-ok">Confirm</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Contact & Feedback Modal -->
+    <div id="contact-modal" class="inline-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
+        <div class="contact-modal-box">
+            <div class="contact-modal-header">
+                <div class="contact-modal-title-group">
+                    <div class="contact-modal-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 id="contact-modal-title">Contact & Feedback</h3>
+                </div>
+                <button class="contact-modal-close" id="btn-contact-close" title="Close (Esc)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="contact-form" class="contact-modal-form">
+                <div class="contact-row">
+                    <div class="contact-field">
+                        <label for="contact-name">Name</label>
+                        <input type="text" id="contact-name" class="contact-input" placeholder="Your Name" required maxlength="100">
+                    </div>
+                    <div class="contact-field">
+                        <label for="contact-email">Email Address</label>
+                        <input type="email" id="contact-email" class="contact-input" placeholder="name@example.com" required maxlength="256">
+                    </div>
+                </div>
+
+                <div class="contact-field">
+                    <label for="contact-subject">Subject</label>
+                    <input type="text" id="contact-subject" class="contact-input" placeholder="How can we help?" maxlength="200">
+                </div>
+
+                <div class="contact-field">
+                    <label for="contact-message">Message</label>
+                    <textarea id="contact-message" class="contact-textarea" rows="4" placeholder="Tell us what's on your mind..." required maxlength="5000"></textarea>
+                </div>
+
+                <div id="contact-status-msg" class="contact-status-msg" style="display: none;"></div>
+
+                <div class="contact-modal-actions">
+                    <button type="button" class="btn-contact-cancel" id="btn-contact-cancel">Cancel</button>
+                    <button type="submit" class="btn-contact-submit" id="btn-contact-submit">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="contact-send-icon">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        <span id="contact-submit-text">Send Message</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -1860,8 +1860,146 @@ refreshThemeProfiles();
         });
 
         btnLanding.addEventListener('click', () => {
-            window.paralineApp.openExternal("https://paraline.vercel.app");
+            window.paralineApp.openExternal("https://paraline.app");
         });
+
+        // ----------------------------------------
+        // Contact & Feedback Modal Handling
+        // ----------------------------------------
+        const btnContact = document.getElementById('btn-contact');
+        const btnSidebarContact = document.getElementById('btn-sidebar-contact');
+        const contactModal = document.getElementById('contact-modal');
+        const btnContactClose = document.getElementById('btn-contact-close');
+        const btnContactCancel = document.getElementById('btn-contact-cancel');
+        const contactForm = document.getElementById('contact-form');
+        const contactStatus = document.getElementById('contact-status-msg');
+        const contactSubmitBtn = document.getElementById('btn-contact-submit');
+        const contactSubmitText = document.getElementById('contact-submit-text');
+
+        function openContactModal() {
+            if (!contactModal) return;
+            contactModal.classList.add('visible');
+            if (contactStatus) {
+                contactStatus.style.display = 'none';
+                contactStatus.textContent = '';
+                contactStatus.className = 'contact-status-msg';
+            }
+            const nameInput = document.getElementById('contact-name');
+            if (nameInput) {
+                setTimeout(() => nameInput.focus(), 80);
+            }
+        }
+
+        function closeContactModal() {
+            if (!contactModal) return;
+            contactModal.classList.remove('visible');
+            if (contactStatus) {
+                contactStatus.style.display = 'none';
+            }
+        }
+
+        if (btnContact) {
+            btnContact.addEventListener('click', openContactModal);
+        }
+        if (btnSidebarContact) {
+            btnSidebarContact.addEventListener('click', openContactModal);
+        }
+        if (btnContactClose) {
+            btnContactClose.addEventListener('click', closeContactModal);
+        }
+        if (btnContactCancel) {
+            btnContactCancel.addEventListener('click', closeContactModal);
+        }
+
+        if (contactModal) {
+            contactModal.addEventListener('click', (e) => {
+                if (e.target === contactModal) {
+                    closeContactModal();
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && contactModal && contactModal.classList.contains('visible')) {
+                closeContactModal();
+            }
+        });
+
+        if (window.paralineApp.onOpenContact) {
+            window.paralineApp.onOpenContact(() => {
+                openContactModal();
+            });
+        }
+
+        if (contactForm) {
+            contactForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const nameInput = document.getElementById('contact-name');
+                const emailInput = document.getElementById('contact-email');
+                const subjectInput = document.getElementById('contact-subject');
+                const messageInput = document.getElementById('contact-message');
+
+                const name = nameInput ? nameInput.value.trim() : '';
+                const email = emailInput ? emailInput.value.trim() : '';
+                const subject = subjectInput ? subjectInput.value.trim() : '';
+                const message = messageInput ? messageInput.value.trim() : '';
+
+                if (!name || !email || !message) {
+                    showContactStatus("Please fill in your name, email, and message.", false);
+                    return;
+                }
+
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    showContactStatus("Please enter a valid email address.", false);
+                    return;
+                }
+
+                if (contactSubmitBtn) {
+                    contactSubmitBtn.disabled = true;
+                }
+                if (contactSubmitText) {
+                    contactSubmitText.textContent = "Sending...";
+                }
+
+                try {
+                    const result = await window.paralineApp.sendContactMessage({
+                        name,
+                        email,
+                        subject,
+                        message
+                    });
+
+                    if (result && result.success) {
+                        showContactStatus("Message sent successfully! Thank you for your feedback.", true);
+                        contactForm.reset();
+                        setTimeout(() => {
+                            closeContactModal();
+                        }, 2800);
+                    } else {
+                        showContactStatus(result?.error || "Failed to send message. Please try again.", false);
+                    }
+                } catch (err) {
+                    console.error("[Contact] Error submitting form:", err);
+                    showContactStatus("Network error occurred. Please check your connection and try again.", false);
+                } finally {
+                    if (contactSubmitBtn) {
+                        contactSubmitBtn.disabled = false;
+                    }
+                    if (contactSubmitText) {
+                        contactSubmitText.textContent = "Send Message";
+                    }
+                }
+            });
+        }
+
+        function showContactStatus(msg, isSuccess) {
+            if (!contactStatus) return;
+            contactStatus.style.display = 'flex';
+            contactStatus.className = `contact-status-msg ${isSuccess ? 'success' : 'error'}`;
+            contactStatus.textContent = `${isSuccess ? '✅ ' : '❌ '}${msg}`;
+        }
     }
 
     function updateHideButtonState(isHidden) {

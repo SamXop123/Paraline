@@ -143,5 +143,16 @@ contextBridge.exposeInMainWorld("paralineApp", {
     return () => {
       ipcRenderer.removeListener("displays:changed", wrapped);
     };
+  },
+
+  sendContactMessage: (payload) =>
+    ipcRenderer.invoke("contact:submit", payload),
+
+  onOpenContact: (listener) => {
+    const wrapped = (_event, payload) => listener(payload);
+    ipcRenderer.on("settings:open-contact", wrapped);
+    return () => {
+      ipcRenderer.removeListener("settings:open-contact", wrapped);
+    };
   }
 });

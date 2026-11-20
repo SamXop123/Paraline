@@ -50,6 +50,7 @@
       "rendererLoop.js",
       "preload.js",
       "audioBridge.js",
+      "contactService.js",
       "settingsStore.js",
       "themeAgent.js",
       "onboarding.html",
