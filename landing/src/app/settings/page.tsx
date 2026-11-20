@@ -223,13 +223,20 @@ export default function SettingsPage() {
                     </span>
                     <span className="text-xs font-medium text-white/80">Monitor 1 (1920×1080 @ 144Hz)</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setDisplay1Enabled(!display1Enabled)}
-                    className={`relative inline-flex h-4 w-7.5 items-center rounded-full transition-colors focus:outline-none ${display1Enabled ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]' : 'bg-white/10'}`}
-                  >
-                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${display1Enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
-                  </button>
+                  {multiMonitorMode === "panoramic" ? (
+                    <span className="text-[10px] font-mono text-cyan-400/90 font-medium tracking-wide">
+                      Span Left
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-label="Toggle Monitor 1"
+                      onClick={() => setDisplay1Enabled(!display1Enabled)}
+                      className={`relative inline-flex h-4 w-7.5 items-center rounded-full transition-colors focus:outline-none ${display1Enabled ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]' : 'bg-white/10'}`}
+                    >
+                      <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${display1Enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                    </button>
+                  )}
                 </div>
 
                 {/* Monitor 2 Row */}
@@ -240,13 +247,20 @@ export default function SettingsPage() {
                     </span>
                     <span className="text-xs font-medium text-white/80">Monitor 2 (1920×1080 @ 60Hz)</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setDisplay2Enabled(!display2Enabled)}
-                    className={`relative inline-flex h-4 w-7.5 items-center rounded-full transition-colors focus:outline-none ${display2Enabled ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]' : 'bg-white/10'}`}
-                  >
-                    <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${display2Enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
-                  </button>
+                  {multiMonitorMode === "panoramic" ? (
+                    <span className="text-[10px] font-mono text-cyan-400/90 font-medium tracking-wide">
+                      Span Right
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-label="Toggle Monitor 2"
+                      onClick={() => setDisplay2Enabled(!display2Enabled)}
+                      className={`relative inline-flex h-4 w-7.5 items-center rounded-full transition-colors focus:outline-none ${display2Enabled ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]' : 'bg-white/10'}`}
+                    >
+                      <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${display2Enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
