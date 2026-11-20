@@ -45,7 +45,8 @@
 
   function getFlowDirectionValue(settings = {}) {
     const base = settings.direction === "anticlockwise" ? -1 : 1;
-    return settings.isMirrored ? -base : base;
+    const isPanoramicActive = Boolean(settings.panoramic && settings.panoramic.perimeter);
+    return (!isPanoramicActive && settings.isMirrored) ? -base : base;
   }
 
   function getFlowSegmentLength(settings) {

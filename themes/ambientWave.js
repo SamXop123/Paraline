@@ -36,9 +36,9 @@
 
   function getAmbientTonePalette(settings) {
     if (settings.tone === "custom" && settings.customColors) {
-      const c1 = hexToRgb(settings.customColors[0]);
-      const c2 = hexToRgb(settings.customColors[1]);
-      const c3 = hexToRgb(settings.customColors[2]);
+      const c1 = hexToRgb(settings.customColors[0]) || [0, 242, 254];
+      const c2 = hexToRgb(settings.customColors[1]) || [79, 172, 254];
+      const c3 = hexToRgb(settings.customColors[2]) || [142, 226, 255];
       
       const str = (c, alpha) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha})`;
       

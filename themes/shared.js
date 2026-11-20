@@ -57,7 +57,7 @@
     context.beginPath();
 
     for (let x = 0; x <= width; x += step) {
-      const sampleX = isMirrored ? (width - x) : (x + xOffset);
+      const sampleX = isMirrored ? (width - x + xOffset) : (x + xOffset);
       const waveA = Math.sin(sampleX * frequency + phaseA);
       const waveB = Math.sin(sampleX * frequency * 0.42 - phaseB);
       const lift = (waveA + waveB) * amplitude;
@@ -109,7 +109,7 @@
     context.moveTo(0, yBase);
 
     for (let x = 0; x <= width; x += step) {
-      const sampleX = isMirrored ? (width - x) : (x + xOffset);
+      const sampleX = isMirrored ? (width - x + xOffset) : (x + xOffset);
       const waveA = Math.sin(sampleX * frequency + phaseA);
       const waveB = Math.sin(sampleX * frequency * 0.35 - phaseB);
       const lift = (waveA + waveB) * amplitude;
@@ -135,7 +135,17 @@
   }
 
   function hexToRgb(hex) {
-    const bigint = parseInt(hex.replace(/^#/, ''), 16);
+    if (typeof hex !== "string") {
+      return null;
+    }
+    const cleanHex = hex.replace(/^#/, '');
+    if (!/^[0-9a-fA-F]{3,8}$/.test(cleanHex)) {
+      return null;
+    }
+    const fullHex = cleanHex.length === 3
+      ? cleanHex.split('').map(c => c + c).join('')
+      : cleanHex.slice(0, 6);
+    const bigint = parseInt(fullHex, 16);
     return [
       (bigint >> 16) & 255,
       (bigint >> 8) & 255,
@@ -144,7 +154,9 @@
   }
 
   function hexToHsl(hex) {
-    let [ r, g, b ] = hexToRgb(hex);
+    const rgb = hexToRgb(hex);
+    if (!rgb) return [0, 0, 0];
+    let [ r, g, b ] = rgb;
     r /= 255; g /= 255; b /= 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b);
     let h, s, l = (max + min) / 2;

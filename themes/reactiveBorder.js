@@ -146,7 +146,7 @@
     const isPanoramicActive = Boolean(panoramic && panoramic.perimeter && panoramic.edges);
     const perimeter = isPanoramicActive ? panoramic.perimeter : geo.perimeter;
 
-    const speed = (32 + smoothedLevel * 180 * intensityMultiplier) * (settings.isMirrored ? -1 : 1);
+    const speed = (32 + smoothedLevel * 180 * intensityMultiplier) * ((!isPanoramicActive && settings.isMirrored) ? -1 : 1);
     const hueOffset = time * speed;
     const glowBlur = (7 + smoothedLevel * 10) * glowMultiplier;
     const opacity = 0.54 + smoothedLevel * 0.18 * intensityMultiplier;
