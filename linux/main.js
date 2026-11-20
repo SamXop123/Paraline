@@ -27,7 +27,11 @@ const {
   sanitizeSettings
 } = require("../settingsStore");
 const ThemeAgent = require("../themeAgent");
-const { formatDisplayLabel } = require("../multiMonitorHelper");
+const {
+  formatDisplayLabel,
+  filterDisplays,
+  computeDisplayContexts
+} = require("../multiMonitorHelper");
 
 let APP_VERSION = "2.6.0";
 try {
@@ -75,6 +79,7 @@ let globalShortcutsSuspended = false;
 let shortcutRegistrationFailures = {};
 let isQuitting = false;
 let isReconcilingDisplays = false;
+let displayContexts = new Map();
 
 // --- Focus Mode state ---
 let focusModeTimer = null;
@@ -112,8 +117,38 @@ function getSystemColorState() {
   };
 }
 
-function getRendererSettings() {
+function updateDisplayContexts() {
+  const allDisplays = screen.getAllDisplays();
+  if (allDisplays.length === 0) {
+    displayContexts.clear();
+    return;
+  }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const multiMonitorConfig = visualizerSettings?.multiMonitor || {};
+  const mainTheme = visualizerSettings?.selectedTheme || "ambientWave";
+  const secondaryTheme = visualizerSettings?.dualTheme?.secondaryTheme || "none";
+
+  const filteredDisplays = filterDisplays(allDisplays, primaryDisplay, multiMonitorConfig);
+  displayContexts = computeDisplayContexts(
+    filteredDisplays,
+    primaryDisplay,
+    multiMonitorConfig,
+    mainTheme,
+    secondaryTheme
+  );
+}
+
+function getRendererSettings(displayId = null) {
   const helperConnected = audioBridge ? (audioBridge.getStatus().mode === "helper") : false;
+  const displayCtx = (displayId !== null && displayContexts.has(displayId))
+    ? displayContexts.get(displayId)
+    : {
+        isMirrored: false,
+        suppressedEdges: { left: false, right: false, top: false, bottom: false },
+        assignedTheme: null
+      };
+
   return {
     ...visualizerSettings,
     ...getSystemColorState(),
@@ -122,7 +157,8 @@ function getRendererSettings() {
     version: APP_VERSION,
     helperConnected: helperConnected,
     shortcutRegistrationFailures: shortcutRegistrationFailures,
-    wallpaperColors: latestWallpaperColors
+    wallpaperColors: latestWallpaperColors,
+    displayContext: displayCtx
   };
 }
 
@@ -130,18 +166,24 @@ function getActiveOverlayWindows() {
   return Array.from(overlayWindows.values()).filter((win) => win && !win.isDestroyed());
 }
 
-function sendVisualizerSettingsToWindow(targetWindow) {
+function sendVisualizerSettingsToWindow(targetWindow, displayId = null) {
   if (!targetWindow || targetWindow.isDestroyed()) {
     return;
   }
-  targetWindow.webContents.send("visualizer-settings", getRendererSettings());
+  const resolvedDisplayId = displayId !== null
+    ? displayId
+    : (targetWindow.displayId !== undefined ? targetWindow.displayId : null);
+
+  targetWindow.webContents.send("visualizer-settings", getRendererSettings(resolvedDisplayId));
 }
 
 function sendVisualizerSettings() {
-  for (const overlayWindow of getActiveOverlayWindows()) {
-    sendVisualizerSettingsToWindow(overlayWindow);
+  updateDisplayContexts();
+
+  for (const [displayId, overlayWindow] of overlayWindows.entries()) {
+    sendVisualizerSettingsToWindow(overlayWindow, displayId);
   }
-  sendVisualizerSettingsToWindow(settingsWindow);
+  sendVisualizerSettingsToWindow(settingsWindow, null);
 }
 
 function sendFocusModeOpacity(opacity) {
@@ -302,6 +344,7 @@ function createOverlayWindow(display) {
     }
   }, backend.getOverlayWindowOptions(display)));
 
+  overlayWindow.displayId = display.id;
   overlayWindows.set(display.id, overlayWindow);
   applyOverlayWindowDisplayState(overlayWindow, display);
   overlayWindow.showInactive();
@@ -310,7 +353,7 @@ function createOverlayWindow(display) {
   overlayWindow.webContents.on("did-finish-load", () => {
     overlayWindow.setIgnoreMouseEvents(true);
     setTimeout(() => {
-      sendVisualizerSettingsToWindow(overlayWindow);
+      sendVisualizerSettingsToWindow(overlayWindow, display.id);
       overlayWindow.webContents.send("focus-mode-opacity", getCurrentFocusModeOpacity());
     }, 100);
   });
@@ -319,8 +362,10 @@ function createOverlayWindow(display) {
     if (overlayWindows.get(display.id) === overlayWindow) {
       overlayWindows.delete(display.id);
     }
-    const displayCount = screen.getAllDisplays().length;
-    if (!isQuitting && !isReconcilingDisplays && overlayWindows.size < displayCount) {
+    const all = screen.getAllDisplays();
+    const primary = screen.getPrimaryDisplay();
+    const expectedCount = filterDisplays(all, primary, visualizerSettings?.multiMonitor || {}).length;
+    if (!isQuitting && !isReconcilingDisplays && overlayWindows.size < expectedCount) {
       reconcileOverlayWindows();
     }
   });
@@ -329,14 +374,19 @@ function createOverlayWindow(display) {
 }
 
 function reconcileOverlayWindows() {
-  const displays = screen.getAllDisplays();
-  if (displays.length === 0) {
+  const allDisplays = screen.getAllDisplays();
+  if (allDisplays.length === 0) {
     return;
   }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const multiMonitorConfig = visualizerSettings?.multiMonitor || {};
+  const filteredDisplays = filterDisplays(allDisplays, primaryDisplay, multiMonitorConfig);
+
   isReconcilingDisplays = true;
   try {
     const activeDisplayIds = new Set();
-    for (const display of displays) {
+    for (const display of filteredDisplays) {
       activeDisplayIds.add(display.id);
       createOverlayWindow(display);
     }
@@ -560,10 +610,15 @@ function showCustomContextMenu() {
     reconcileOverlayWindows();
     overlayWindow = overlayWindows.get(targetDisplay.id);
   }
+  if (!overlayWindow || overlayWindow.isDestroyed()) {
+    const active = getActiveOverlayWindows();
+    overlayWindow = active[0];
+  }
   if (!overlayWindow || overlayWindow.isDestroyed()) return;
 
-  const localX = cursorPoint.x - targetDisplay.bounds.x;
-  const localY = cursorPoint.y - targetDisplay.bounds.y;
+  const winBounds = overlayWindow.getBounds();
+  const localX = Math.max(10, Math.min(winBounds.width - 240, cursorPoint.x - winBounds.x));
+  const localY = Math.max(10, Math.min(winBounds.height - 200, cursorPoint.y - winBounds.y));
 
   overlayWindow.webContents.send("show-context-menu", {
     x: localX,
@@ -633,31 +688,48 @@ function registerGlobalShortcuts() {
   }
 }
 
+function getDisplaysInfoPayload() {
+  const allDisplays = screen.getAllDisplays();
+  const primary = screen.getPrimaryDisplay();
+  const primaryId = primary ? primary.id : (allDisplays[0] ? allDisplays[0].id : null);
+  return {
+    displays: allDisplays.map((d, index) => ({
+      id: String(d.id),
+      numericId: d.id,
+      label: formatDisplayLabel(d, index),
+      bounds: d.bounds,
+      isPrimary: d.id === primaryId,
+      scaleFactor: d.scaleFactor
+    })),
+    primaryId: String(primaryId)
+  };
+}
+
+function notifyDisplaysChanged() {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.webContents.send("displays:changed", getDisplaysInfoPayload());
+  }
+}
+
 // IPC Handlers
 function setupIpcHandlers() {
   ipcMain.handle("audio-bridge-status", () => {
     return audioBridge ? audioBridge.getStatus() : { mode: "simulated", reason: "Stopped" };
   });
 
-  ipcMain.handle("visualizer-settings:get", () => {
-    return getRendererSettings();
+  ipcMain.handle("visualizer-settings:get", (event) => {
+    let displayId = null;
+    for (const [id, win] of overlayWindows.entries()) {
+      if (win && !win.isDestroyed() && win.webContents === event.sender) {
+        displayId = id;
+        break;
+      }
+    }
+    return getRendererSettings(displayId);
   });
 
   ipcMain.handle("displays:get-info", () => {
-    const allDisplays = screen.getAllDisplays();
-    const primary = screen.getPrimaryDisplay();
-    const primaryId = primary ? primary.id : (allDisplays[0] ? allDisplays[0].id : null);
-    return {
-      displays: allDisplays.map((d, index) => ({
-        id: String(d.id),
-        numericId: d.id,
-        label: formatDisplayLabel(d, index),
-        bounds: d.bounds,
-        isPrimary: d.id === primaryId,
-        scaleFactor: d.scaleFactor
-      })),
-      primaryId: String(primaryId)
-    };
+    return getDisplaysInfoPayload();
   });
 
   ipcMain.on("visualizer-action", (event, { action, data }) => {
@@ -934,16 +1006,19 @@ app.whenReady().then(() => {
   screen.on("display-metrics-changed", (_e, display) => {
     applyOverlayWindowDisplayState(overlayWindows.get(display.id), display);
     reconcileOverlayWindows();
+    notifyDisplaysChanged();
   });
   screen.on("display-added", (_e, display) => {
     createOverlayWindow(display);
     reconcileOverlayWindows();
     sendVisualizerSettings();
+    notifyDisplaysChanged();
   });
   screen.on("display-removed", (_e, display) => {
     destroyOverlayWindowForDisplay(display.id);
     reconcileOverlayWindows();
     sendVisualizerSettings();
+    notifyDisplaysChanged();
   });
 
   nativeTheme.on("updated", () => {

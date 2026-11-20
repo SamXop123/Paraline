@@ -2104,6 +2104,12 @@ function showCustomContextMenu() {
     overlayWindow = overlayWindows.get(targetDisplay.id);
   }
 
+  // Fallback to any active overlay window if target display has no overlay (e.g. primary-only targetMode)
+  if (!overlayWindow || overlayWindow.isDestroyed()) {
+    const active = getActiveOverlayWindows();
+    overlayWindow = active[0];
+  }
+
   if (!overlayWindow || overlayWindow.isDestroyed()) {
     return;
   }
@@ -2114,8 +2120,9 @@ function showCustomContextMenu() {
   overlayWindow.setAlwaysOnTop(true, "screen-saver");
   overlayWindow.moveTop();
 
-  const localX = cursorPoint.x - targetDisplay.bounds.x;
-  const localY = cursorPoint.y - targetDisplay.bounds.y;
+  const winBounds = overlayWindow.getBounds();
+  const localX = Math.max(10, Math.min(winBounds.width - 240, cursorPoint.x - winBounds.x));
+  const localY = Math.max(10, Math.min(winBounds.height - 200, cursorPoint.y - winBounds.y));
 
   overlayWindow.webContents.send("show-context-menu", {
     x: localX,
