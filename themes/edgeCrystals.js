@@ -241,9 +241,10 @@
 
   function getEdgeCrystalsSettingsColor(settings) {
     if (settings.colorStyle === "custom" && Array.isArray(settings.customColors)) {
+      const colors = settings.customColors.map(hexToRgb).filter(Boolean);
       return {
         mode: "palette",
-        colors: settings.customColors.map(hexToRgb)
+        colors: colors.length > 0 ? colors : [EDGE_CRYSTALS_COLORS.blue.primary, EDGE_CRYSTALS_COLORS.blue.secondary]
       };
     }
     return EDGE_CRYSTALS_COLORS[settings.colorStyle] || EDGE_CRYSTALS_COLORS.blue;
@@ -275,9 +276,11 @@
     context.lineCap = "round";
 
     const suppressed = settings.suppressedEdges || {};
+    const suppressLeft = Boolean(suppressed.left && !suppressed.right);
+    const suppressRight = Boolean(suppressed.right && !suppressed.left);
 
     for (const stroke of strokes) {
-      if (suppressed[stroke.side]) {
+      if ((stroke.side === "left" && suppressLeft) || (stroke.side === "right" && suppressRight)) {
         continue;
       }
       drawStroke(context, stroke, width, time, smoothedEnergy, profile, colors, glowMultiplier, performanceMode);

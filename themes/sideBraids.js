@@ -198,14 +198,16 @@
     const rightBaseX = width - edgeInset;
 
     const suppressed = settings.suppressedEdges || {};
+    const suppressLeft = Boolean(suppressed.left && !suppressed.right);
+    const suppressRight = Boolean(suppressed.right && !suppressed.left);
 
     // Draw Left Braid (alternating z-index overlays based on 3D helix projection)
-    if (!suppressed.left) {
+    if (!suppressLeft) {
       drawSegmentedBraid(context, leftBaseX, height, currentLeftAmp, leftPhase, frequency, palette.a, palette.b, glowRadius, lineWidth, performanceMode);
     }
 
     // Draw Right Braid (alternating z-index overlays based on 3D helix projection)
-    if (!suppressed.right) {
+    if (!suppressRight) {
       drawSegmentedBraid(context, rightBaseX, height, currentRightAmp, rightPhase, frequency, palette.b, palette.a, glowRadius, lineWidth, performanceMode);
     }
 

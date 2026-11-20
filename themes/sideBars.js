@@ -35,9 +35,10 @@
 
   function getSideBarsSettingsColor(settings) {
     if (settings.colorStyle === "custom" && Array.isArray(settings.customColors)) {
+      const colors = settings.customColors.map(hexToRgb).filter(Boolean);
       return {
         mode: "palette",
-        colors: settings.customColors.map(hexToRgb)
+        colors: colors.length > 0 ? colors : SIDE_BARS_STYLES.multicolor.colors
       };
     }
     return SIDE_BARS_STYLES[settings.colorStyle] || SIDE_BARS_STYLES.multicolor;
@@ -109,7 +110,9 @@
       return { r, g, b };
     }
 
-    const palette = style.colors;
+    const palette = (style && Array.isArray(style.colors) && style.colors.length > 0)
+      ? style.colors
+      : SIDE_BARS_STYLES.multicolor.colors;
     const rawTravel = (normalizedY + time * 0.045) % 1;
     const travel = rawTravel < 0 ? rawTravel + 1 : rawTravel;
     const scaled = travel * palette.length;
@@ -167,6 +170,8 @@
     context.shadowBlur = 0;
 
     const suppressed = settings.suppressedEdges || {};
+    const suppressLeft = Boolean(suppressed.left && !suppressed.right);
+    const suppressRight = Boolean(suppressed.right && !suppressed.left);
     const timeDirection = settings.isMirrored ? -1 : 1;
 
     for (let index = 0; index < count; index++) {
@@ -187,10 +192,10 @@
 
       context.fillStyle = fillColor;
       applyOptimizedShadow(context, fillColor, glowBlur * (0.4 + audioWeight * 0.45), performanceMode);
-      if (!suppressed.left) {
+      if (!suppressLeft) {
         drawRoundedBar(context, leftX, y, barLength, barHeight);
       }
-      if (!suppressed.right) {
+      if (!suppressRight) {
         drawRoundedBar(context, rightX, y, barLength, barHeight);
       }
     }
