@@ -121,8 +121,8 @@ function computeDisplayContexts(
     for (const d of activeDisplays) {
       if (d.bounds) {
         const displayCenterX = d.bounds.x + d.bounds.width / 2;
-        // Displays positioned on the right half of the desk are mirrored
-        if (displayCenterX >= deskCenterX) {
+        // Displays positioned strictly on the right half of the desk are mirrored
+        if (displayCenterX > deskCenterX + 1) {
           const ctx = contexts.get(d.id);
           if (ctx) {
             ctx.isMirrored = true;
@@ -186,6 +186,8 @@ function computeDisplayContexts(
 
     // Compute panoramic perimeter and edge mapping across horizontally adjoined displays
     computePanoramicHorizontalEdges(activeDisplays, contexts);
+    // If not horizontally adjoined, check vertically stacked displays
+    computePanoramicVerticalEdges(activeDisplays, contexts);
   }
 
   // 3. Display Split Theme (Theme per screen)
@@ -275,6 +277,78 @@ function computePanoramicHorizontalEdges(activeDisplays = [], contexts) {
   }
 }
 
+/**
+ * Computes panoramic geometry and continuous edge offsets across vertically stacked displays.
+ *
+ * @param {Array<Object>} activeDisplays - Active display array.
+ * @param {Map} contexts - Contexts map to mutate.
+ */
+function computePanoramicVerticalEdges(activeDisplays = [], contexts) {
+  const displaysWithBounds = activeDisplays
+    .filter((d) => d && d.bounds && typeof d.bounds.y === "number" && typeof d.bounds.height === "number")
+    .sort((a, b) => a.bounds.y - b.bounds.y);
+
+  if (displaysWithBounds.length < 2) {
+    return;
+  }
+
+  // If any display already received a horizontal panoramic context, skip
+  for (const d of displaysWithBounds) {
+    const ctx = contexts.get(d.id);
+    if (ctx && ctx.panoramic) return;
+  }
+
+  const ADJACENCY_TOLERANCE_PX = 25;
+  for (let i = 0; i < displaysWithBounds.length - 1; i++) {
+    const a = displaysWithBounds[i];
+    const b = displaysWithBounds[i + 1];
+    const yDist = Math.abs((a.bounds.y + a.bounds.height) - b.bounds.y);
+    if (yDist > ADJACENCY_TOLERANCE_PX) {
+      return;
+    }
+  }
+
+  const sumHeight = displaysWithBounds.reduce((sum, d) => sum + d.bounds.height, 0);
+  const firstWidth = displaysWithBounds[0].bounds.width || 1920;
+  const lastWidth = displaysWithBounds[displaysWithBounds.length - 1].bounds.width || 1920;
+  const perimeter = firstWidth + lastWidth + 2 * sumHeight;
+
+  let currentRight = firstWidth;
+  for (let i = 0; i < displaysWithBounds.length; i++) {
+    const d = displaysWithBounds[i];
+    const isFirst = i === 0;
+    const isLast = i === displaysWithBounds.length - 1;
+
+    const topStart = 0;
+    const rightStart = currentRight;
+    currentRight += d.bounds.height;
+    const bottomStart = firstWidth + sumHeight;
+
+    let leftOffsetFromBottom = 0;
+    for (let k = displaysWithBounds.length - 1; k > i; k--) {
+      leftOffsetFromBottom += displaysWithBounds[k].bounds.height;
+    }
+    const leftStart = firstWidth + sumHeight + lastWidth + leftOffsetFromBottom;
+
+    const ctx = contexts.get(d.id);
+    if (ctx) {
+      ctx.panoramic = {
+        enabled: true,
+        orientation: "vertical",
+        xOffset: 0,
+        yOffset: isFirst ? 0 : d.bounds.height,
+        perimeter,
+        edges: {
+          top: isFirst ? { startDistance: topStart } : null,
+          right: { startDistance: rightStart },
+          bottom: isLast ? { startDistance: bottomStart } : null,
+          left: { startDistance: leftStart }
+        }
+      };
+    }
+  }
+}
+
 const STANDARD_RESOLUTIONS = Object.freeze([
   [1280, 720],
   [1280, 800],
@@ -351,6 +425,7 @@ module.exports = {
   filterDisplays,
   computeDisplayContexts,
   computePanoramicHorizontalEdges,
+  computePanoramicVerticalEdges,
   snapToStandardResolution,
   formatDisplayLabel
 };

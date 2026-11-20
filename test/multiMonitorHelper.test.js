@@ -3,6 +3,8 @@ const assert = require("node:assert");
 const {
   filterDisplays,
   computeDisplayContexts,
+  computePanoramicHorizontalEdges,
+  computePanoramicVerticalEdges,
   formatDisplayLabel,
   snapToStandardResolution
 } = require("../multiMonitorHelper");
@@ -89,6 +91,23 @@ test("multiMonitorHelper - computeDisplayContexts desk symmetry (mirrorMode)", (
   );
   assert.strictEqual(unmirroredContexts.get(1).isMirrored, false);
   assert.strictEqual(unmirroredContexts.get(2).isMirrored, false);
+
+  // 3-display setup: Left (x: 0), Center (x: 1920), Right (x: 3840)
+  // Desk center is (0 + 5760) / 2 = 2880. Center monitor midpoint is 2880.
+  // Left is false, Center is false, Right is true.
+  const tripleDisplays = [
+    { id: 10, bounds: { x: 0, y: 0, width: 1920, height: 1080 } },
+    { id: 11, bounds: { x: 1920, y: 0, width: 1920, height: 1080 } },
+    { id: 12, bounds: { x: 3840, y: 0, width: 1920, height: 1080 } }
+  ];
+  const tripleContexts = computeDisplayContexts(
+    tripleDisplays,
+    tripleDisplays[1],
+    { mirrorMode: true }
+  );
+  assert.strictEqual(tripleContexts.get(10).isMirrored, false);
+  assert.strictEqual(tripleContexts.get(11).isMirrored, false);
+  assert.strictEqual(tripleContexts.get(12).isMirrored, true);
 });
 
 test("multiMonitorHelper - computeDisplayContexts seamless panoramic span (seamSuppression)", () => {
@@ -236,6 +255,37 @@ test("multiMonitorHelper - computeDisplayContexts panoramic span metrics and edg
   );
   assert.strictEqual(noSuppression.get(1).panoramic, null);
   assert.strictEqual(noSuppression.get(2).panoramic, null);
+});
+
+test("multiMonitorHelper - computeDisplayContexts vertical stacked panoramic span", () => {
+  const stackedContexts = computeDisplayContexts(
+    [DISPLAY_A, DISPLAY_STACKED_BOTTOM],
+    DISPLAY_A,
+    { seamSuppression: true }
+  );
+
+  const topCtx = stackedContexts.get(1);
+  const bottomCtx = stackedContexts.get(4);
+
+  assert.ok(topCtx.panoramic);
+  assert.ok(bottomCtx.panoramic);
+  assert.strictEqual(topCtx.panoramic.orientation, "vertical");
+  assert.strictEqual(bottomCtx.panoramic.orientation, "vertical");
+
+  // Expected perimeter: 1920 + 1920 + 2 * (1080 + 1080) = 8160
+  const expectedPerimeter = 1920 + 1920 + 2 * (1080 + 1080);
+  assert.strictEqual(topCtx.panoramic.perimeter, expectedPerimeter);
+  assert.strictEqual(bottomCtx.panoramic.perimeter, expectedPerimeter);
+
+  // Top display: top edge starts at 0, right edge starts at 1920, bottom edge null (suppressed)
+  assert.strictEqual(topCtx.panoramic.edges.top.startDistance, 0);
+  assert.strictEqual(topCtx.panoramic.edges.right.startDistance, 1920);
+  assert.strictEqual(topCtx.panoramic.edges.bottom, null);
+
+  // Bottom display: top null (suppressed), right starts at 1920 + 1080 = 3000, bottom starts at 1920 + 2160 = 4080
+  assert.strictEqual(bottomCtx.panoramic.edges.top, null);
+  assert.strictEqual(bottomCtx.panoramic.edges.right.startDistance, 3000);
+  assert.strictEqual(bottomCtx.panoramic.edges.bottom.startDistance, 4080);
 });
 
 test("multiMonitorHelper - snapToStandardResolution and formatDisplayLabel", () => {
