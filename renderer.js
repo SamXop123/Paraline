@@ -400,12 +400,24 @@ function buildAdaptivePalette(themeId) {
     : [shiftRgb(accent, -0.3), shiftRgb(accent, -0.02), shiftRgb(accent, 0.2)];
 }
 
+function getActiveMainTheme() {
+  const isSplitThemeActive = Boolean(
+    visualizerState.multiMonitor?.splitTheme &&
+    visualizerState.displayContext?.assignedTheme
+  );
+  return isSplitThemeActive
+    ? visualizerState.displayContext.assignedTheme
+    : visualizerState.selectedTheme;
+}
+
 function syncAdaptivePaletteTarget() {
+  const activeTheme = getActiveMainTheme();
+
   if (visualizerState.colorMode === "wallpaper") {
     const colors = visualizerState.wallpaperColors || ["#00f2fe", "#4facfe", "#8ee2ff"];
     const paletteKey = [
       "wallpaper",
-      visualizerState.selectedTheme,
+      activeTheme,
       ...colors
     ].join(":");
 
@@ -424,7 +436,7 @@ function syncAdaptivePaletteTarget() {
   }
 
   const paletteKey = [
-    visualizerState.selectedTheme,
+    activeTheme,
     visualizerState.systemAppearance,
     normalizeHexColor(visualizerState.systemAccentColor || ADAPTIVE_FALLBACK_ACCENT)
   ].join(":");
@@ -434,7 +446,7 @@ function syncAdaptivePaletteTarget() {
   }
 
   adaptivePaletteState.key = paletteKey;
-  adaptivePaletteState.target = buildAdaptivePalette(visualizerState.selectedTheme);
+  adaptivePaletteState.target = buildAdaptivePalette(activeTheme);
 
   if (!adaptivePaletteState.current.length) {
     adaptivePaletteState.current = clonePalette(adaptivePaletteState.target);
@@ -626,17 +638,24 @@ function getThemeAudioMultiplier(themeId) {
 }
 
 function recalculateIncomingLevels() {
-  const primaryMult = getThemeAudioMultiplier(visualizerState.selectedTheme);
+  const activeTheme = getActiveMainTheme();
+  const primaryMult = getThemeAudioMultiplier(activeTheme);
   primaryIncomingLevel = latestSource === "helper"
     ? clamp01(lastPayloadValue * primaryMult)
     : clamp01(lastPayloadValue);
 
+  const isSplitThemeActive = Boolean(
+    visualizerState.multiMonitor?.splitTheme &&
+    visualizerState.displayContext?.assignedTheme
+  );
+
   const dual = visualizerState.dualTheme;
-  const isDualThemeActive = dual &&
+  const isDualThemeActive = !isSplitThemeActive &&
+    dual &&
     dual.enabled &&
     dual.secondaryTheme &&
     dual.secondaryTheme !== "none" &&
-    dual.secondaryTheme !== visualizerState.selectedTheme;
+    dual.secondaryTheme !== activeTheme;
 
   if (isDualThemeActive) {
     const secondaryMult = getThemeAudioMultiplier(dual.secondaryTheme);
@@ -651,12 +670,17 @@ function recalculateIncomingLevels() {
 }
 
 function getActiveAudioMultiplier() {
-  return getThemeAudioMultiplier(visualizerState.selectedTheme);
+  return getThemeAudioMultiplier(getActiveMainTheme());
 }
 
 function rebuildCachedPaint() {
-  const isAmbient = visualizerState.selectedTheme === "ambientWave" ||
-    (visualizerState.dualTheme?.enabled && visualizerState.dualTheme?.secondaryTheme === "ambientWave");
+  const activeTheme = getActiveMainTheme();
+  const isSplitThemeActive = Boolean(
+    visualizerState.multiMonitor?.splitTheme &&
+    visualizerState.displayContext?.assignedTheme
+  );
+  const isAmbient = activeTheme === "ambientWave" ||
+    (!isSplitThemeActive && visualizerState.dualTheme?.enabled && visualizerState.dualTheme?.secondaryTheme === "ambientWave");
   const theme = isAmbient
     ? getAmbientTonePalette(getAmbientWaveSettings())
     : TRANSPARENT_HAZE;
@@ -698,12 +722,18 @@ function paintDebugPanel(now) {
     return;
   }
 
+  const activeTheme = getActiveMainTheme();
+  const isSplitThemeActive = Boolean(
+    visualizerState.multiMonitor?.splitTheme &&
+    visualizerState.displayContext?.assignedTheme
+  );
   const dual = visualizerState.dualTheme;
-  const isDualThemeActive = dual &&
+  const isDualThemeActive = !isSplitThemeActive &&
+    dual &&
     dual.enabled &&
     dual.secondaryTheme &&
     dual.secondaryTheme !== "none" &&
-    dual.secondaryTheme !== visualizerState.selectedTheme;
+    dual.secondaryTheme !== activeTheme;
 
   lastDebugPaintAt = now;
   debugPanel.textContent =
@@ -765,12 +795,17 @@ function updateAudioLevel(now) {
 
   primarySmoothedLevel += ((primaryIncomingLevel + breathing) - primarySmoothedLevel) * response;
 
+  const isSplitThemeActive = Boolean(
+    visualizerState.multiMonitor?.splitTheme &&
+    visualizerState.displayContext?.assignedTheme
+  );
   const dual = visualizerState.dualTheme;
-  const isDualThemeActive = dual &&
+  const isDualThemeActive = !isSplitThemeActive &&
+    dual &&
     dual.enabled &&
     dual.secondaryTheme &&
     dual.secondaryTheme !== "none" &&
-    dual.secondaryTheme !== visualizerState.selectedTheme;
+    dual.secondaryTheme !== getActiveMainTheme();
 
   if (isDualThemeActive) {
     secondarySmoothedLevel += ((secondaryIncomingLevel + breathing) - secondarySmoothedLevel) * response;
@@ -986,9 +1021,7 @@ function renderFrame(now) {
     visualizerState.displayContext?.assignedTheme
   );
 
-  const activeMainTheme = isSplitThemeActive
-    ? visualizerState.displayContext.assignedTheme
-    : visualizerState.selectedTheme;
+  const activeMainTheme = getActiveMainTheme();
 
   let activeFrameInterval = 0;
   const currentLimit = visualizerState.fpsLimit || "default";
