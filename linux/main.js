@@ -32,6 +32,7 @@ const {
   filterDisplays,
   computeDisplayContexts
 } = require("../multiMonitorHelper");
+const { submitContactMessage } = require("../contactService");
 
 let APP_VERSION = "2.6.0";
 try {
@@ -478,6 +479,19 @@ function createSettingsWindow() {
   });
 }
 
+function openContactInSettings() {
+  createSettingsWindow();
+  if (settingsWindow) {
+    if (settingsWindow.webContents.isLoading()) {
+      settingsWindow.webContents.once("did-finish-load", () => {
+        settingsWindow.webContents.send("settings:open-contact");
+      });
+    } else {
+      settingsWindow.webContents.send("settings:open-contact");
+    }
+  }
+}
+
 function createOnboardingWindow() {
   if (onboardingWindow) {
     onboardingWindow.focus();
@@ -592,6 +606,10 @@ function refreshTrayMenu() {
       click: () => resetAllSettings()
     },
     { type: "separator" },
+    {
+      label: "Contact & Feedback",
+      click: () => openContactInSettings()
+    },
     {
       label: "Quit App",
       click: () => app.quit()
@@ -749,6 +767,8 @@ function setupIpcHandlers() {
       }
     } else if (action === "open-settings") {
       createSettingsWindow();
+    } else if (action === "open-contact") {
+      openContactInSettings();
     } else if (action === "quit") {
       app.quit();
     }
@@ -951,6 +971,10 @@ function setupIpcHandlers() {
     if (ALLOWED_EXTERNAL_SCHEMES.has(new URL(url).protocol)) {
       shell.openExternal(url);
     }
+  });
+
+  ipcMain.handle("contact:submit", async (_event, payload) => {
+    return submitContactMessage(payload, APP_VERSION);
   });
 
   ipcMain.handle("onboarding:dismiss", (_event, payload = {}) => {
