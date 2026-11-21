@@ -91,9 +91,9 @@ export async function GET() {
     // Direct fallback to the actual release asset on GitHub
     return NextResponse.json({
       success: true,
-      url: "https://github.com/SamXop123/Paraline/releases/download/v2.6.1/Paraline-Setup-2.6.1.exe",
-      version: "v2.6.1",
-      filename: "Paraline-Setup-2.6.1.exe",
+      url: "https://github.com/SamXop123/Paraline/releases/download/v2.7.0/Paraline-Setup-2.7.0.exe",
+      version: "v2.7.0",
+      filename: "Paraline-Setup-2.7.0.exe",
       message: "Download ready!"
     }, {
       headers: {
