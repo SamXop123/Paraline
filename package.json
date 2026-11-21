@@ -51,6 +51,7 @@
       "preload.js",
       "audioBridge.js",
       "contactService.js",
+      "multiMonitorHelper.js",
       "settingsStore.js",
       "themeAgent.js",
       "onboarding.html",
