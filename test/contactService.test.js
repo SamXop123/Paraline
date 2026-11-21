@@ -131,7 +131,7 @@ test("buildDiscordPayload - formats rich embeds with appropriate category colors
         category: cat,
         message: "Everything is great!"
       },
-      "2.6.1",
+      "2.7.0",
       "win32 x64"
     );
 
@@ -145,7 +145,7 @@ test("buildDiscordPayload - formats rich embeds with appropriate category colors
     assert.strictEqual(fieldsMap["Name"], "Test User");
     assert.strictEqual(fieldsMap["Email"], "test@example.com");
     assert.strictEqual(fieldsMap["Category"], cat);
-    assert.strictEqual(fieldsMap["Client / System"], "Paraline v2.6.1 (win32 x64)");
+    assert.strictEqual(fieldsMap["Client / System"], "Paraline v2.7.0 (win32 x64)");
     assert.strictEqual(fieldsMap["Message"], "Everything is great!");
   }
 });
@@ -158,7 +158,7 @@ test("buildDiscordPayload - formats embeds correctly when category is omitted (w
       subject: "Feature Idea",
       message: "Can we get custom gradient stops?"
     },
-    "2.6.1",
+    "2.7.0",
     "win32 x64"
   );
 
@@ -170,7 +170,7 @@ test("buildDiscordPayload - formats embeds correctly when category is omitted (w
   assert.strictEqual(fieldsMap["Email"], "jamie@example.com");
   assert.strictEqual(fieldsMap["Category"], undefined);
   assert.strictEqual(fieldsMap["Subject"], "Feature Idea");
-  assert.strictEqual(fieldsMap["Client / System"], "Paraline v2.6.1 (win32 x64)");
+  assert.strictEqual(fieldsMap["Client / System"], "Paraline v2.7.0 (win32 x64)");
   assert.strictEqual(fieldsMap["Message"], "Can we get custom gradient stops?");
 });
 
@@ -210,7 +210,7 @@ test("submitContactMessage - dispatches to Discord webhook directly when URL is 
         subject: "Great app",
         message: "Loving the new multi-monitor modes!"
       },
-      "2.6.1",
+      "2.7.0",
       mockFetch
     );
 
@@ -251,7 +251,7 @@ test("submitContactMessage - falls back to website API if Discord webhook return
         subject: "Audio Issue",
         message: "Audio device disconnected unexpectedly."
       },
-      "2.6.1",
+      "2.7.0",
       mockFetch
     );
 
@@ -281,7 +281,7 @@ test("submitContactMessage - returns graceful failure if both Discord and websit
       email: "taylor@example.com",
       message: "Test message"
     },
-    "2.6.1",
+    "2.7.0",
     mockFetch
   );
 

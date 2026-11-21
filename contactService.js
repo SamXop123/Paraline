@@ -120,7 +120,7 @@ function validateContactPayload(payload) {
  * @param {string} [platformInfo] - OS/platform description.
  * @returns {Object} Discord webhook JSON payload.
  */
-function buildDiscordPayload(data, appVersion = "2.6.1", platformInfo = "") {
+function buildDiscordPayload(data, appVersion = "2.7.0", platformInfo = "") {
   const { name, email, subject, category, message } = data;
 
   let embedColor = 58879; // Paraline Cyan #00e5ff
@@ -190,7 +190,7 @@ function buildDiscordPayload(data, appVersion = "2.6.1", platformInfo = "") {
  * @param {Function} [fetchFn] - Custom fetch for testing / injection.
  * @returns {Promise<{ success: boolean, message?: string, error?: string }>}
  */
-async function submitContactMessage(rawPayload, appVersion = "2.6.1", fetchFn = null) {
+async function submitContactMessage(rawPayload, appVersion = "2.7.0", fetchFn = null) {
   const validation = validateContactPayload(rawPayload);
   if (!validation.valid) {
     return { success: false, error: validation.error };
